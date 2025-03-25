@@ -82,7 +82,7 @@ const dummyFacilities: Facility[] = [
 export default function FacilitiesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [sportType, setSportType] = useState("")
-  const [priceRange, setPriceRange] = useState([0, 100])
+  const [priceRange, setPriceRange] = useState([0, 10])
   const [facilities, setFacilities] = useState<Facility[]>(dummyFacilities)
 
   // 검색 처리
@@ -107,8 +107,8 @@ export default function FacilitiesPage() {
       {/* 검색 필터 */}
       <Card className="styled-card mb-8">
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div className="relative">
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="relative flex-grow-0 flex-shrink-0 w-full sm:w-64 md:w-56 lg:w-64">
               <Input
                 placeholder="시설명 또는 위치 검색"
                 value={searchTerm}
@@ -118,33 +118,33 @@ export default function FacilitiesPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             </div>
 
-            <Select value={sportType} onValueChange={setSportType}>
-              <SelectTrigger>
-                <SelectValue placeholder="스포츠 종류" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">전체</SelectItem>
-                <SelectItem value="테니스">테니스</SelectItem>
-                <SelectItem value="풋살">풋살</SelectItem>
-                <SelectItem value="농구">농구</SelectItem>
-                <SelectItem value="배드민턴">배드민턴</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm">가격 범위</span>
-                <span className="text-sm">
-                  {priceRange[0]}천원 - {priceRange[1]}천원
-                </span>
-              </div>
-              <Slider defaultValue={[0, 100]} max={100} step={5} value={priceRange} onValueChange={setPriceRange} />
+            <div className="flex-grow-0 flex-shrink-0 w-full sm:w-48 md:w-40 lg:w-48">
+              <Select value={sportType} onValueChange={setSportType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="스포츠 종류" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체</SelectItem>
+                  <SelectItem value="테니스">테니스</SelectItem>
+                  <SelectItem value="풋살">풋살</SelectItem>
+                  <SelectItem value="농구">농구</SelectItem>
+                  <SelectItem value="배드민턴">배드민턴</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
 
-          <Button onClick={handleSearch} className="primary-button">
-            <Filter className="mr-2 h-4 w-4" /> 필터 적용
-          </Button>
+            <div className="flex items-center gap-6 w-full sm:flex-grow lg:flex-1">
+              <span className="text-sm font-medium whitespace-nowrap">가격 범위:</span>
+              <div className="flex-grow mx-6">
+                <Slider defaultValue={[0, 10]} max={10} step={1} value={priceRange} onValueChange={setPriceRange} />
+              </div>
+              <span className="text-sm whitespace-nowrap min-w-[120px] text-right font-medium">{priceRange[0]}만원 - {priceRange[1]}만원</span>
+            </div>
+
+            <Button onClick={handleSearch} className="primary-button flex-shrink-0 sm:ml-auto w-full sm:w-auto h-10">
+              <Filter className="mr-2 h-4 w-4" /> 필터 적용
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
