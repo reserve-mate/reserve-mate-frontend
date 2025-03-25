@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 50% 99%;
+    --foreground: 240 10% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+
+    --primary: 240 70% 50%;
+    --primary-foreground: 240 10% 98%;
+
+    --secondary: 240 30% 96%;
+    --secondary-foreground: 240 10% 30%;
+
+    --muted: 240 30% 96%;
+    --muted-foreground: 240 10% 40%;
+
+    --accent: 240 30% 96%;
+    --accent-foreground: 240 10% 30%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 30% 92%;
+    --input: 240 30% 92%;
+    --ring: 240 70% 50%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 240 30% 5%;
+    --foreground: 240 10% 98%;
+
+    --card: 240 30% 7%;
+    --card-foreground: 240 10% 98%;
+
+    --popover: 240 30% 7%;
+    --popover-foreground: 240 10% 98%;
+
+    --primary: 240 70% 50%;
+    --primary-foreground: 240 10% 98%;
+
+    --secondary: 240 30% 15%;
+    --secondary-foreground: 240 10% 98%;
+
+    --muted: 240 30% 15%;
+    --muted-foreground: 240 10% 60%;
+
+    --accent: 240 30% 15%;
+    --accent-foreground: 240 10% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 30% 20%;
+    --input: 240 30% 20%;
+    --ring: 240 70% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* 전체 페이지 공통 스타일 */
+.page-container {
+  @apply max-w-6xl mx-auto px-4 sm:px-6 py-8 md:py-12;
+}
+
+/* 카드 공통 스타일 */
+.styled-card {
+  @apply border-0 shadow-lg rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl bg-white;
+}
+
+/* 섹션 공통 스타일 */
+.section-container {
+  @apply mb-10 md:mb-16;
+}
+
+/* 헤더 공통 스타일 */
+.section-header {
+  @apply mb-6 md:mb-10;
+}
+
+/* 버튼 공통 스타일 */
+.primary-button {
+  @apply bg-indigo-600 hover:bg-indigo-700 text-white transition-all duration-300 transform hover:scale-105;
+}
+
+/* 배지 공통 스타일 */
+.status-badge {
+  @apply px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.status-badge-recruiting {
+  @apply bg-indigo-100 text-indigo-800;
+}
+
+.status-badge-completed {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.status-badge-in-progress {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.status-badge-ended {
+  @apply bg-gray-100 text-gray-800;
+}
+
