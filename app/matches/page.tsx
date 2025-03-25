@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar } from "@/components/ui/calendar"
-import { MapPin, CalendarIcon, Clock, Users, Search, Filter } from "lucide-react"
-import { format, addDays, isSameDay, parseISO, isToday, isTomorrow } from "date-fns"
+import { MapPin, CalendarIcon, Clock, Users, Search, Filter, ChevronLeft, ChevronRight } from "lucide-react"
+import { format, addDays, subDays, isSameDay, parseISO, isToday, isTomorrow, startOfDay } from "date-fns"
 import { ko } from "date-fns/locale"
 
 // 매치 데이터 타입
@@ -140,21 +140,35 @@ export default function MatchesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [sportType, setSportType] = useState("")
   const [matches, setMatches] = useState<Match[]>(dummyMatches)
-  const [filteredMatches, setFilteredMatches] = useState<Match[]>(dummyMatches)
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
-  const [activeTab, setActiveTab] = useState("today")
+  const [filteredMatches, setFilteredMatches] = useState<Match[]>([])
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [dateRange, setDateRange] = useState<Date[]>([])
+  const [startDate, setStartDate] = useState<Date>(startOfDay(new Date()))
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  // 날짜 범위 생성 (오늘부터 7일)
+  // 날짜 범위 생성
   useEffect(() => {
     const range: Date[] = []
-    const today = new Date()
-
-    for (let i = 0; i < 7; i++) {
-      range.push(addDays(today, i))
+    
+    for (let i = 0; i < 14; i++) {
+      range.push(addDays(startDate, i))
     }
 
     setDateRange(range)
+  }, [startDate])
+
+  // 초기 선택된 날짜 설정
+  useEffect(() => {
+    // 처음 로드될 때만 오늘 날짜로 설정
+    const today = startOfDay(new Date())
+    setSelectedDate(today)
+    
+    // 이미 날짜가 필터링되어 있다면 다시 필터링
+    if (matches.length > 0) {
+      let filtered = [...matches]
+      filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), today))
+      setFilteredMatches(filtered)
+    }
   }, [])
 
   // 검색 및 필터링 처리
@@ -175,21 +189,13 @@ export default function MatchesPage() {
       filtered = filtered.filter((match) => match.sportType === sportType)
     }
 
-    // 날짜 필터링
+    // 선택된 날짜의 매치만 필터링
     if (selectedDate) {
-      if (activeTab === "today") {
-        const today = new Date()
-        filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), today))
-      } else if (activeTab === "tomorrow") {
-        const tomorrow = addDays(new Date(), 1)
-        filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), tomorrow))
-      } else if (activeTab === "selected") {
-        filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), selectedDate))
-      }
+      filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), selectedDate))
     }
 
     setFilteredMatches(filtered)
-  }, [searchTerm, sportType, matches, selectedDate, activeTab])
+  }, [searchTerm, sportType, matches, selectedDate])
 
   // 날짜별 매치 그룹화
   const matchesByDate = dateRange.map((date) => {
@@ -223,18 +229,130 @@ export default function MatchesPage() {
   }
 
   // 날짜 탭 클릭 처리
-  const handleDateTabClick = (date: Date) => {
+  const handleDateClick = (date: Date) => {
     setSelectedDate(date)
-    setActiveTab("selected")
+  }
+
+  // 이전 주로 이동
+  const handlePrevWeek = () => {
+    setStartDate(subDays(startDate, 7))
+    
+    // 스크롤을 시작점으로 이동
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = 0
+    }
+  }
+
+  // 다음 주로 이동
+  const handleNextWeek = () => {
+    setStartDate(addDays(startDate, 7))
+    
+    // 스크롤을 시작점으로 이동
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = 0
+    }
+  }
+
+  // 오늘 날짜로 이동
+  const goToToday = () => {
+    const today = startOfDay(new Date())
+    setStartDate(today)
+    setSelectedDate(today)
+    
+    // 선택된 날짜가 화면에 표시되도록 스크롤 조정
+    setTimeout(() => {
+      const todayButton = document.querySelector(`.date-button-today`)
+      if (todayButton && scrollContainerRef.current) {
+        todayButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+      }
+    }, 100)
   }
 
   return (
     <div className="page-container">
-      <div className="section-header flex flex-col md:flex-row md:items-center md:justify-between">
+      <div className="section-header flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <h1 className="text-3xl font-bold mb-4 md:mb-0">소셜 매치</h1>
         <Button asChild className="primary-button">
           <Link href="/matches/create">매치 등록하기</Link>
         </Button>
+      </div>
+
+      {/* 날짜 선택 캘린더 - 상단으로 이동 */}
+      <div className="mb-6 relative">
+        <div className="flex items-center justify-between mb-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePrevWeek}
+            className="flex items-center gap-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span>이전</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToToday}
+            className="flex items-center gap-1"
+          >
+            <CalendarIcon className="h-4 w-4" />
+            <span>오늘</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNextWeek}
+            className="flex items-center gap-1"
+          >
+            <span>다음</span>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div ref={scrollContainerRef} className="overflow-x-auto pb-4 scrollbar-thin">
+          <div className="flex space-x-2 min-w-max">
+            {dateRange.map((date, index) => {
+              const isToday = isSameDay(date, new Date());
+              const isFirstDay = index === 0;
+              // 이전 날짜와 월이 다른 경우(월이 바뀐 경우)를 체크
+              const isPrevDifferentMonth = index > 0 && date.getMonth() !== dateRange[index - 1].getMonth();
+              // 첫 날짜이거나 월이 바뀌었을 때 월 표시
+              const showMonth = isFirstDay || isPrevDifferentMonth;
+              
+              return (
+                <Button
+                  key={index}
+                  variant={isSameDay(date, selectedDate) ? "default" : "outline"}
+                  onClick={() => handleDateClick(date)}
+                  className={`flex flex-col py-2 px-4 h-auto w-[80px] ${
+                    isSameDay(date, selectedDate) ? "bg-indigo-600 text-white" : "hover:bg-indigo-50"
+                  } ${isToday ? "date-button-today" : ""}`}
+                >
+                  <span className="text-xs opacity-70">
+                    {isToday ? "오늘" : isTomorrow(date) ? "내일" : format(date, "eee", { locale: ko })}
+                  </span>
+                  {showMonth && (
+                    <span className="text-xs font-medium -mb-1">
+                      {format(date, "M월", { locale: ko })}
+                    </span>
+                  )}
+                  <span className="text-lg font-semibold">{format(date, "d", { locale: ko })}</span>
+                  <Badge
+                    className={`mt-1 ${
+                      isSameDay(date, selectedDate)
+                        ? "bg-white text-indigo-800"
+                        : "bg-indigo-100 text-indigo-800"
+                    }`}
+                  >
+                    {matchesByDate[index]?.count || 0}
+                  </Badge>
+                </Button>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       {/* 검색 필터 */}
@@ -271,217 +389,31 @@ export default function MatchesPage() {
         </CardContent>
       </Card>
 
-      {/* 날짜 탭 */}
+      {/* 선택된 날짜의 매치 목록 */}
       <div className="mb-8">
-        <Tabs defaultValue="today" onValueChange={setActiveTab} value={activeTab}>
-          <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 mb-4">
-            <TabsTrigger value="today" className="flex items-center gap-2">
-              <CalendarIcon className="h-4 w-4" />
-              <span>오늘</span>
-              <Badge className="ml-1 bg-indigo-100 text-indigo-800">{matchesByDate[0]?.count || 0}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="tomorrow" className="flex items-center gap-2">
-              <CalendarIcon className="h-4 w-4" />
-              <span>내일</span>
-              <Badge className="ml-1 bg-indigo-100 text-indigo-800">{matchesByDate[1]?.count || 0}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex items-center gap-2">
-              <CalendarIcon className="h-4 w-4" />
-              <span>달력으로 보기</span>
-            </TabsTrigger>
-            <TabsTrigger value="all" className="flex items-center gap-2">
-              <CalendarIcon className="h-4 w-4" />
-              <span>전체 매치</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="today" className="mt-0">
-            <div className="flex items-center mb-4">
-              <CalendarIcon className="mr-2 h-5 w-5 text-indigo-500" />
-              <h2 className="text-xl font-semibold">오늘 매치</h2>
-            </div>
-
-            {matchesByDate[0]?.matches.length === 0 ? (
-              <Card className="styled-card">
-                <CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground">오늘 예정된 매치가 없습니다.</p>
-                  <Button asChild className="mt-4 primary-button">
-                    <Link href="/matches/create">매치 등록하기</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {matchesByDate[0]?.matches.map((match) => (
-                  <MatchCard key={match.id} match={match} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="tomorrow" className="mt-0">
-            <div className="flex items-center mb-4">
-              <CalendarIcon className="mr-2 h-5 w-5 text-indigo-500" />
-              <h2 className="text-xl font-semibold">내일 매치</h2>
-            </div>
-
-            {matchesByDate[1]?.matches.length === 0 ? (
-              <Card className="styled-card">
-                <CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground">내일 예정된 매치가 없습니다.</p>
-                  <Button asChild className="mt-4 primary-button">
-                    <Link href="/matches/create">매치 등록하기</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {matchesByDate[1]?.matches.map((match) => (
-                  <MatchCard key={match.id} match={match} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="calendar" className="mt-0">
-            <div className="flex items-center mb-4">
-              <CalendarIcon className="mr-2 h-5 w-5 text-indigo-500" />
-              <h2 className="text-xl font-semibold">날짜로 찾기</h2>
-            </div>
-
-            <Card className="styled-card mb-6">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row gap-6">
-                  <div className="md:w-1/3">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => {
-                        setSelectedDate(date)
-                        setActiveTab("selected")
-                      }}
-                      className="rounded-md border"
-                    />
-                  </div>
-                  <div className="md:w-2/3">
-                    <h3 className="text-lg font-semibold mb-4">
-                      {selectedDate
-                        ? format(selectedDate, "yyyy년 MM월 dd일 (eee)", { locale: ko })
-                        : "날짜를 선택하세요"}
-                    </h3>
-
-                    {selectedDate &&
-                    filteredMatches.filter((match) => isSameDay(parseISO(match.matchDate), selectedDate)).length ===
-                      0 ? (
-                      <p className="text-muted-foreground">선택한 날짜에 예정된 매치가 없습니다.</p>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {filteredMatches
-                          .filter((match) => selectedDate && isSameDay(parseISO(match.matchDate), selectedDate))
-                          .map((match) => (
-                            <MatchCard key={match.id} match={match} compact />
-                          ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="selected" className="mt-0">
-            <div className="flex items-center mb-4">
-              <CalendarIcon className="mr-2 h-5 w-5 text-indigo-500" />
-              <h2 className="text-xl font-semibold">
-                {selectedDate ? format(selectedDate, "yyyy년 MM월 dd일 (eee)", { locale: ko }) : "선택한 날짜"}
-              </h2>
-            </div>
-
-            {filteredMatches.length === 0 ? (
-              <Card className="styled-card">
-                <CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground">선택한 날짜에 예정된 매치가 없습니다.</p>
-                  <Button asChild className="mt-4 primary-button">
-                    <Link href="/matches/create">매치 등록하기</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredMatches.map((match) => (
-                  <MatchCard key={match.id} match={match} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="all" className="mt-0">
-            <div className="flex items-center mb-4">
-              <CalendarIcon className="mr-2 h-5 w-5 text-indigo-500" />
-              <h2 className="text-xl font-semibold">전체 매치</h2>
-            </div>
-
-            {/* 날짜별 매치 목록 */}
-            <div className="space-y-8">
-              {dateRange.map((date, index) => {
-                const dateMatches = matches.filter((match) => isSameDay(parseISO(match.matchDate), date))
-
-                if (dateMatches.length === 0) return null
-
-                return (
-                  <div key={index} className="space-y-4">
-                    <div className="flex items-center">
-                      <CalendarIcon className="mr-2 h-5 w-5 text-indigo-500" />
-                      <h3 className="text-lg font-semibold">
-                        {isToday(date)
-                          ? "오늘"
-                          : isTomorrow(date)
-                            ? "내일"
-                            : format(date, "yyyy년 MM월 dd일 (eee)", { locale: ko })}
-                      </h3>
-                      <Badge className="ml-2 bg-indigo-100 text-indigo-800">{dateMatches.length}</Badge>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {dateMatches.map((match) => (
-                        <MatchCard key={match.id} match={match} />
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* 날짜 스크롤 */}
-      <div className="mb-8 overflow-x-auto pb-4">
-        <div className="flex space-x-2 min-w-max">
-          {dateRange.map((date, index) => (
-            <Button
-              key={index}
-              variant={selectedDate && isSameDay(date, selectedDate) ? "default" : "outline"}
-              onClick={() => handleDateTabClick(date)}
-              className={`flex flex-col py-2 px-4 h-auto ${
-                selectedDate && isSameDay(date, selectedDate) ? "bg-indigo-600 text-white" : "hover:bg-indigo-50"
-              }`}
-            >
-              <span className="text-xs opacity-70">
-                {isToday(date) ? "오늘" : isTomorrow(date) ? "내일" : format(date, "eee", { locale: ko })}
-              </span>
-              <span className="text-lg font-semibold">{format(date, "d", { locale: ko })}</span>
-              <Badge
-                className={`mt-1 ${
-                  selectedDate && isSameDay(date, selectedDate)
-                    ? "bg-white text-indigo-800"
-                    : "bg-indigo-100 text-indigo-800"
-                }`}
-              >
-                {matchesByDate[index]?.count || 0}
-              </Badge>
-            </Button>
-          ))}
+        <div className="flex items-center mb-4">
+          <CalendarIcon className="mr-2 h-5 w-5 text-indigo-500" />
+          <h2 className="text-xl font-semibold">
+            {format(selectedDate, "yyyy년 MM월 dd일 (eee)", { locale: ko })} 매치
+          </h2>
         </div>
+
+        {filteredMatches.length === 0 ? (
+          <Card className="styled-card">
+            <CardContent className="p-8 text-center">
+              <p className="text-muted-foreground">해당 날짜에 예정된 매치가 없습니다.</p>
+              <Button asChild className="mt-4 primary-button">
+                <Link href="/matches/create">매치 등록하기</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredMatches.map((match) => (
+              <MatchCard key={match.id} match={match} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

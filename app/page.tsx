@@ -26,12 +26,9 @@ export default function Home() {
               <Button
                 asChild
                 size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white/10 px-8 py-6 text-lg rounded-xl shadow-lg transition-transform hover:scale-105"
+                className="bg-indigo-600 text-white hover:bg-indigo-700 px-8 py-6 text-lg rounded-xl shadow-lg transition-transform hover:scale-105"
               >
-                <Link href="/matches">
-                  <span className="text-white font-bold">소셜 매치</span>
-                </Link>
+                <Link href="/matches">소셜 매치</Link>
               </Button>
             </div>
           </div>
@@ -148,8 +145,7 @@ export default function Home() {
               <Button
                 asChild
                 size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white/10 px-8 py-6 text-lg rounded-xl shadow-lg transition-transform hover:scale-105"
+                className="bg-indigo-600 text-white hover:bg-indigo-700 px-8 py-6 text-lg rounded-xl shadow-lg transition-transform hover:scale-105"
               >
                 <Link href="/login">로그인</Link>
               </Button>
