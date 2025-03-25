@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar } from "@/components/ui/calendar"
-import { MapPin, CalendarIcon, Clock, Users, Search, Filter, ChevronLeft, ChevronRight } from "lucide-react"
+import { MapPin, CalendarIcon, Clock, Users, Search, Filter, ChevronLeft, ChevronRight, PlusCircle } from "lucide-react"
 import { format, addDays, subDays, isSameDay, parseISO, isToday, isTomorrow, startOfDay } from "date-fns"
 import { ko } from "date-fns/locale"
 
@@ -145,6 +145,26 @@ export default function MatchesPage() {
   const [dateRange, setDateRange] = useState<Date[]>([])
   const [startDate, setStartDate] = useState<Date>(startOfDay(new Date()))
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  // 관리자 상태 추가 (실제로는 로그인 시스템이나 권한 검증 로직에서 가져와야 함)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  // 관리자 인증 상태 확인 함수 (실제로는 API 호출이나 토큰 검증을 통해 구현)
+  useEffect(() => {
+    // 임시로 로컬 스토리지에서 관리자 상태를 확인하는 예시
+    // 실제 구현에서는 세션이나 토큰 기반의 인증 시스템을 사용
+    const checkAdminStatus = () => {
+      try {
+        // 이 부분은 실제 인증 시스템에 맞게 대체되어야 함
+        const userRole = localStorage.getItem('userRole')
+        setIsAdmin(userRole === 'admin')
+      } catch (error) {
+        console.error('인증 상태 확인 중 오류 발생:', error)
+        setIsAdmin(false)
+      }
+    }
+    
+    checkAdminStatus()
+  }, [])
 
   // 날짜 범위 생성
   useEffect(() => {
@@ -270,11 +290,17 @@ export default function MatchesPage() {
 
   return (
     <div className="page-container">
-      <div className="section-header flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <h1 className="text-3xl font-bold mb-4 md:mb-0">소셜 매치</h1>
-        <Button asChild className="primary-button">
-          <Link href="/matches/create">매치 등록하기</Link>
-        </Button>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">소셜 매치</h1>
+        
+        {/* 관리자에게만 매치 등록 버튼 표시 */}
+        {isAdmin && (
+          <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
+            <Link href="/matches/create">
+              <PlusCircle className="mr-2 h-4 w-4" /> 매치 등록하기
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* 날짜 선택 캘린더 - 상단으로 이동 */}
@@ -391,20 +417,34 @@ export default function MatchesPage() {
 
       {/* 선택된 날짜의 매치 목록 */}
       <div className="mb-8">
-        <div className="flex items-center mb-4">
-          <CalendarIcon className="mr-2 h-5 w-5 text-indigo-500" />
-          <h2 className="text-xl font-semibold">
-            {format(selectedDate, "yyyy년 MM월 dd일 (eee)", { locale: ko })} 매치
-          </h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <CalendarIcon className="mr-2 h-5 w-5 text-indigo-500" />
+            <h2 className="text-xl font-semibold">
+              {format(selectedDate, "yyyy년 MM월 dd일 (eee)", { locale: ko })} 매치
+            </h2>
+          </div>
+          
+          {/* 관리자에게만 매치 등록 버튼 표시 (작은 버튼) */}
+          {isAdmin && filteredMatches.length > 0 && (
+            <Button asChild size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              <Link href="/matches/create">
+                <PlusCircle className="mr-2 h-4 w-4" /> 매치 등록
+              </Link>
+            </Button>
+          )}
         </div>
 
         {filteredMatches.length === 0 ? (
           <Card className="styled-card">
             <CardContent className="p-8 text-center">
               <p className="text-muted-foreground">해당 날짜에 예정된 매치가 없습니다.</p>
-              <Button asChild className="mt-4 primary-button">
-                <Link href="/matches/create">매치 등록하기</Link>
-              </Button>
+              {/* 관리자에게만 매치 등록 버튼 표시 */}
+              {isAdmin && (
+                <Button asChild className="mt-4 primary-button">
+                  <Link href="/matches/create">매치 등록하기</Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (

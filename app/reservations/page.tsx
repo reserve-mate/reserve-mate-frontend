@@ -105,158 +105,162 @@ export default function ReservationsPage() {
   const pastReservations = reservations.filter((r) => r.status === "완료" || r.status === "취소")
 
   return (
-    <div className="container py-8">
+    <div className="page-container">
       <h1 className="text-3xl font-bold mb-8">내 예약</h1>
 
-      <Tabs defaultValue="upcoming" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-8">
-          <TabsTrigger value="upcoming">예정된 예약</TabsTrigger>
-          <TabsTrigger value="past">지난 예약</TabsTrigger>
-        </TabsList>
+      <Card className="styled-card mb-8">
+        <CardContent className="p-6">
+          <Tabs defaultValue="upcoming" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100">
+              <TabsTrigger value="upcoming" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">예정된 예약</TabsTrigger>
+              <TabsTrigger value="past" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">지난 예약</TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="upcoming">
-          {upcomingReservations.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">예정된 예약이 없습니다.</p>
-              <Button asChild>
-                <Link href="/facilities">시설 찾아보기</Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {upcomingReservations.map((reservation) => (
-                <Card key={reservation.id}>
-                  <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-semibold">{reservation.facilityName}</h3>
-                          <Badge
-                            className={`
-                              ${reservation.status === "확정" ? "bg-green-100 text-green-800" : ""}
-                              ${reservation.status === "대기중" ? "bg-yellow-100 text-yellow-800" : ""}
-                            `}
-                          >
-                            {reservation.status}
-                          </Badge>
+            <TabsContent value="upcoming">
+              {upcomingReservations.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 mb-4">예정된 예약이 없습니다.</p>
+                  <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                    <Link href="/facilities">시설 찾아보기</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {upcomingReservations.map((reservation) => (
+                    <Card key={reservation.id} className="border border-indigo-100 hover:shadow-md transition-shadow">
+                      <CardContent className="p-5">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-lg font-semibold">{reservation.facilityName}</h3>
+                              <Badge
+                                className={`
+                                  ${reservation.status === "확정" ? "bg-green-100 text-green-800 border-green-200" : ""}
+                                  ${reservation.status === "대기중" ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
+                                `}
+                              >
+                                {reservation.status}
+                              </Badge>
+                            </div>
+
+                            <div className="text-sm text-gray-500">
+                              {reservation.courtName} | {reservation.sportType}
+                            </div>
+
+                            <div className="flex items-start">
+                              <MapPin className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
+                              <span className="text-sm text-gray-500">{reservation.address}</span>
+                            </div>
+
+                            <div className="flex items-start">
+                              <Calendar className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
+                              <span className="text-sm text-gray-500">{formatDate(reservation.reservationDate)}</span>
+                            </div>
+
+                            <div className="flex items-start">
+                              <Clock className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
+                              <span className="text-sm text-gray-500">{reservation.timeSlot}</span>
+                            </div>
+
+                            <div className="flex items-start">
+                              <CreditCard className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
+                              <span className="text-sm text-gray-500">
+                                {reservation.totalPrice} | {reservation.paymentStatus}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-2 md:min-w-[120px]">
+                            <Button asChild variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300">
+                              <Link href={`/reservations/${reservation.id}`}>상세 보기</Link>
+                            </Button>
+
+                            {reservation.status !== "취소" && (
+                              <Button variant="destructive" className="bg-red-600 hover:bg-red-700" onClick={() => handleCancelReservation(reservation.id)}>
+                                예약 취소
+                              </Button>
+                            )}
+                          </div>
                         </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
 
-                        <div className="text-sm text-gray-500">
-                          {reservation.courtName} | {reservation.sportType}
+            <TabsContent value="past">
+              {pastReservations.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">지난 예약이 없습니다.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pastReservations.map((reservation) => (
+                    <Card key={reservation.id} className="border border-indigo-100 hover:shadow-md transition-shadow">
+                      <CardContent className="p-5">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-lg font-semibold">{reservation.facilityName}</h3>
+                              <Badge
+                                className={`
+                                  ${reservation.status === "완료" ? "bg-indigo-100 text-indigo-800 border-indigo-200" : ""}
+                                  ${reservation.status === "취소" ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
+                                `}
+                              >
+                                {reservation.status}
+                              </Badge>
+                            </div>
+
+                            <div className="text-sm text-gray-500">
+                              {reservation.courtName} | {reservation.sportType}
+                            </div>
+
+                            <div className="flex items-start">
+                              <MapPin className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
+                              <span className="text-sm text-gray-500">{reservation.address}</span>
+                            </div>
+
+                            <div className="flex items-start">
+                              <Calendar className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
+                              <span className="text-sm text-gray-500">{formatDate(reservation.reservationDate)}</span>
+                            </div>
+
+                            <div className="flex items-start">
+                              <Clock className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
+                              <span className="text-sm text-gray-500">{reservation.timeSlot}</span>
+                            </div>
+
+                            <div className="flex items-start">
+                              <CreditCard className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
+                              <span className="text-sm text-gray-500">
+                                {reservation.totalPrice} | {reservation.paymentStatus}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-2 md:min-w-[120px]">
+                            <Button asChild variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300">
+                              <Link href={`/reservations/${reservation.id}`}>상세 보기</Link>
+                            </Button>
+
+                            {reservation.status === "완료" && (
+                              <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                                <Link href={`/facilities/${reservation.id}/review`}>리뷰 작성</Link>
+                              </Button>
+                            )}
+                          </div>
                         </div>
-
-                        <div className="flex items-start">
-                          <MapPin className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                          <span className="text-sm text-gray-500">{reservation.address}</span>
-                        </div>
-
-                        <div className="flex items-start">
-                          <Calendar className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                          <span className="text-sm text-gray-500">{formatDate(reservation.reservationDate)}</span>
-                        </div>
-
-                        <div className="flex items-start">
-                          <Clock className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                          <span className="text-sm text-gray-500">{reservation.timeSlot}</span>
-                        </div>
-
-                        <div className="flex items-start">
-                          <CreditCard className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                          <span className="text-sm text-gray-500">
-                            {reservation.totalPrice} | {reservation.paymentStatus}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <Button asChild variant="outline">
-                          <Link href={`/reservations/${reservation.id}`}>상세 보기</Link>
-                        </Button>
-
-                        {reservation.status !== "취소" && (
-                          <Button variant="destructive" onClick={() => handleCancelReservation(reservation.id)}>
-                            예약 취소
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="past">
-          {pastReservations.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">지난 예약이 없습니다.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {pastReservations.map((reservation) => (
-                <Card key={reservation.id}>
-                  <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-semibold">{reservation.facilityName}</h3>
-                          <Badge
-                            className={`
-                              ${reservation.status === "완료" ? "bg-blue-100 text-blue-800" : ""}
-                              ${reservation.status === "취소" ? "bg-gray-100 text-gray-800" : ""}
-                            `}
-                          >
-                            {reservation.status}
-                          </Badge>
-                        </div>
-
-                        <div className="text-sm text-gray-500">
-                          {reservation.courtName} | {reservation.sportType}
-                        </div>
-
-                        <div className="flex items-start">
-                          <MapPin className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                          <span className="text-sm text-gray-500">{reservation.address}</span>
-                        </div>
-
-                        <div className="flex items-start">
-                          <Calendar className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                          <span className="text-sm text-gray-500">{formatDate(reservation.reservationDate)}</span>
-                        </div>
-
-                        <div className="flex items-start">
-                          <Clock className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                          <span className="text-sm text-gray-500">{reservation.timeSlot}</span>
-                        </div>
-
-                        <div className="flex items-start">
-                          <CreditCard className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                          <span className="text-sm text-gray-500">
-                            {reservation.totalPrice} | {reservation.paymentStatus}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <Button asChild variant="outline">
-                          <Link href={`/reservations/${reservation.id}`}>상세 보기</Link>
-                        </Button>
-
-                        {reservation.status === "완료" && (
-                          <Button asChild>
-                            <Link href={`/facilities/${reservation.id}/review`}>리뷰 작성</Link>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   )
 }
