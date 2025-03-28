@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/hooks/use-toast"
-import { MapPin, Calendar, Clock, Users, DollarSign, Share2, ChevronLeft } from "lucide-react"
+import { MapPin, Calendar, Clock, Users, DollarSign, Share2, ChevronLeft, ChevronUp, ChevronDown } from "lucide-react"
 
 // 매치 데이터 타입
 type Match = {
@@ -171,6 +171,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [loading, setLoading] = useState(true)
   const [comment, setComment] = useState("")
   const [isJoining, setIsJoining] = useState(false)
+  const [showMobileJoinPanel, setShowMobileJoinPanel] = useState(false)
 
   useEffect(() => {
     // 실제 구현에서는 API를 통해 매치 정보를 가져옵니다
@@ -280,79 +281,188 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const canJoin = match.status === "모집중" && !isMatchFull
 
   return (
-    <div className="container py-8 max-w-6xl mx-auto">
-      <Button variant="ghost" className="mb-6 flex items-center gap-1" onClick={() => router.push("/matches")}>
+    <div className="container py-4 sm:py-8 px-4 sm:px-6 max-w-6xl mx-auto">
+      <Button variant="ghost" className="mb-4 sm:mb-6 flex items-center gap-1" onClick={() => router.push("/matches")}>
         <ChevronLeft className="h-4 w-4" /> 매치 목록으로 돌아가기
       </Button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* 모바일에서만 보이는 참가 신청 요약 및 플로팅 버튼 */}
+      <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-white shadow-xl border-t z-30">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center rounded-full bg-indigo-100 h-11 w-11">
+              <Users className="h-5 w-5 text-indigo-600" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1 mb-0.5">
+                <span className={`font-bold text-base ${isMatchFull ? "text-red-500" : "text-green-500"}`}>
+                  {match.currentTeams}
+                </span>
+                <span className="text-gray-500 text-base">/{match.teamCapacity} 팀</span>
+              </div>
+              <p className="font-bold text-indigo-700 text-lg">{match.matchPrice}/인</p>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1.5">
+            <Button
+              className="w-36 h-11 bg-indigo-600 hover:bg-indigo-700 font-medium"
+              disabled={!canJoin || isJoining}
+              onClick={handleJoinMatch}
+            >
+              {isJoining
+                ? "처리 중..."
+                : match.status === "모집완료"
+                  ? "모집 완료"
+                  : match.status === "진행중"
+                    ? "진행 중"
+                    : match.status === "종료"
+                      ? "종료됨"
+                      : "참가 신청하기"}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 px-2 text-xs" 
+              onClick={() => setShowMobileJoinPanel(!showMobileJoinPanel)}
+            >
+              {showMobileJoinPanel ? (
+                <span className="flex items-center text-gray-500">접기 <ChevronDown className="h-3 w-3 ml-1.5" /></span>
+              ) : (
+                <span className="flex items-center text-indigo-600">참가 정보 보기 <ChevronUp className="h-3 w-3 ml-1.5" /></span>
+              )}
+            </Button>
+          </div>
+        </div>
+        
+        {/* 모바일 확장 패널 */}
+        {showMobileJoinPanel && (
+          <div className="px-4 pb-4 pt-0 border-t border-gray-100 animate-in slide-in-from-bottom duration-300">
+            <div className="rounded-lg bg-gray-50 p-4">
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <p className="text-gray-500">날짜</p>
+                  <p className="text-sm">{formatDate(match.matchDate)}</p>
+                </div>
+                <div className="flex justify-between">
+                  <p className="text-gray-500">시간</p>
+                  <p className="text-sm">{match.matchTime}</p>
+                </div>
+                <div className="flex justify-between">
+                  <p className="text-gray-500">참가 현황</p>
+                  <p className="text-sm">
+                    <span className={isMatchFull ? "text-red-500 font-bold" : "text-green-500 font-bold"}>
+                      {match.currentTeams}
+                    </span>
+                    /{match.teamCapacity} 팀
+                  </p>
+                </div>
+                <Separator />
+                <p className="text-sm font-medium">참가자 정보</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {match.participants.slice(0, 4).map((participant) => (
+                    <div key={participant.id} className="flex items-center p-2 bg-white rounded-lg shadow-sm">
+                      <Avatar className="h-6 w-6 mr-2">
+                        <AvatarImage src={`/placeholder.svg?height=24&width=24&text=${participant.name.charAt(0)}`} />
+                        <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-xs">{participant.name}</p>
+                        <p className="text-xs text-gray-500">레벨: {participant.level}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {match.participants.length > 4 && (
+                    <div className="p-2 bg-white rounded-lg shadow-sm flex items-center justify-center">
+                      <p className="text-xs text-gray-500">+{match.participants.length - 4}명 더 보기</p>
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs text-gray-500 space-y-1 mt-2">
+                  <p>• 참가 신청 후 24시간 이내에 결제를 완료해주세요.</p>
+                  <p>• 매치 시작 24시간 전까지 취소 시 전액 환불됩니다.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 본문 콘텐츠 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 pb-24 lg:pb-0">
         {/* 매치 정보 */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="overflow-hidden border-0 shadow-lg rounded-xl">
-            <div className="relative h-64">
+            <div className="relative h-72 sm:h-80 md:h-96">
               <Image
-                src={`/placeholder.svg?height=400&width=800&text=${match.sportType}+매치`}
-                alt={match.facilityName}
+                src={match.sportType === "테니스" 
+                  ? "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?q=80&w=1024"
+                  : match.sportType === "풋살"
+                  ? "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?q=80&w=1024"
+                  : match.sportType === "농구"
+                  ? "https://images.unsplash.com/photo-1505666287802-931582b5ed56?q=80&w=1024"
+                  : "https://images.unsplash.com/photo-1626224583764-f88b815bad2a?q=80&w=1024"
+                }
+                alt={`${match.sportType} 매치 이미지`}
                 fill
                 className="object-cover"
+                priority
               />
-              <div className="absolute top-4 right-4">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+              <div className="absolute top-4 right-4 z-10">
                 <Badge
                   className={`
-                    px-3 py-1 text-sm
-                    ${match.status === "모집중" ? "bg-green-100 text-green-800" : ""}
-                    ${match.status === "모집완료" ? "bg-blue-100 text-blue-800" : ""}
-                    ${match.status === "진행중" ? "bg-yellow-100 text-yellow-800" : ""}
-                    ${match.status === "종료" ? "bg-gray-100 text-gray-800" : ""}
+                    px-3 py-1.5 text-sm font-medium
+                    ${match.status === "모집중" ? "bg-green-500 text-white" : ""}
+                    ${match.status === "모집완료" ? "bg-blue-500 text-white" : ""}
+                    ${match.status === "진행중" ? "bg-yellow-500 text-white" : ""}
+                    ${match.status === "종료" ? "bg-gray-500 text-white" : ""}
                   `}
                 >
                   {match.status}
                 </Badge>
               </div>
+              <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+                  {match.facilityName} - {match.sportType} 매치
+                </h1>
+                <p className="text-gray-200 mb-1">{match.courtName}</p>
+                <div className="flex items-center text-sm">
+                  <Calendar className="h-4 w-4 mr-1" />
+                  <span className="mr-3">{formatDate(match.matchDate).split("요일")[0]}</span>
+                  <Clock className="h-4 w-4 mr-1" />
+                  <span>{match.matchTime}</span>
+                </div>
+              </div>
             </div>
 
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-2xl font-bold mb-2">
-                    {match.facilityName} - {match.sportType} 매치
-                  </CardTitle>
-                  <p className="text-gray-500">{match.courtName}</p>
-                </div>
-                <Button variant="outline" size="icon">
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-6 px-4 sm:px-6 pt-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-start">
-                  <Calendar className="h-5 w-5 text-blue-600 mr-3 mt-0.5" />
+                  <Calendar className="h-5 w-5 text-indigo-600 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">날짜</p>
-                    <p className="text-gray-500">{formatDate(match.matchDate)}</p>
+                    <p className="font-medium text-sm sm:text-base">날짜</p>
+                    <p className="text-gray-500 text-sm sm:text-base">{formatDate(match.matchDate)}</p>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <Clock className="h-5 w-5 text-blue-600 mr-3 mt-0.5" />
+                  <Clock className="h-5 w-5 text-indigo-600 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">시간</p>
-                    <p className="text-gray-500">{match.matchTime}</p>
+                    <p className="font-medium text-sm sm:text-base">시간</p>
+                    <p className="text-gray-500 text-sm sm:text-base">{match.matchTime}</p>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <MapPin className="h-5 w-5 text-blue-600 mr-3 mt-0.5" />
+                  <MapPin className="h-5 w-5 text-indigo-600 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">위치</p>
-                    <p className="text-gray-500">{match.address}</p>
+                    <p className="font-medium text-sm sm:text-base">위치</p>
+                    <p className="text-gray-500 text-sm sm:text-base">{match.address}</p>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <DollarSign className="h-5 w-5 text-blue-600 mr-3 mt-0.5" />
+                  <DollarSign className="h-5 w-5 text-indigo-600 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">참가비</p>
-                    <p className="text-gray-500">{match.matchPrice}/인</p>
+                    <p className="font-medium text-sm sm:text-base">참가비</p>
+                    <p className="text-gray-500 text-sm sm:text-base">{match.matchPrice}/인</p>
                   </div>
                 </div>
               </div>
@@ -360,41 +470,41 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               <Separator />
 
               <div>
-                <h3 className="text-lg font-semibold mb-3">매치 설명</h3>
-                <p className="text-gray-700 whitespace-pre-line">{match.description}</p>
+                <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">매치 설명</h3>
+                <p className="text-gray-700 text-sm sm:text-base whitespace-pre-line">{match.description}</p>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold mb-3">주최자 정보</h3>
+                <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">주최자 정보</h3>
                 <div className="flex items-center">
-                  <Avatar className="h-10 w-10 mr-3">
+                  <Avatar className="h-9 w-9 sm:h-10 sm:w-10 mr-3">
                     <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${match.hostName.charAt(0)}`} />
                     <AvatarFallback>{match.hostName.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{match.hostName}</p>
-                    <p className="text-sm text-gray-500">레벨: {match.hostLevel}</p>
+                    <p className="font-medium text-sm sm:text-base">{match.hostName}</p>
+                    <p className="text-xs sm:text-sm text-gray-500">레벨: {match.hostLevel}</p>
                   </div>
                 </div>
               </div>
 
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold">참가 현황</h3>
-                  <Badge variant="outline" className="px-3 py-1">
-                    <Users className="h-4 w-4 mr-1" />
+                  <h3 className="text-base sm:text-lg font-semibold">참가 현황</h3>
+                  <Badge variant="outline" className="px-2 sm:px-3 py-1">
+                    <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     {match.currentTeams}/{match.teamCapacity} 팀
                   </Badge>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                   {match.participants.map((participant) => (
                     <div key={participant.id} className="flex items-center p-2 bg-white rounded-lg shadow-sm">
-                      <Avatar className="h-8 w-8 mr-2">
+                      <Avatar className="h-7 w-7 sm:h-8 sm:w-8 mr-2">
                         <AvatarImage src={`/placeholder.svg?height=32&width=32&text=${participant.name.charAt(0)}`} />
                         <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium text-sm">{participant.name}</p>
+                        <p className="font-medium text-xs sm:text-sm">{participant.name}</p>
                         <p className="text-xs text-gray-500">레벨: {participant.level}</p>
                       </div>
                     </div>
@@ -405,34 +515,40 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           </Card>
 
           <Card className="border-0 shadow-lg rounded-xl">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold">위치 정보</CardTitle>
+            <CardHeader className="px-4 sm:px-6 pt-5 pb-2">
+              <CardTitle className="text-lg sm:text-xl font-semibold">위치 정보</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="relative h-64 bg-gray-200 rounded-lg overflow-hidden">
-                <Image src="/placeholder.svg?height=300&width=600&text=지도" alt="지도" fill className="object-cover" />
+            <CardContent className="px-4 sm:px-6 pt-2">
+              <div className="relative h-56 sm:h-64 bg-gray-200 rounded-lg overflow-hidden">
+                <Image 
+                  src="/placeholder.svg?height=300&width=600&text=지도" 
+                  alt="지도" 
+                  fill 
+                  className="object-cover"
+                  priority 
+                />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <p className="text-gray-500">지도 정보</p>
                 </div>
               </div>
               <div className="mt-4">
-                <p className="font-medium">{match.facilityName}</p>
-                <p className="text-gray-500">{match.address}</p>
+                <p className="font-medium text-sm sm:text-base">{match.facilityName}</p>
+                <p className="text-gray-500 text-sm">{match.address}</p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg rounded-xl">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold">문의 및 댓글</CardTitle>
+            <CardHeader className="px-4 sm:px-6 pt-5 pb-0">
+              <CardTitle className="text-lg sm:text-xl font-semibold">문의 및 댓글</CardTitle>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmitComment} className="mb-6">
+            <CardContent className="px-4 sm:px-6 pt-4">
+              <form onSubmit={handleSubmitComment} className="mb-4 sm:mb-6">
                 <Textarea
                   placeholder="댓글을 입력하세요..."
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  className="mb-3 resize-none"
+                  className="mb-3 resize-none text-sm sm:text-base"
                   rows={3}
                 />
                 <Button type="submit" disabled={!comment.trim()}>
@@ -440,25 +556,25 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                 </Button>
               </form>
 
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {match.comments.length === 0 ? (
-                  <p className="text-center text-gray-500 py-4">아직 댓글이 없습니다.</p>
+                  <p className="text-center text-gray-500 py-4 text-sm sm:text-base">아직 댓글이 없습니다.</p>
                 ) : (
                   match.comments.map((comment) => (
-                    <div key={comment.id} className="p-4 bg-gray-50 rounded-lg">
+                    <div key={comment.id} className="p-3 sm:p-4 bg-gray-50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center">
-                          <Avatar className="h-8 w-8 mr-2">
+                          <Avatar className="h-7 w-7 sm:h-8 sm:w-8 mr-2">
                             <AvatarImage
                               src={`/placeholder.svg?height=32&width=32&text=${comment.userName.charAt(0)}`}
                             />
                             <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
                           </Avatar>
-                          <p className="font-medium">{comment.userName}</p>
+                          <p className="font-medium text-sm sm:text-base">{comment.userName}</p>
                         </div>
-                        <p className="text-sm text-gray-500">{comment.createdAt}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">{comment.createdAt}</p>
                       </div>
-                      <p className="text-gray-700">{comment.content}</p>
+                      <p className="text-gray-700 text-sm sm:text-base">{comment.content}</p>
                     </div>
                   ))
                 )}
@@ -467,34 +583,31 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           </Card>
         </div>
 
-        {/* 참가 신청 */}
-        <div>
+        {/* 참가 신청 (데스크톱 화면에서만 표시) */}
+        <div className="hidden lg:block">
           <Card className="sticky top-20 border-0 shadow-lg rounded-xl">
-            <CardHeader>
+            <CardHeader className="px-6 pt-5 pb-0">
               <CardTitle className="text-xl font-semibold">참가 신청</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <p className="text-gray-500">참가비</p>
-                  <p className="font-bold">{match.matchPrice}/인</p>
+            <CardContent className="px-6 pt-5 space-y-5">
+              <div className="rounded-lg bg-indigo-50 p-4 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="bg-indigo-100 rounded-full p-2">
+                    <Users className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">참가 인원</p>
+                    <p className="font-bold">
+                      <span className={isMatchFull ? "text-red-500" : "text-green-500"}>
+                        {match.currentTeams}
+                      </span>
+                      /{match.teamCapacity} 팀
+                    </p>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <p className="text-gray-500">날짜</p>
-                  <p>{formatDate(match.matchDate)}</p>
-                </div>
-                <div className="flex justify-between">
-                  <p className="text-gray-500">시간</p>
-                  <p>{match.matchTime}</p>
-                </div>
-                <div className="flex justify-between">
-                  <p className="text-gray-500">참가 현황</p>
-                  <p>
-                    <span className={isMatchFull ? "text-red-500 font-bold" : "text-green-500 font-bold"}>
-                      {match.currentTeams}
-                    </span>
-                    /{match.teamCapacity} 팀
-                  </p>
+                <div>
+                  <p className="text-sm text-gray-500">참가비</p>
+                  <p className="font-bold text-indigo-700">{match.matchPrice}/인</p>
                 </div>
               </div>
 
