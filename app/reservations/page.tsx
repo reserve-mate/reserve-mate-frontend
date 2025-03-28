@@ -7,6 +7,16 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Calendar, Clock, CreditCard } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // 예약 데이터 타입
 type Reservation = {
@@ -76,6 +86,8 @@ const dummyReservations: Reservation[] = [
 
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>(dummyReservations)
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null)
 
   // 날짜 포맷 함수
   const formatDate = (dateString: string) => {
@@ -88,16 +100,27 @@ export default function ReservationsPage() {
     }).format(date)
   }
 
+  // 예약 취소 모달 표시
+  const openCancelDialog = (id: string) => {
+    setSelectedReservationId(id)
+    setShowCancelDialog(true)
+  }
+
   // 예약 취소 처리
-  const handleCancelReservation = (id: string) => {
+  const handleCancelReservation = () => {
+    if (!selectedReservationId) return
+    
     // 실제 구현에서는 API 호출을 통해 예약을 취소합니다
     setReservations(
       reservations.map((reservation) =>
-        reservation.id === id
+        reservation.id === selectedReservationId
           ? { ...reservation, status: "취소" as const, paymentStatus: "환불" as const }
           : reservation,
       ),
     )
+    
+    setShowCancelDialog(false)
+    setSelectedReservationId(null)
   }
 
   // 상태별 예약 필터링
@@ -176,7 +199,11 @@ export default function ReservationsPage() {
                             </Button>
 
                             {reservation.status !== "취소" && (
-                              <Button variant="destructive" className="bg-red-600 hover:bg-red-700" onClick={() => handleCancelReservation(reservation.id)}>
+                              <Button 
+                                variant="destructive" 
+                                className="bg-red-600 hover:bg-red-700" 
+                                onClick={() => openCancelDialog(reservation.id)}
+                              >
                                 예약 취소
                               </Button>
                             )}
@@ -261,6 +288,29 @@ export default function ReservationsPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* 예약 취소 확인 모달 */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent className="bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl text-indigo-700">예약 취소 확인</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600">
+              정말로 이 예약을 취소하시겠습니까? 취소 시 환불 규정에 따라 처리됩니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700">
+              취소
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleCancelReservation}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              예약 취소
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
