@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import { MapPin, Search, Filter, Star } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // 시설 데이터 타입
 type Facility = {
@@ -83,7 +84,10 @@ export default function FacilitiesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [sportType, setSportType] = useState("")
   const [priceRange, setPriceRange] = useState([0, 10])
+  const [minPrice, setMinPrice] = useState("0")
+  const [maxPrice, setMaxPrice] = useState("10")
   const [facilities, setFacilities] = useState<Facility[]>(dummyFacilities)
+  const [isPriceInputVisible, setIsPriceInputVisible] = useState(false)
 
   // 검색 처리
   const handleSearch = () => {
@@ -92,12 +96,45 @@ export default function FacilitiesPage() {
       const matchesSearch =
         facility.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         facility.address.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesSport = sportType === "" || facility.sportType === sportType
+      const matchesSport = sportType === "" || sportType === "all" || facility.sportType === sportType
 
       return matchesSearch && matchesSport
     })
 
     setFacilities(filtered)
+  }
+
+  // 가격 범위 변경 처리
+  const handlePriceRangeChange = (values: number[]) => {
+    setPriceRange(values);
+    setMinPrice(values[0].toString());
+    setMaxPrice(values[1].toString());
+  }
+
+  // 입력 필드 값 변경 처리
+  const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numValue = value === '' ? 0 : parseInt(value);
+    setMinPrice(value);
+    
+    if (numValue >= 0 && numValue <= parseInt(maxPrice)) {
+      setPriceRange([numValue, priceRange[1]]);
+    }
+  }
+
+  const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numValue = value === '' ? 0 : parseInt(value);
+    setMaxPrice(value);
+    
+    if (numValue >= parseInt(minPrice) && numValue <= 50) {
+      setPriceRange([priceRange[0], numValue]);
+    }
+  }
+
+  // 가격 범위 입력 방식 토글
+  const togglePriceInput = () => {
+    setIsPriceInputVisible(!isPriceInputVisible);
   }
 
   return (
@@ -107,7 +144,7 @@ export default function FacilitiesPage() {
       {/* 검색 필터 */}
       <Card className="styled-card mb-8">
         <CardContent className="p-6">
-          <div className="flex flex-wrap items-center gap-6">
+          <div className="flex flex-wrap items-start gap-6">
             <div className="relative flex-grow-0 flex-shrink-0 w-full sm:w-64 md:w-56 lg:w-64">
               <Input
                 placeholder="시설명 또는 위치 검색"
@@ -133,15 +170,58 @@ export default function FacilitiesPage() {
               </Select>
             </div>
 
-            <div className="flex items-center gap-6 w-full sm:flex-grow lg:flex-1">
-              <span className="text-sm font-medium whitespace-nowrap">가격 범위:</span>
-              <div className="flex-grow mx-6">
-                <Slider defaultValue={[0, 10]} max={10} step={1} value={priceRange} onValueChange={setPriceRange} />
+            <div className="w-full">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium">가격 범위</span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={togglePriceInput} 
+                  className="text-xs h-8 px-2"
+                >
+                  {isPriceInputVisible ? "슬라이더로 설정" : "직접 입력하기"}
+                </Button>
               </div>
-              <span className="text-sm whitespace-nowrap min-w-[120px] text-right font-medium">{priceRange[0]}만원 - {priceRange[1]}만원</span>
+              
+              {isPriceInputVisible ? (
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="number"
+                    min="0"
+                    max={parseInt(maxPrice)}
+                    value={minPrice}
+                    onChange={handleMinPriceChange}
+                    className="w-24 text-center"
+                  />
+                  <span className="text-sm">~</span>
+                  <Input
+                    type="number"
+                    min={parseInt(minPrice)}
+                    max="50"
+                    value={maxPrice}
+                    onChange={handleMaxPriceChange}
+                    className="w-24 text-center"
+                  />
+                  <span className="text-sm whitespace-nowrap">만원</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div className="flex-grow">
+                    <Slider 
+                      defaultValue={[0, 10]} 
+                      max={50} 
+                      step={1} 
+                      value={priceRange} 
+                      onValueChange={handlePriceRangeChange}
+                      className="py-4"
+                    />
+                  </div>
+                  <span className="text-sm whitespace-nowrap font-medium min-w-[90px]">{priceRange[0]}만원 - {priceRange[1]}만원</span>
+                </div>
+              )}
             </div>
 
-            <Button onClick={handleSearch} className="primary-button flex-shrink-0 sm:ml-auto w-full sm:w-auto h-10">
+            <Button onClick={handleSearch} className="primary-button flex-shrink-0 w-full sm:w-auto h-10">
               <Filter className="mr-2 h-4 w-4" /> 필터 적용
             </Button>
           </div>
