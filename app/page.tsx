@@ -7,80 +7,93 @@ import { MapPin, Calendar, CreditCard, Users, ArrowRight, Search, CalendarDays }
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-indigo-700 to-purple-700 text-white">
-        <div className="container px-4 sm:px-6 max-w-6xl mx-auto">
+      {/* Hero Section - 모바일 최적화 */}
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-br from-indigo-600 to-purple-700 text-white relative overflow-hidden">
+        {/* 백그라운드 장식 요소 */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500 rounded-full opacity-20 blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-purple-500 rounded-full opacity-20 blur-3xl"></div>
+        </div>
+        
+        <div className="container px-4 sm:px-6 max-w-6xl mx-auto relative z-10">
           <div className="flex flex-col items-center space-y-6 text-center">
-            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">ReserveMate</h1>
-            <p className="max-w-[800px] text-gray-200 text-base md:text-xl lg:text-2xl">
+            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
+              ReserveMate
+            </h1>
+            <p className="max-w-[800px] text-gray-100 text-lg md:text-xl px-2">
               간편하게 스포츠 시설을 예약하고 관리하세요. 테니스, 축구, 농구 등 다양한 스포츠 시설을 한 곳에서.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full px-8 sm:px-0 sm:w-auto">
               <Button
                 asChild
                 size="lg"
-                className="bg-white text-indigo-700 hover:bg-gray-100 px-8 py-6 text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
+                className="bg-white text-indigo-700 hover:bg-gray-100 px-6 py-5 text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
               >
                 <Link href="/facilities">시설 찾기</Link>
               </Button>
               <Button
                 asChild
                 size="lg"
-                className="bg-indigo-600 text-white hover:bg-indigo-700 px-8 py-6 text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
+                className="bg-indigo-600 border-2 border-white text-white hover:bg-indigo-700 px-6 py-5 text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
               >
                 <Link href="/matches">소셜 매치</Link>
               </Button>
             </div>
           </div>
+          
+          {/* 모바일용 스크롤 안내 */}
+          <div className="mt-12 flex items-center justify-center sm:hidden animate-bounce">
+            <ArrowRight className="h-6 w-6 transform rotate-90" />
+          </div>
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Features Section - 모바일 최적화 */}
       <section className="w-full py-16 md:py-24 lg:py-32 bg-gray-50">
         <div className="container px-4 sm:px-6 max-w-6xl mx-auto">
           <div className="flex flex-col items-center justify-center space-y-6 text-center mb-12">
             <div className="space-y-3">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">주요 기능</h2>
-              <p className="max-w-[700px] text-gray-500 text-lg md:text-xl mx-auto">
+              <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl">주요 기능</h2>
+              <p className="max-w-[700px] text-gray-500 text-base md:text-lg mx-auto px-2">
                 스포츠 시설 예약 시스템의 주요 기능을 소개합니다.
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-12">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mt-6 md:mt-12 px-2 sm:px-0">
             <Card className="styled-card">
-              <CardContent className="p-8 flex flex-col items-center text-center space-y-5">
-                <div className="p-4 rounded-full bg-indigo-100 text-indigo-600">
-                  <MapPin className="h-8 w-8" />
+              <CardContent className="p-4 md:p-8 flex flex-col items-center text-center space-y-3 md:space-y-5">
+                <div className="p-3 md:p-4 rounded-full bg-indigo-100 text-indigo-600">
+                  <MapPin className="h-6 w-6 md:h-8 md:w-8" />
                 </div>
-                <h3 className="text-xl font-bold">시설 검색</h3>
-                <p className="text-gray-500">위치, 스포츠 종류, 가격 등 다양한 조건으로 시설을 검색하세요.</p>
+                <h3 className="text-base md:text-xl font-bold">시설 검색</h3>
+                <p className="text-gray-500 text-sm md:text-base">위치, 스포츠 종류 등 다양한 조건으로 검색하세요.</p>
               </CardContent>
             </Card>
             <Card className="styled-card">
-              <CardContent className="p-8 flex flex-col items-center text-center space-y-5">
-                <div className="p-4 rounded-full bg-indigo-100 text-indigo-600">
-                  <Calendar className="h-8 w-8" />
+              <CardContent className="p-4 md:p-8 flex flex-col items-center text-center space-y-3 md:space-y-5">
+                <div className="p-3 md:p-4 rounded-full bg-indigo-100 text-indigo-600">
+                  <Calendar className="h-6 w-6 md:h-8 md:w-8" />
                 </div>
-                <h3 className="text-xl font-bold">간편 예약</h3>
-                <p className="text-gray-500">원하는 날짜와 시간에 빠르고 쉽게 예약하세요.</p>
+                <h3 className="text-base md:text-xl font-bold">간편 예약</h3>
+                <p className="text-gray-500 text-sm md:text-base">원하는 날짜와 시간에 빠르고 쉽게 예약하세요.</p>
               </CardContent>
             </Card>
             <Card className="styled-card">
-              <CardContent className="p-8 flex flex-col items-center text-center space-y-5">
-                <div className="p-4 rounded-full bg-indigo-100 text-indigo-600">
-                  <CreditCard className="h-8 w-8" />
+              <CardContent className="p-4 md:p-8 flex flex-col items-center text-center space-y-3 md:space-y-5">
+                <div className="p-3 md:p-4 rounded-full bg-indigo-100 text-indigo-600">
+                  <CreditCard className="h-6 w-6 md:h-8 md:w-8" />
                 </div>
-                <h3 className="text-xl font-bold">온라인 결제</h3>
-                <p className="text-gray-500">다양한 결제 방법으로 안전하게 결제하세요.</p>
+                <h3 className="text-base md:text-xl font-bold">온라인 결제</h3>
+                <p className="text-gray-500 text-sm md:text-base">다양한 결제 방법으로 안전하게 결제하세요.</p>
               </CardContent>
             </Card>
             <Card className="styled-card">
-              <CardContent className="p-8 flex flex-col items-center text-center space-y-5">
-                <div className="p-4 rounded-full bg-indigo-100 text-indigo-600">
-                  <Users className="h-8 w-8" />
+              <CardContent className="p-4 md:p-8 flex flex-col items-center text-center space-y-3 md:space-y-5">
+                <div className="p-3 md:p-4 rounded-full bg-indigo-100 text-indigo-600">
+                  <Users className="h-6 w-6 md:h-8 md:w-8" />
                 </div>
-                <h3 className="text-xl font-bold">소셜 매치</h3>
-                <p className="text-gray-500">함께 운동할 팀원을 찾고 매치를 신청하세요.</p>
+                <h3 className="text-base md:text-xl font-bold">소셜 매치</h3>
+                <p className="text-gray-500 text-sm md:text-base">함께 운동할 팀원을 찾고 매치를 신청하세요.</p>
               </CardContent>
             </Card>
           </div>
@@ -90,18 +103,18 @@ export default function Home() {
       {/* Popular Facilities Section */}
       <section className="w-full py-16 md:py-24 lg:py-32 bg-white">
         <div className="container px-4 sm:px-6 max-w-6xl mx-auto">
-          <div className="flex flex-col items-center justify-center space-y-6 text-center mb-12">
-            <div className="space-y-3">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">인기 시설</h2>
-              <p className="max-w-[700px] text-gray-500 text-lg md:text-xl mx-auto">
+          <div className="flex flex-col items-center justify-center space-y-4 md:space-y-6 text-center mb-8 md:mb-12">
+            <div className="space-y-2 md:space-y-3">
+              <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl">인기 시설</h2>
+              <p className="max-w-[700px] text-gray-500 text-base md:text-lg mx-auto px-2">
                 사용자들이 가장 많이 이용하는 인기 스포츠 시설을 만나보세요.
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="styled-card">
-                <div className="relative h-48 w-full">
+              <Card key={i} className="styled-card overflow-hidden">
+                <div className="relative h-40 md:h-48 w-full">
                   <Image
                     src={`/placeholder.svg?height=300&width=500&text=인기시설${i}`}
                     alt={`인기 시설 ${i}`}
@@ -109,9 +122,9 @@ export default function Home() {
                     className="object-cover"
                   />
                 </div>
-                <CardContent className="p-6">
-                  <h3 className="text-xl font-bold mb-2">인기 스포츠 시설 {i}</h3>
-                  <p className="text-gray-500 mb-4">최신 시설과 편리한 위치로 많은 사용자들이 이용하는 시설입니다.</p>
+                <CardContent className="p-4 md:p-6">
+                  <h3 className="text-lg md:text-xl font-bold mb-2">인기 스포츠 시설 {i}</h3>
+                  <p className="text-gray-500 text-sm md:text-base mb-4">최신 시설과 편리한 위치로 많은 사용자들이 이용하는 시설입니다.</p>
                   <Button asChild variant="outline" className="w-full hover:text-indigo-700 hover:border-indigo-700">
                     <Link href="/facilities">
                       자세히 보기 <ArrowRight className="ml-2 h-4 w-4" />
@@ -125,27 +138,33 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-r from-indigo-700 to-purple-700 text-white">
-        <div className="container px-4 sm:px-6 max-w-6xl mx-auto">
+      <section className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-br from-indigo-600 to-purple-700 text-white relative overflow-hidden">
+        {/* 백그라운드 장식 */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+          <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-indigo-500 rounded-full opacity-20 blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-purple-500 rounded-full opacity-20 blur-3xl"></div>
+        </div>
+        
+        <div className="container px-4 sm:px-6 max-w-6xl mx-auto relative z-10">
           <div className="flex flex-col items-center justify-center space-y-6 text-center">
             <div className="space-y-3">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">지금 바로 시작하세요</h2>
-              <p className="max-w-[700px] text-gray-200 text-lg md:text-xl mx-auto">
+              <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl">지금 바로 시작하세요</h2>
+              <p className="max-w-[700px] text-gray-200 text-base md:text-lg mx-auto px-2">
                 회원가입 후 다양한 스포츠 시설을 이용해보세요.
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-5 mt-4">
+            <div className="flex flex-col sm:flex-row gap-4 mt-4 w-full px-8 sm:px-0 sm:w-auto">
               <Button
                 asChild
                 size="lg"
-                className="bg-white text-indigo-700 hover:bg-gray-100 px-8 py-6 text-lg rounded-xl shadow-lg transition-transform hover:scale-105"
+                className="bg-white text-indigo-700 hover:bg-gray-100 px-6 py-5 text-base md:text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
               >
                 <Link href="/signup">회원가입</Link>
               </Button>
               <Button
                 asChild
                 size="lg"
-                className="bg-indigo-600 text-white hover:bg-indigo-700 px-8 py-6 text-lg rounded-xl shadow-lg transition-transform hover:scale-105"
+                className="bg-indigo-600 border-2 border-white text-white hover:bg-indigo-700 px-6 py-5 text-base md:text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
               >
                 <Link href="/login">로그인</Link>
               </Button>
@@ -157,15 +176,15 @@ export default function Home() {
       {/* Testimonials Section */}
       <section className="w-full py-16 md:py-24 lg:py-32 bg-gray-50">
         <div className="container px-4 sm:px-6 max-w-6xl mx-auto">
-          <div className="flex flex-col items-center justify-center space-y-6 text-center mb-12">
-            <div className="space-y-3">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">사용자 후기</h2>
-              <p className="max-w-[700px] text-gray-500 text-lg md:text-xl mx-auto">
+          <div className="flex flex-col items-center justify-center space-y-4 md:space-y-6 text-center mb-8 md:mb-12">
+            <div className="space-y-2 md:space-y-3">
+              <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl">사용자 후기</h2>
+              <p className="max-w-[700px] text-gray-500 text-base md:text-lg mx-auto px-2">
                 ReserveMate를 이용한 사용자들의 생생한 후기를 확인하세요.
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
             {[
               {
                 name: "김철수",
@@ -187,21 +206,24 @@ export default function Home() {
               },
             ].map((testimonial, i) => (
               <Card key={i} className="styled-card">
-                <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <span className="text-indigo-600 text-xl font-bold">{testimonial.name.charAt(0)}</span>
+                <CardContent className="p-4 md:p-8 flex flex-col items-center text-center space-y-4">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <span className="text-indigo-600 text-lg md:text-xl font-bold">{testimonial.name.charAt(0)}</span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold">{testimonial.name}</h3>
-                    <p className="text-gray-500">{testimonial.role}</p>
+                    <h3 className="text-lg md:text-xl font-bold">{testimonial.name}</h3>
+                    <p className="text-gray-500 text-sm">{testimonial.role}</p>
                   </div>
-                  <p className="text-gray-600 italic">"{testimonial.content}"</p>
+                  <p className="text-gray-600 italic text-sm md:text-base">"{testimonial.content}"</p>
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
       </section>
+      
+      {/* 모바일 하단 네비게이션용 여백 */}
+      <div className="h-16 md:hidden"></div>
     </div>
   )
 }

@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Calendar, Clock, CreditCard } from "lucide-react"
+import { MapPin, Calendar, Clock, CreditCard, LogIn } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -88,6 +88,20 @@ export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>(dummyReservations)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  
+  useEffect(() => {
+    const loggedInStatus = localStorage.getItem('isLoggedIn')
+    setIsLoggedIn(loggedInStatus === 'true')
+  }, [])
+  
+  useEffect(() => {
+    localStorage.setItem('isLoggedIn', isLoggedIn.toString())
+  }, [isLoggedIn])
+
+  const handleLogin = () => {
+    setIsLoggedIn(true)
+  }
 
   // 날짜 포맷 함수
   const formatDate = (dateString: string) => {
@@ -126,6 +140,32 @@ export default function ReservationsPage() {
   // 상태별 예약 필터링
   const upcomingReservations = reservations.filter((r) => r.status === "확정" || r.status === "대기중")
   const pastReservations = reservations.filter((r) => r.status === "완료" || r.status === "취소")
+
+  if (!isLoggedIn) {
+    return (
+      <div className="container py-8">
+        <Card className="styled-card mb-8">
+          <CardContent className="p-8 flex flex-col items-center justify-center text-center">
+            <LogIn className="h-16 w-16 text-indigo-400 mb-4" />
+            <h1 className="text-2xl font-bold mb-2">로그인이 필요합니다</h1>
+            <p className="text-gray-600 mb-6">예약 내역을 확인하려면 로그인이 필요합니다.</p>
+            
+            <div className="flex gap-3">
+              <Button 
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                onClick={handleLogin}
+              >
+                로그인 테스트
+              </Button>
+              <Button asChild variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300">
+                <Link href="/">홈으로 돌아가기</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="page-container">

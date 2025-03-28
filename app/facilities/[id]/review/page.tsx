@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Star, ArrowLeft, Building } from "lucide-react"
+import { Star, ArrowLeft, Building, LogIn } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 
 // 시설 정보 타입
@@ -58,6 +58,7 @@ export default function ReviewPage() {
   const [facility, setFacility] = useState<Facility | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   // 리뷰 데이터
   const [reviewData, setReviewData] = useState({
@@ -66,9 +67,24 @@ export default function ReviewPage() {
     content: "",
   })
 
+  // 로그인 상태 확인
+  useEffect(() => {
+    const loggedInStatus = localStorage.getItem('isLoggedIn')
+    setIsLoggedIn(loggedInStatus === 'true')
+  }, [])
+
+  // 테스트용 로그인 처리
+  const handleLogin = () => {
+    localStorage.setItem('isLoggedIn', 'true')
+    setIsLoggedIn(true)
+    router.refresh()
+  }
+
   useEffect(() => {
     // 실제 구현에서는 API 호출을 통해 시설 정보를 가져옴
     const fetchFacility = () => {
+      if (!isLoggedIn) return // 로그인 상태가 아니면 API 호출 하지 않음
+      
       setIsLoading(true)
       try {
         // API 호출 시뮬레이션
@@ -86,7 +102,7 @@ export default function ReviewPage() {
     }
 
     fetchFacility()
-  }, [id])
+  }, [id, isLoggedIn])
 
   // 리뷰 입력 처리
   const handleInputChange = (
@@ -152,6 +168,33 @@ export default function ReviewPage() {
       })
       setIsSubmitting(false)
     }
+  }
+
+  // 로그인이 필요한 경우 안내 메시지 표시
+  if (!isLoggedIn) {
+    return (
+      <div className="container py-8">
+        <Card className="styled-card mb-8">
+          <CardContent className="p-8 flex flex-col items-center justify-center text-center">
+            <LogIn className="h-16 w-16 text-indigo-400 mb-4" />
+            <h1 className="text-2xl font-bold mb-2">로그인이 필요합니다</h1>
+            <p className="text-gray-600 mb-6">리뷰를 작성하려면 로그인이 필요합니다.</p>
+            
+            <div className="flex gap-3">
+              <Button 
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                onClick={handleLogin}
+              >
+                로그인 테스트
+              </Button>
+              <Button asChild variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300">
+                <Link href="/">홈으로 돌아가기</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   // 로딩 중이거나 시설 정보를 찾지 못한 경우
