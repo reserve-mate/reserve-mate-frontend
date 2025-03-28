@@ -21,11 +21,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-screen`}>
+      <body className={`${inter.className} min-h-screen bg-white`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme="light">
           <div className="relative flex min-h-screen flex-col">
             <SiteHeader />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 pb-8 sm:pb-10 lg:pb-12">{children}</main>
             <ClientFooter />
           </div>
         </ThemeProvider>
