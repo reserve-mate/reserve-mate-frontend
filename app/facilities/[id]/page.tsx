@@ -289,7 +289,7 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
                           nav_button_next: "absolute right-2",
                           table: "w-full border-collapse",
                           head_row: "grid grid-cols-7",
-                          head_cell: "text-gray-500 font-medium text-sm text-center py-2",
+                          head_cell: "text-gray-500 font-medium text-sm text-center py-2 first:text-red-500 last:text-blue-500",
                           row: "grid grid-cols-7",
                           cell: "text-center relative py-1",
                           day: "h-8 w-8 p-0 mx-auto font-normal text-sm flex items-center justify-center rounded-full hover:bg-gray-100",
