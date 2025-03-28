@@ -407,32 +407,33 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
   }
   
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="title">매치명 *</Label>
+    <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-3xl mx-auto">
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-4">
+          <Label htmlFor="title" className="text-base">매치명 *</Label>
           <Input
             id="title"
             name="title"
             value={matchData.title}
             onChange={handleInputChange}
             placeholder="예: 주말 테니스 초보자 매치"
+            className="h-12 text-base"
             required
           />
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="sportType">종목 *</Label>
+        <div className="space-y-4">
+          <Label htmlFor="sportType" className="text-base">종목 *</Label>
           <Select 
             value={matchData.sportType} 
             onValueChange={(value) => handleSelectChange('sportType', value)}
           >
-            <SelectTrigger id="sportType">
+            <SelectTrigger id="sportType" className="h-12 text-base">
               <SelectValue placeholder="종목을 선택하세요" />
             </SelectTrigger>
             <SelectContent>
               {sportTypes.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
+                <SelectItem key={type.value} value={type.value} className="text-base py-2">
                   {type.label}
                 </SelectItem>
               ))}
@@ -441,19 +442,19 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
         </div>
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="facility">시설 *</Label>
+      <div className="space-y-4">
+        <Label htmlFor="facility" className="text-base">시설 *</Label>
         <Select 
           value={matchData.facilityId} 
           onValueChange={(value) => handleSelectChange('facilityId', value)}
           disabled={!matchData.sportType}
         >
-          <SelectTrigger id="facility">
+          <SelectTrigger id="facility" className="h-12 text-base">
             <SelectValue placeholder={!matchData.sportType ? "먼저 종목을 선택하세요" : "시설을 선택하세요"} />
           </SelectTrigger>
           <SelectContent>
             {filteredFacilities.map((facility) => (
-              <SelectItem key={facility.id} value={facility.id}>
+              <SelectItem key={facility.id} value={facility.id} className="text-base py-2">
                 {facility.name} ({facility.address})
               </SelectItem>
             ))}
@@ -461,8 +462,8 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
         </Select>
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="court">코트 *</Label>
+      <div className="space-y-4">
+        <Label htmlFor="court" className="text-base">코트 *</Label>
         <Select 
           value={matchData.courtId} 
           onValueChange={(value) => {
@@ -474,12 +475,12 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
           }}
           disabled={!matchData.facilityId || availableCourts.length === 0}
         >
-          <SelectTrigger id="court">
+          <SelectTrigger id="court" className="h-12 text-base">
             <SelectValue placeholder={!matchData.facilityId ? "먼저 시설을 선택하세요" : "코트를 선택하세요"} />
           </SelectTrigger>
           <SelectContent>
             {availableCourts.map((court) => (
-              <SelectItem key={court.id} value={court.id}>
+              <SelectItem key={court.id} value={court.id} className="text-base py-2">
                 {court.name} ({court.width}m × {court.height}m, {court.type})
               </SelectItem>
             ))}
@@ -487,16 +488,16 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
         </Select>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label>날짜 *</Label>
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-4">
+          <Label className="text-base">날짜 *</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-start text-left font-normal"
+                className="w-full justify-start text-left font-normal h-12 text-base"
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
+                <CalendarIcon className="mr-2 h-5 w-5" />
                 {date ? format(date, 'PPP', { locale: ko }) : "날짜를 선택하세요"}
               </Button>
             </PopoverTrigger>
@@ -507,24 +508,25 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
                 onSelect={setDate}
                 initialFocus
                 disabled={(date) => date < new Date()}
+                className="rounded-md border shadow p-3"
               />
             </PopoverContent>
           </Popover>
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="matchTime">시작 시간 *</Label>
+        <div className="space-y-4">
+          <Label htmlFor="matchTime" className="text-base">시작 시간 *</Label>
           <Select 
             value={matchData.matchTime} 
             onValueChange={(value) => handleSelectChange('matchTime', value)}
             disabled={!matchData.facilityId || !matchData.courtId || !matchData.matchDate}
           >
-            <SelectTrigger id="matchTime">
+            <SelectTrigger id="matchTime" className="h-12 text-base">
               <SelectValue placeholder={!matchData.facilityId || !matchData.courtId || !matchData.matchDate ? "먼저 시설, 코트, 날짜를 선택하세요" : "시간을 선택하세요"} />
             </SelectTrigger>
             <SelectContent>
               {availableTimeSlots.map((slot) => (
-                <SelectItem key={slot.value} value={slot.value}>
+                <SelectItem key={slot.value} value={slot.value} className="text-base py-2">
                   {slot.label}
                 </SelectItem>
               ))}
@@ -533,8 +535,8 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
         </div>
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="maxParticipants">최대 참가자 수 *</Label>
+      <div className="space-y-4">
+        <Label htmlFor="maxParticipants" className="text-base">최대 참가자 수 *</Label>
         <Input
           id="maxParticipants"
           name="maxParticipants"
@@ -543,46 +545,53 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
           value={matchData.maxParticipants}
           onChange={handleInputChange}
           placeholder="예: 8"
+          className="h-12 text-base"
           required
         />
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="fee">참가비</Label>
+      <div className="space-y-4">
+        <Label htmlFor="fee" className="text-base">참가비</Label>
         <Input
           id="fee"
           name="fee"
           value={matchData.fee}
           onChange={handleInputChange}
           placeholder="예: 10000"
+          className="h-12 text-base"
         />
       </div>
       
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-3 mt-6">
         <Checkbox 
           id="equipmentProvided" 
           checked={matchData.equipmentProvided}
           onCheckedChange={(checked) => 
             handleCheckboxChange('equipmentProvided', checked as boolean)
           }
+          className="h-5 w-5"
         />
-        <Label htmlFor="equipmentProvided">장비 제공 여부</Label>
+        <Label htmlFor="equipmentProvided" className="text-base">장비 제공 여부</Label>
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="description">상세 설명</Label>
+      <div className="space-y-4">
+        <Label htmlFor="description" className="text-base">상세 설명</Label>
         <Textarea
           id="description"
           name="description"
           value={matchData.description}
           onChange={handleInputChange}
           placeholder="매치에 대한 상세 설명을 입력하세요"
-          className="min-h-[100px]"
+          className="min-h-[120px] text-base"
         />
       </div>
       
-      <div className="flex justify-end space-x-2">
-        <Button type="submit" disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-700">
+      <div className="pt-4">
+        <Button 
+          type="submit" 
+          disabled={isLoading} 
+          className="bg-indigo-600 hover:bg-indigo-700 w-full md:w-auto h-12 text-base"
+        >
           {isLoading ? "등록 중..." : "매치 등록하기"}
         </Button>
       </div>

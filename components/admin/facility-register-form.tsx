@@ -239,18 +239,18 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="w-full max-w-3xl mx-auto">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="basic">기본 정보</TabsTrigger>
-          <TabsTrigger value="details">상세 정보</TabsTrigger>
-          <TabsTrigger value="courts">코트 정보</TabsTrigger>
-          <TabsTrigger value="images">이미지</TabsTrigger>
+        <TabsList className="w-full mb-4 grid grid-cols-2 md:grid-cols-4 gap-1">
+          <TabsTrigger value="basic" className="py-3 text-sm md:text-base">기본 정보</TabsTrigger>
+          <TabsTrigger value="details" className="py-3 text-sm md:text-base">상세 정보</TabsTrigger>
+          <TabsTrigger value="courts" className="py-3 text-sm md:text-base">코트 정보</TabsTrigger>
+          <TabsTrigger value="images" className="py-3 text-sm md:text-base">이미지</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="basic" className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">시설명 *</Label>
+        <TabsContent value="basic" className="space-y-6 pt-2">
+          <div className="space-y-4">
+            <Label htmlFor="name" className="text-base">시설명 *</Label>
             <Input
               id="name"
               name="name"
@@ -258,21 +258,22 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
               onChange={handleInputChange}
               placeholder="예: 서울 테니스 센터"
               required
+              className="h-12 text-base"
             />
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="sportType">종목 *</Label>
+          <div className="space-y-4">
+            <Label htmlFor="sportType" className="text-base">종목 *</Label>
             <Select 
               value={facilityData.sportType} 
               onValueChange={(value) => handleSelectChange('sportType', value)}
             >
-              <SelectTrigger id="sportType">
+              <SelectTrigger id="sportType" className="h-12 text-base">
                 <SelectValue placeholder="종목을 선택하세요" />
               </SelectTrigger>
               <SelectContent>
                 {sportTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
+                  <SelectItem key={type.value} value={type.value} className="text-base py-2">
                     {type.label}
                   </SelectItem>
                 ))}
@@ -280,60 +281,61 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
             </Select>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="address">주소 *</Label>
-            <div className="flex space-x-2">
+          <div className="space-y-4">
+            <Label htmlFor="address" className="text-base">주소 *</Label>
+            <div className="flex flex-col md:flex-row gap-3">
               <Input
                 id="address"
                 name="address"
                 value={facilityData.address}
                 onChange={handleInputChange}
                 placeholder="예: 서울시 강남구 테헤란로 123"
-                className="flex-1"
+                className="flex-1 h-12 text-base"
                 required
               />
-              <Button type="button" variant="outline">
-                <MapPin className="mr-2 h-4 w-4" /> 주소 검색
+              <Button type="button" variant="outline" className="h-12 text-base md:w-auto w-full">
+                <MapPin className="mr-2 h-5 w-5" /> 주소 검색
               </Button>
             </div>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="detailAddress">상세 주소</Label>
+          <div className="space-y-4">
+            <Label htmlFor="detailAddress" className="text-base">상세 주소</Label>
             <Input
               id="detailAddress"
               name="detailAddress"
               value={facilityData.detailAddress}
               onChange={handleInputChange}
               placeholder="예: 2층 테니스 코트"
+              className="h-12 text-base"
             />
           </div>
           
           <Button 
             type="button" 
-            className="mt-2" 
+            className="mt-6 w-full md:w-auto h-12 text-base" 
             onClick={() => setActiveTab("details")}
           >
             다음: 상세 정보
           </Button>
         </TabsContent>
         
-        <TabsContent value="details" className="space-y-4 pt-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="openingHours">운영 시작 시간 *</Label>
+        <TabsContent value="details" className="space-y-6 pt-2">
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-4">
+              <Label htmlFor="openingHours" className="text-base">운영 시작 시간 *</Label>
               <Select 
                 value={facilityData.openingHours} 
                 onValueChange={(value) => handleSelectChange('openingHours', value)}
               >
-                <SelectTrigger id="openingHours">
+                <SelectTrigger id="openingHours" className="h-12 text-base">
                   <SelectValue placeholder="시작 시간을 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
                   {Array.from({ length: 24 }, (_, i) => {
                     const hour = i < 10 ? `0${i}` : `${i}`
                     return (
-                      <SelectItem key={hour} value={`${hour}:00`}>
+                      <SelectItem key={hour} value={`${hour}:00`} className="text-base py-2">
                         {`${hour}:00`}
                       </SelectItem>
                     )
@@ -342,20 +344,20 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
               </Select>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="closingHours">운영 종료 시간 *</Label>
+            <div className="space-y-4">
+              <Label htmlFor="closingHours" className="text-base">운영 종료 시간 *</Label>
               <Select 
                 value={facilityData.closingHours} 
                 onValueChange={(value) => handleSelectChange('closingHours', value)}
               >
-                <SelectTrigger id="closingHours">
+                <SelectTrigger id="closingHours" className="h-12 text-base">
                   <SelectValue placeholder="종료 시간을 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
                   {Array.from({ length: 24 }, (_, i) => {
                     const hour = i < 10 ? `0${i}` : `${i}`
                     return (
-                      <SelectItem key={hour} value={`${hour}:00`}>
+                      <SelectItem key={hour} value={`${hour}:00`} className="text-base py-2">
                         {`${hour}:00`}
                       </SelectItem>
                     )
@@ -365,119 +367,126 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
             </div>
           </div>
           
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>편의 시설</Label>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-4">
+              <Label className="text-base">편의 시설</Label>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
                   <Checkbox 
                     id="hasParking" 
                     checked={facilityData.hasParking}
                     onCheckedChange={(checked) => 
                       handleCheckboxChange('hasParking', checked as boolean)
                     }
+                    className="h-5 w-5"
                   />
-                  <Label htmlFor="hasParking">주차장</Label>
+                  <Label htmlFor="hasParking" className="text-base">주차장</Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   <Checkbox 
                     id="hasShower" 
                     checked={facilityData.hasShower}
                     onCheckedChange={(checked) => 
                       handleCheckboxChange('hasShower', checked as boolean)
                     }
+                    className="h-5 w-5"
                   />
-                  <Label htmlFor="hasShower">샤워실</Label>
+                  <Label htmlFor="hasShower" className="text-base">샤워실</Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   <Checkbox 
                     id="hasEquipmentRental" 
                     checked={facilityData.hasEquipmentRental}
                     onCheckedChange={(checked) => 
                       handleCheckboxChange('hasEquipmentRental', checked as boolean)
                     }
+                    className="h-5 w-5"
                   />
-                  <Label htmlFor="hasEquipmentRental">장비 대여</Label>
+                  <Label htmlFor="hasEquipmentRental" className="text-base">장비 대여</Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   <Checkbox 
                     id="hasCafe" 
                     checked={facilityData.hasCafe}
                     onCheckedChange={(checked) => 
                       handleCheckboxChange('hasCafe', checked as boolean)
                     }
+                    className="h-5 w-5"
                   />
-                  <Label htmlFor="hasCafe">카페/휴게실</Label>
+                  <Label htmlFor="hasCafe" className="text-base">카페/휴게실</Label>
                 </div>
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="description">시설 설명</Label>
+            <div className="space-y-4">
+              <Label htmlFor="description" className="text-base">시설 설명</Label>
               <Textarea
                 id="description"
                 name="description"
                 value={facilityData.description}
                 onChange={handleInputChange}
                 placeholder="시설에 대한 추가 설명을 입력하세요"
-                className="min-h-[120px]"
+                className="min-h-[120px] text-base"
               />
             </div>
           </div>
           
-          <div className="flex justify-between">
+          <div className="flex flex-col-reverse md:flex-row md:justify-between gap-3 mt-4">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => setActiveTab("basic")}
+              className="w-full md:w-auto h-12 text-base"
             >
               이전: 기본 정보
             </Button>
             <Button 
               type="button" 
               onClick={() => setActiveTab("courts")}
+              className="w-full md:w-auto h-12 text-base"
             >
               다음: 코트 정보
             </Button>
           </div>
         </TabsContent>
 
-        <TabsContent value="courts" className="space-y-4 pt-4">
-          <div className="mb-4">
+        <TabsContent value="courts" className="space-y-6 pt-2">
+          <div className="mb-6">
             <h3 className="text-lg font-medium mb-2">코트 정보 등록</h3>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-gray-500 mb-6">
               각 코트의 상세 정보를 입력하세요. 최소 하나 이상의 코트 정보가 필요합니다.
             </p>
 
-            <Card>
+            <Card className="mb-6">
               <CardHeader>
                 <CardTitle>{editingCourt ? "코트 정보 수정" : "새 코트 추가"}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="courtName">코트 이름 *</Label>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <Label htmlFor="courtName" className="text-base">코트 이름 *</Label>
                     <Input
                       id="courtName"
                       name="name"
                       value={courtFormData.name}
                       onChange={handleCourtInputChange}
                       placeholder="예: A코트, 센터 코트"
+                      className="h-12 text-base"
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="courtType">코트 유형 *</Label>
+                  <div className="space-y-4">
+                    <Label htmlFor="courtType" className="text-base">코트 유형 *</Label>
                     <Select 
                       value={courtFormData.type} 
                       onValueChange={(value) => handleCourtSelectChange('type', value)}
                     >
-                      <SelectTrigger id="courtType">
+                      <SelectTrigger id="courtType" className="h-12 text-base">
                         <SelectValue placeholder="코트 유형을 선택하세요" />
                       </SelectTrigger>
                       <SelectContent>
                         {courtTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
+                          <SelectItem key={type.value} value={type.value} className="text-base py-2">
                             {type.label}
                           </SelectItem>
                         ))}
@@ -486,9 +495,9 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                   </div>
                 </div>
                 
-                <div className="grid gap-4 md:grid-cols-2 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="courtWidth">가로 길이 (m) *</Label>
+                <div className="grid gap-6 md:grid-cols-2 mt-6">
+                  <div className="space-y-4">
+                    <Label htmlFor="courtWidth" className="text-base">가로 길이 (m) *</Label>
                     <Input
                       id="courtWidth"
                       name="width"
@@ -496,11 +505,12 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                       value={courtFormData.width}
                       onChange={handleCourtInputChange}
                       placeholder="예: 20"
+                      className="h-12 text-base"
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="courtHeight">세로 길이 (m) *</Label>
+                  <div className="space-y-4">
+                    <Label htmlFor="courtHeight" className="text-base">세로 길이 (m) *</Label>
                     <Input
                       id="courtHeight"
                       name="height"
@@ -508,39 +518,39 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                       value={courtFormData.height}
                       onChange={handleCourtInputChange}
                       placeholder="예: 10"
+                      className="h-12 text-base"
                     />
                   </div>
                 </div>
                 
-                <div className="mt-4 flex items-center space-x-2">
+                <div className="mt-6 flex items-center space-x-3">
                   <Checkbox 
                     id="courtIsActive" 
                     checked={courtFormData.isActive}
                     onCheckedChange={(checked) => 
                       setCourtFormData(prev => ({ ...prev, isActive: checked as boolean }))
                     }
+                    className="h-5 w-5"
                   />
-                  <Label htmlFor="courtIsActive">코트 활성화 상태 (비활성화 시 예약 불가)</Label>
+                  <Label htmlFor="courtIsActive" className="text-base">코트 활성화 상태 (비활성화 시 예약 불가)</Label>
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-end">
+              <CardFooter className="flex justify-end pt-2">
                 <Button 
                   type="button" 
                   onClick={handleAddCourt}
-                  className="bg-indigo-600 hover:bg-indigo-700"
+                  className="bg-indigo-600 hover:bg-indigo-700 w-full md:w-auto h-12 text-base"
                 >
                   {editingCourt ? "코트 수정하기" : "코트 추가하기"}
                 </Button>
               </CardFooter>
             </Card>
 
-            <Separator className="my-6" />
-
             <div className="rounded-md border">
               <div className="p-4">
-                <h4 className="text-md font-medium mb-2">등록된 코트 목록 ({courts.length}개)</h4>
+                <h4 className="text-md font-medium mb-4">등록된 코트 목록 ({courts.length}개)</h4>
                 {courts.length === 0 ? (
-                  <p className="text-sm text-gray-500 py-4 text-center">
+                  <p className="text-sm text-gray-500 py-6 text-center">
                     등록된 코트가 없습니다. 위 폼을 통해 코트를 추가해주세요.
                   </p>
                 ) : (
@@ -548,32 +558,33 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                     {courts.map((court) => (
                       <Card key={court.id} className="bg-gray-50">
                         <CardContent className="p-4">
-                          <div className="flex justify-between items-start">
+                          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                             <div>
-                              <h5 className="font-medium">{court.name}</h5>
-                              <p className="text-sm text-gray-500">
+                              <h5 className="font-medium text-base">{court.name}</h5>
+                              <p className="text-sm text-gray-500 mt-1">
                                 {courtTypes.find(t => t.value === court.type)?.label || court.type} | 
                                 {" "}{parseInt(court.width).toLocaleString()}m × {parseInt(court.height).toLocaleString()}m | 
                                 상태: {court.isActive ? "활성화" : "비활성화"}
                               </p>
                             </div>
-                            <div className="flex space-x-2">
+                            <div className="flex space-x-2 self-end md:self-start">
                               <Button 
                                 type="button" 
                                 variant="outline" 
                                 size="icon"
                                 onClick={() => handleEditCourt(court)}
+                                className="h-10 w-10"
                               >
-                                <Edit2 className="h-4 w-4" />
+                                <Edit2 className="h-5 w-5" />
                               </Button>
                               <Button 
                                 type="button" 
                                 variant="outline" 
                                 size="icon"
-                                className="text-red-500 hover:bg-red-50"
+                                className="text-red-500 hover:bg-red-50 h-10 w-10"
                                 onClick={() => handleDeleteCourt(court.id)}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-5 w-5" />
                               </Button>
                             </div>
                           </div>
@@ -586,31 +597,33 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
             </div>
           </div>
           
-          <div className="flex justify-between">
+          <div className="flex flex-col-reverse md:flex-row md:justify-between gap-3 mt-4">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => setActiveTab("details")}
+              className="w-full md:w-auto h-12 text-base"
             >
               이전: 상세 정보
             </Button>
             <Button 
               type="button" 
               onClick={() => setActiveTab("images")}
+              className="w-full md:w-auto h-12 text-base"
             >
               다음: 이미지
             </Button>
           </div>
         </TabsContent>
         
-        <TabsContent value="images" className="space-y-4 pt-4">
-          <div className="space-y-4">
-            <Label>시설 이미지</Label>
+        <TabsContent value="images" className="space-y-6 pt-2">
+          <div className="space-y-6">
+            <Label className="text-base">시설 이미지</Label>
             <div className="grid grid-cols-1 gap-4">
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
+              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <Plus className="w-8 h-8 text-gray-400" />
-                  <p className="mb-2 text-sm text-gray-500">
+                  <Plus className="w-10 h-10 text-gray-400" />
+                  <p className="mb-2 text-sm md:text-base text-gray-500 text-center px-2">
                     <span className="font-semibold">클릭하여 파일 선택</span> 또는 드래그 앤 드롭
                   </p>
                   <p className="text-xs text-gray-500">PNG, JPG, GIF (최대 10MB)</p>
@@ -627,11 +640,11 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
             </div>
             
             {facilityData.images.length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-sm font-medium mb-2">업로드된 이미지</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="mt-6">
+                <h3 className="text-base font-medium mb-4">업로드된 이미지</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {facilityData.images.map((image, index) => (
-                    <div key={index} className="relative rounded-md overflow-hidden h-24">
+                    <div key={index} className="relative rounded-md overflow-hidden h-36">
                       <img 
                         src={URL.createObjectURL(image)} 
                         alt={`Facility Image ${index + 1}`}
@@ -639,10 +652,10 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                       />
                       <button
                         type="button"
-                        className="absolute top-1 right-1 bg-white rounded-full p-1 shadow-md"
+                        className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md"
                         onClick={() => handleRemoveImage(index)}
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-5 w-5 text-red-500" />
                       </button>
                     </div>
                   ))}
@@ -651,18 +664,19 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
             )}
           </div>
           
-          <div className="flex justify-between">
+          <div className="flex flex-col-reverse md:flex-row md:justify-between gap-3 mt-6">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => setActiveTab("courts")}
+              className="w-full md:w-auto h-12 text-base"
             >
               이전: 코트 정보
             </Button>
             <Button 
               type="submit" 
               disabled={isLoading}
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className="bg-indigo-600 hover:bg-indigo-700 w-full md:w-auto h-12 text-base"
             >
               {isLoading ? "등록 중..." : "시설 등록하기"}
             </Button>
