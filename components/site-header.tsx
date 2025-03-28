@@ -34,6 +34,7 @@ import { toast } from "@/hooks/use-toast"
 export function SiteHeader() {
   // 로그인 상태를 useState로 관리
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   
   // 현재 경로 확인
   const pathname = usePathname()
@@ -41,7 +42,9 @@ export function SiteHeader() {
   // 초기 로드 시 로컬 스토리지에서 로그인 상태 확인
   useEffect(() => {
     const loggedInStatus = localStorage.getItem('isLoggedIn')
+    const adminStatus = localStorage.getItem('isAdmin')
     setIsLoggedIn(loggedInStatus === 'true')
+    setIsAdmin(adminStatus === 'true')
   }, [])
   
   // 로그인 상태가 변경될 때 로컬 스토리지 업데이트
@@ -57,14 +60,19 @@ export function SiteHeader() {
   // 로그인/로그아웃 처리
   const handleLogin = () => {
     setIsLoggedIn(true)
+    // 테스트를 위해 관리자 권한도 부여
+    setIsAdmin(true)
+    localStorage.setItem('isAdmin', 'true')
     toast({
       title: "로그인 성공",
-      description: "환영합니다! 로그인에 성공했습니다.",
+      description: "환영합니다! 관리자 권한으로 로그인했습니다.",
     })
   }
 
   const handleLogout = () => {
     setIsLoggedIn(false)
+    setIsAdmin(false)
+    localStorage.setItem('isAdmin', 'false')
     toast({
       title: "로그아웃 완료",
       description: "성공적으로 로그아웃되었습니다.",
@@ -123,6 +131,17 @@ export function SiteHeader() {
                 <DropdownMenuItem asChild>
                   <Link href="/payments">결제 내역</Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/dashboard" className="flex items-center">
+                        <Settings className="mr-2 h-4 w-4" />
+                        관리자 모드
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   로그아웃
@@ -159,6 +178,12 @@ export function SiteHeader() {
                         <CreditCard className="w-5 h-5 text-gray-400" />
                         <span>결제 내역</span>
                       </Link>
+                      {isAdmin && (
+                        <Link href="/admin/dashboard" className="flex items-center gap-3 text-base font-medium text-indigo-600 hover:text-indigo-800">
+                          <Settings className="w-5 h-5 text-indigo-500" />
+                          <span>관리자 모드</span>
+                        </Link>
+                      )}
                     </>
                   ) : (
                     <>

@@ -280,13 +280,6 @@ export default function MatchesPage() {
     <div className="page-container pb-16 sm:pb-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
         <h1 className="text-3xl font-bold">소셜 매치 찾기</h1>
-        {isLoggedIn && (
-          <Button asChild className="hidden sm:flex mt-4 sm:mt-0 bg-indigo-600 hover:bg-indigo-700 text-white">
-            <Link href="/matches/register" className="flex items-center">
-              <Plus className="mr-2 h-4 w-4" /> 매치 등록하기
-            </Link>
-          </Button>
-        )}
       </div>
 
       {/* 날짜 선택 캘린더 - 상단으로 이동 */}
@@ -402,42 +395,20 @@ export default function MatchesPage() {
         </CardContent>
       </Card>
 
-      {/* 선택된 날짜의 매치 목록 */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <CalendarIcon className="mr-2 h-5 w-5 text-indigo-500" />
-            <h2 className="text-xl font-semibold">
-              {format(selectedDate, "yyyy년 MM월 dd일 (eee)", { locale: ko })} 매치
-            </h2>
-          </div>
-        </div>
-
-        {filteredMatches.length === 0 ? (
-          <Card className="styled-card">
-            <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">해당 날짜에 예정된 매치가 없습니다.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* 날짜별 매치 목록 */}
+      <div className="mt-4">
+        {filteredMatches.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4">
             {filteredMatches.map((match) => (
               <MatchCard key={match.id} match={match} />
             ))}
           </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">해당 날짜에 예정된 매치가 없습니다.</p>
+          </div>
         )}
       </div>
-
-      {/* 모바일 등록 버튼 (플로팅 버튼) */}
-      {isLoggedIn && (
-        <div className="sm:hidden fixed bottom-20 right-4 z-40">
-          <Button asChild className="rounded-full w-14 h-14 shadow-lg bg-indigo-600 hover:bg-indigo-700">
-            <Link href="/matches/register">
-              <Plus className="h-6 w-6" />
-            </Link>
-          </Button>
-        </div>
-      )}
     </div>
   )
 }

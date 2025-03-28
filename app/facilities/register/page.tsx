@@ -59,6 +59,18 @@ export default function RegisterFacilityPage() {
         variant: "destructive",
       })
       router.push('/login')
+      return
+    }
+    
+    // 관리자 권한 확인
+    const isAdmin = localStorage.getItem('isAdmin') === 'true'
+    if (!isAdmin) {
+      toast({
+        title: "접근 권한이 없습니다",
+        description: "시설 등록은 관리자만 가능합니다.",
+        variant: "destructive",
+      })
+      router.push('/')
     }
   }, [router])
   

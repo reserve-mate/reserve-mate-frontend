@@ -145,16 +145,9 @@ export default function FacilitiesPage() {
   }
 
   return (
-    <div className="page-container">
+    <div className="page-container pb-16 sm:pb-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <h1 className="text-3xl font-bold">스포츠 시설 찾기</h1>
-        {isLoggedIn && (
-          <Button asChild className="hidden sm:flex mt-4 sm:mt-0 bg-indigo-600 hover:bg-indigo-700 text-white">
-            <Link href="/facilities/register" className="flex items-center">
-              <Plus className="mr-2 h-4 w-4" /> 시설 등록하기
-            </Link>
-          </Button>
-        )}
       </div>
 
       {/* 검색 필터 */}
@@ -281,17 +274,6 @@ export default function FacilitiesPage() {
           </Card>
         ))}
       </div>
-
-      {/* 모바일 등록 버튼 (플로팅 버튼) */}
-      {isLoggedIn && (
-        <div className="sm:hidden fixed bottom-20 right-4 z-40">
-          <Button asChild className="rounded-full w-14 h-14 shadow-lg bg-indigo-600 hover:bg-indigo-700">
-            <Link href="/facilities/register">
-              <Plus className="h-6 w-6" />
-            </Link>
-          </Button>
-        </div>
-      )}
     </div>
   )
 }
