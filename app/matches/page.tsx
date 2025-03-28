@@ -28,6 +28,11 @@ type Match = {
   status: "모집중" | "모집완료" | "진행중" | "종료"
 }
 
+// 시간별로 그룹화된 매치 타입
+type GroupedMatches = {
+  [timeSlot: string]: Match[]
+}
+
 // 더미 데이터
 const dummyMatches: Match[] = [
   {
@@ -134,6 +139,45 @@ const dummyMatches: Match[] = [
     matchPrice: "12,000원",
     status: "모집중",
   },
+  {
+    id: "9",
+    courtName: "실내 코트 3",
+    facilityName: "강북 스포츠센터",
+    address: "서울시 강북구 수유동 123",
+    sportType: "테니스",
+    matchDate: "2025-03-28",
+    matchTime: "10:00 - 12:00",
+    teamCapacity: 4,
+    currentTeams: 1,
+    matchPrice: "18,000원",
+    status: "모집중",
+  },
+  {
+    id: "10",
+    courtName: "실내 코트 2",
+    facilityName: "송파 스포츠센터",
+    address: "서울시 송파구 잠실동 456",
+    sportType: "배드민턴",
+    matchDate: "2025-03-29",
+    matchTime: "10:00 - 12:00",
+    teamCapacity: 6,
+    currentTeams: 3,
+    matchPrice: "12,000원",
+    status: "모집중",
+  },
+  {
+    id: "11",
+    courtName: "메인 코트",
+    facilityName: "강서 테니스장",
+    address: "서울시 강서구 마곡동 789",
+    sportType: "테니스",
+    matchDate: "2025-03-29",
+    matchTime: "10:00 - 12:00",
+    teamCapacity: 4,
+    currentTeams: 2,
+    matchPrice: "15,000원",
+    status: "모집중",
+  },
 ]
 
 export default function MatchesPage() {
@@ -205,7 +249,7 @@ export default function MatchesPage() {
     setFilteredMatches(filtered)
   }, [searchTerm, sportType, matches, selectedDate])
 
-  // 날짜별 매치 그룹화
+  // 날짜별 매치 그룹화 (날짜 뱃지용)
   const matchesByDate = dateRange.map((date) => {
     const dateMatches = matches.filter((match) => isSameDay(parseISO(match.matchDate), date))
 
@@ -215,6 +259,43 @@ export default function MatchesPage() {
       count: dateMatches.length,
     }
   })
+
+  // 시간별로 매치 그룹화
+  const groupMatchesByTime = (matches: Match[]): GroupedMatches => {
+    const grouped: GroupedMatches = {}
+    
+    matches.forEach(match => {
+      // 시간만 추출 (18:00 - 20:00 → 18:00)
+      const timeSlot = match.matchTime.split(' ')[0]
+      
+      if (!grouped[timeSlot]) {
+        grouped[timeSlot] = []
+      }
+      
+      grouped[timeSlot].push(match)
+    })
+    
+    return grouped
+  }
+  
+  // 시간순으로 정렬된 그룹화된 매치
+  const sortedGroupedMatches = (): [string, Match[]][] => {
+    const grouped = groupMatchesByTime(filteredMatches)
+    
+    // 시간을 키로 정렬
+    return Object.entries(grouped).sort((a, b) => {
+      const timeA = a[0].split(':').map(Number)
+      const timeB = b[0].split(':').map(Number)
+      
+      // 시간으로 먼저 비교
+      if (timeA[0] !== timeB[0]) {
+        return timeA[0] - timeB[0]
+      }
+      
+      // 분으로 비교
+      return timeA[1] - timeB[1]
+    })
+  }
 
   const handleSearch = () => {
     // 실제 구현에서는 API 호출을 통해 검색 결과를 가져옵니다
@@ -302,7 +383,7 @@ export default function MatchesPage() {
               className="text-xs"
               onClick={goToToday}
             >
-              오늘로 이동
+              오늘
             </Button>
           </div>
           
@@ -398,9 +479,19 @@ export default function MatchesPage() {
       {/* 날짜별 매치 목록 */}
       <div className="mt-4">
         {filteredMatches.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4">
-            {filteredMatches.map((match) => (
-              <MatchCard key={match.id} match={match} />
+          <div className="space-y-8">
+            {sortedGroupedMatches().map(([timeSlot, matches]) => (
+              <div key={timeSlot} className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex-shrink-0 w-20 font-bold text-lg">{timeSlot}</div>
+                  <div className="h-px flex-grow bg-gray-200"></div>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  {matches.map((match) => (
+                    <MatchCard key={match.id} match={match} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         ) : (
