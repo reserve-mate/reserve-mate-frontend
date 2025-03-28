@@ -28,54 +28,12 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
-      <div className="container flex h-16 items-center justify-between max-w-6xl mx-auto">
-        <div className="flex items-center gap-2 md:gap-4">
-          <Sheet>
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon" aria-label="Menu">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[240px] sm:w-[300px]">
-              <nav className="flex flex-col gap-4 mt-8">
-                <Link href="/" className={`text-lg font-semibold ${isActive("/") ? "text-indigo-600 font-bold" : ""}`}>
-                  홈
-                </Link>
-                <Link href="/facilities" className={`text-lg font-semibold ${isActive("/facilities") ? "text-indigo-600 font-bold" : ""}`}>
-                  시설 찾기
-                </Link>
-                <Link href="/matches" className={`text-lg font-semibold ${isActive("/matches") ? "text-indigo-600 font-bold" : ""}`}>
-                  소셜 매치
-                </Link>
-                <Link href="/reservations" className={`text-lg font-semibold ${isActive("/reservations") ? "text-indigo-600 font-bold" : ""}`}>
-                  내 예약
-                </Link>
-                {!isLoggedIn ? (
-                  <>
-                    <Link href="/login" className={`text-lg font-semibold ${isActive("/login") ? "text-indigo-600 font-bold" : ""}`}>
-                      로그인
-                    </Link>
-                    <Link href="/signup" className={`text-lg font-semibold ${isActive("/signup") ? "text-indigo-600 font-bold" : ""}`}>
-                      회원가입
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/profile" className={`text-lg font-semibold ${isActive("/profile") ? "text-indigo-600 font-bold" : ""}`}>
-                      내 프로필
-                    </Link>
-                    <Button variant="ghost" className="justify-start p-0 text-lg font-semibold">
-                      로그아웃
-                    </Button>
-                  </>
-                )}
-              </nav>
-            </SheetContent>
-          </Sheet>
-          <Link href="/" className="flex items-center space-x-2">
+      <div className="container flex h-14 items-center justify-between max-w-6xl mx-auto px-2 sm:px-6">
+        <div className="flex items-center">
+          <Link href="/" className="flex items-center pl-0">
             <span className="text-xl font-bold text-indigo-600">ReserveMate</span>
           </Link>
-          <nav className="hidden md:flex items-center gap-6 text-sm">
+          <nav className="hidden md:flex items-center gap-6 text-sm ml-8">
             <Link href="/facilities" className={`font-medium transition-colors hover:text-indigo-600 ${isActive("/facilities") ? "font-bold text-indigo-600" : ""}`}>
               시설 찾기
             </Link>
@@ -121,6 +79,48 @@ export function SiteHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+          <Sheet>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon" aria-label="Menu" className="ml-2 p-0">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[240px] sm:w-[300px]">
+              <nav className="flex flex-col gap-4 mt-8">
+                <Link href="/" className={`text-lg font-semibold ${isActive("/") ? "text-indigo-600 font-bold" : ""}`}>
+                  홈
+                </Link>
+                <Link href="/facilities" className={`text-lg font-semibold ${isActive("/facilities") ? "text-indigo-600 font-bold" : ""}`}>
+                  시설 찾기
+                </Link>
+                <Link href="/matches" className={`text-lg font-semibold ${isActive("/matches") ? "text-indigo-600 font-bold" : ""}`}>
+                  소셜 매치
+                </Link>
+                <Link href="/reservations" className={`text-lg font-semibold ${isActive("/reservations") ? "text-indigo-600 font-bold" : ""}`}>
+                  내 예약
+                </Link>
+                {!isLoggedIn ? (
+                  <>
+                    <Link href="/login" className={`text-lg font-semibold ${isActive("/login") ? "text-indigo-600 font-bold" : ""}`}>
+                      로그인
+                    </Link>
+                    <Link href="/signup" className={`text-lg font-semibold ${isActive("/signup") ? "text-indigo-600 font-bold" : ""}`}>
+                      회원가입
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/profile" className={`text-lg font-semibold ${isActive("/profile") ? "text-indigo-600 font-bold" : ""}`}>
+                      내 프로필
+                    </Link>
+                    <Button variant="ghost" className="justify-start p-0 text-lg font-semibold">
+                      로그아웃
+                    </Button>
+                  </>
+                )}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>

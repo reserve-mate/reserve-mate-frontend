@@ -2,31 +2,31 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { MapPin, Calendar, CreditCard, Users, ArrowRight } from "lucide-react"
+import { MapPin, Calendar, CreditCard, Users, ArrowRight, Search, CalendarDays } from "lucide-react"
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-r from-indigo-700 to-purple-700 text-white">
-        <div className="container px-4 md:px-6 max-w-6xl mx-auto">
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-indigo-700 to-purple-700 text-white">
+        <div className="container px-4 sm:px-6 max-w-6xl mx-auto">
           <div className="flex flex-col items-center space-y-6 text-center">
             <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">ReserveMate</h1>
-            <p className="max-w-[800px] text-gray-200 text-lg md:text-xl lg:text-2xl">
+            <p className="max-w-[800px] text-gray-200 text-base md:text-xl lg:text-2xl">
               간편하게 스포츠 시설을 예약하고 관리하세요. 테니스, 축구, 농구 등 다양한 스포츠 시설을 한 곳에서.
             </p>
-            <div className="flex flex-col sm:flex-row gap-5 mt-4">
+            <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full sm:w-auto">
               <Button
                 asChild
                 size="lg"
-                className="bg-white text-indigo-700 hover:bg-gray-100 px-8 py-6 text-lg rounded-xl shadow-lg transition-transform hover:scale-105"
+                className="bg-white text-indigo-700 hover:bg-gray-100 px-8 py-6 text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
               >
                 <Link href="/facilities">시설 찾기</Link>
               </Button>
               <Button
                 asChild
                 size="lg"
-                className="bg-indigo-600 text-white hover:bg-indigo-700 px-8 py-6 text-lg rounded-xl shadow-lg transition-transform hover:scale-105"
+                className="bg-indigo-600 text-white hover:bg-indigo-700 px-8 py-6 text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
               >
                 <Link href="/matches">소셜 매치</Link>
               </Button>
@@ -37,7 +37,7 @@ export default function Home() {
 
       {/* Features Section */}
       <section className="w-full py-16 md:py-24 lg:py-32 bg-gray-50">
-        <div className="container px-4 md:px-6 max-w-6xl mx-auto">
+        <div className="container px-4 sm:px-6 max-w-6xl mx-auto">
           <div className="flex flex-col items-center justify-center space-y-6 text-center mb-12">
             <div className="space-y-3">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">주요 기능</h2>
@@ -89,7 +89,7 @@ export default function Home() {
 
       {/* Popular Facilities Section */}
       <section className="w-full py-16 md:py-24 lg:py-32 bg-white">
-        <div className="container px-4 md:px-6 max-w-6xl mx-auto">
+        <div className="container px-4 sm:px-6 max-w-6xl mx-auto">
           <div className="flex flex-col items-center justify-center space-y-6 text-center mb-12">
             <div className="space-y-3">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">인기 시설</h2>
@@ -126,7 +126,7 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-r from-indigo-700 to-purple-700 text-white">
-        <div className="container px-4 md:px-6 max-w-6xl mx-auto">
+        <div className="container px-4 sm:px-6 max-w-6xl mx-auto">
           <div className="flex flex-col items-center justify-center space-y-6 text-center">
             <div className="space-y-3">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">지금 바로 시작하세요</h2>
@@ -156,7 +156,7 @@ export default function Home() {
 
       {/* Testimonials Section */}
       <section className="w-full py-16 md:py-24 lg:py-32 bg-gray-50">
-        <div className="container px-4 md:px-6 max-w-6xl mx-auto">
+        <div className="container px-4 sm:px-6 max-w-6xl mx-auto">
           <div className="flex flex-col items-center justify-center space-y-6 text-center mb-12">
             <div className="space-y-3">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">사용자 후기</h2>

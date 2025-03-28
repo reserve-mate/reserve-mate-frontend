@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -9,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar } from "@/components/ui/calendar"
 import { MapPin, Phone, Clock, Star, Info } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { format } from "date-fns"
+import { ko } from "date-fns/locale"
 
 // 시설 상세 데이터 타입
 type FacilityDetail = {
@@ -289,7 +292,7 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
                           nav_button_next: "absolute right-2",
                           table: "w-full border-collapse",
                           head_row: "grid grid-cols-7",
-                          head_cell: "text-gray-500 font-medium text-sm text-center py-2 first:text-red-500 last:text-blue-500",
+                          head_cell: "text-gray-500 font-medium text-sm text-center py-2 [&:nth-child(1)]:text-red-500 [&:nth-child(7)]:text-blue-500",
                           row: "grid grid-cols-7",
                           cell: "text-center relative py-1",
                           day: "h-8 w-8 p-0 mx-auto font-normal text-sm flex items-center justify-center rounded-full hover:bg-gray-100",
