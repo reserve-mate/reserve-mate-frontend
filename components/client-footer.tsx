@@ -45,7 +45,7 @@ export default function ClientFooter() {
           
           {showAll && (
             <div className="pb-6 pt-2 border-t border-indigo-100">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <h3 className="text-sm font-bold uppercase tracking-wider text-indigo-800 mb-3">서비스</h3>
                   <ul className="space-y-2">
@@ -62,6 +62,26 @@ export default function ClientFooter() {
                     <li>
                       <Link href="/reservations" className="text-sm text-gray-600 hover:text-indigo-600">
                         예약 관리
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-indigo-800 mb-3">회사</h3>
+                  <ul className="space-y-2">
+                    <li>
+                      <Link href="/about" className="text-sm text-gray-600 hover:text-indigo-600">
+                        회사 소개
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/terms" className="text-sm text-gray-600 hover:text-indigo-600">
+                        이용약관
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/privacy" className="text-sm text-gray-600 hover:text-indigo-600">
+                        개인정보
                       </Link>
                     </li>
                   </ul>
