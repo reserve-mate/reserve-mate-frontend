@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar } from "@/components/ui/calendar"
-import { MapPin, CalendarIcon, Clock, Users, Search, Filter, ChevronLeft, ChevronRight, PlusCircle } from "lucide-react"
+import { MapPin, CalendarIcon, Clock, Users, Search, Filter, ChevronLeft, ChevronRight, PlusCircle, Plus } from "lucide-react"
 import { format, addDays, subDays, isSameDay, parseISO, isToday, isTomorrow, startOfDay } from "date-fns"
 import { ko } from "date-fns/locale"
 
@@ -145,25 +145,13 @@ export default function MatchesPage() {
   const [dateRange, setDateRange] = useState<Date[]>([])
   const [startDate, setStartDate] = useState<Date>(startOfDay(new Date()))
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  // 관리자 상태 추가 (실제로는 로그인 시스템이나 권한 검증 로직에서 가져와야 함)
-  const [isAdmin, setIsAdmin] = useState(false)
+  // 로그인 상태를 관리
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-  // 관리자 인증 상태 확인 함수 (실제로는 API 호출이나 토큰 검증을 통해 구현)
+  // 로그인 상태 확인
   useEffect(() => {
-    // 임시로 로컬 스토리지에서 관리자 상태를 확인하는 예시
-    // 실제 구현에서는 세션이나 토큰 기반의 인증 시스템을 사용
-    const checkAdminStatus = () => {
-      try {
-        // 이 부분은 실제 인증 시스템에 맞게 대체되어야 함
-        const userRole = localStorage.getItem('userRole')
-        setIsAdmin(userRole === 'admin')
-      } catch (error) {
-        console.error('인증 상태 확인 중 오류 발생:', error)
-        setIsAdmin(false)
-      }
-    }
-    
-    checkAdminStatus()
+    const loggedInStatus = localStorage.getItem('isLoggedIn')
+    setIsLoggedIn(loggedInStatus === 'true')
   }, [])
 
   // 날짜 범위 생성
@@ -289,15 +277,13 @@ export default function MatchesPage() {
   }
 
   return (
-    <div className="page-container">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">소셜 매치</h1>
-        
-        {/* 관리자에게만 매치 등록 버튼 표시 */}
-        {isAdmin && (
-          <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
-            <Link href="/matches/create">
-              <PlusCircle className="mr-2 h-4 w-4" /> 매치 등록하기
+    <div className="page-container pb-16 sm:pb-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+        <h1 className="text-3xl font-bold">소셜 매치 찾기</h1>
+        {isLoggedIn && (
+          <Button asChild className="hidden sm:flex mt-4 sm:mt-0 bg-indigo-600 hover:bg-indigo-700 text-white">
+            <Link href="/matches/register" className="flex items-center">
+              <Plus className="mr-2 h-4 w-4" /> 매치 등록하기
             </Link>
           </Button>
         )}
@@ -316,15 +302,16 @@ export default function MatchesPage() {
             <span>이전</span>
           </Button>
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToToday}
-            className="flex items-center gap-1"
-          >
-            <CalendarIcon className="h-4 w-4" />
-            <span>오늘</span>
-          </Button>
+          <div className="text-center mb-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={goToToday}
+            >
+              오늘로 이동
+            </Button>
+          </div>
           
           <Button
             variant="outline"
@@ -424,27 +411,12 @@ export default function MatchesPage() {
               {format(selectedDate, "yyyy년 MM월 dd일 (eee)", { locale: ko })} 매치
             </h2>
           </div>
-          
-          {/* 관리자에게만 매치 등록 버튼 표시 (작은 버튼) */}
-          {isAdmin && filteredMatches.length > 0 && (
-            <Button asChild size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white">
-              <Link href="/matches/create">
-                <PlusCircle className="mr-2 h-4 w-4" /> 매치 등록
-              </Link>
-            </Button>
-          )}
         </div>
 
         {filteredMatches.length === 0 ? (
           <Card className="styled-card">
             <CardContent className="p-8 text-center">
               <p className="text-muted-foreground">해당 날짜에 예정된 매치가 없습니다.</p>
-              {/* 관리자에게만 매치 등록 버튼 표시 */}
-              {isAdmin && (
-                <Button asChild className="mt-4 primary-button">
-                  <Link href="/matches/create">매치 등록하기</Link>
-                </Button>
-              )}
             </CardContent>
           </Card>
         ) : (
@@ -455,6 +427,17 @@ export default function MatchesPage() {
           </div>
         )}
       </div>
+
+      {/* 모바일 등록 버튼 (플로팅 버튼) */}
+      {isLoggedIn && (
+        <div className="sm:hidden fixed bottom-20 right-4 z-40">
+          <Button asChild className="rounded-full w-14 h-14 shadow-lg bg-indigo-600 hover:bg-indigo-700">
+            <Link href="/matches/register">
+              <Plus className="h-6 w-6" />
+            </Link>
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

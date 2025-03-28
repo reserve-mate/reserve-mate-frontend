@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
-import { MapPin, Search, Filter, Star } from "lucide-react"
+import { MapPin, Search, Filter, Star, Plus } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // 시설 데이터 타입
@@ -88,6 +88,13 @@ export default function FacilitiesPage() {
   const [maxPrice, setMaxPrice] = useState("10")
   const [facilities, setFacilities] = useState<Facility[]>(dummyFacilities)
   const [isPriceInputVisible, setIsPriceInputVisible] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  // 로그인 상태 확인
+  useEffect(() => {
+    const loggedInStatus = localStorage.getItem('isLoggedIn')
+    setIsLoggedIn(loggedInStatus === 'true')
+  }, [])
 
   // 검색 처리
   const handleSearch = () => {
@@ -139,7 +146,16 @@ export default function FacilitiesPage() {
 
   return (
     <div className="page-container">
-      <h1 className="text-3xl font-bold mb-8">스포츠 시설 찾기</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <h1 className="text-3xl font-bold">스포츠 시설 찾기</h1>
+        {isLoggedIn && (
+          <Button asChild className="hidden sm:flex mt-4 sm:mt-0 bg-indigo-600 hover:bg-indigo-700 text-white">
+            <Link href="/facilities/register" className="flex items-center">
+              <Plus className="mr-2 h-4 w-4" /> 시설 등록하기
+            </Link>
+          </Button>
+        )}
+      </div>
 
       {/* 검색 필터 */}
       <Card className="styled-card mb-8">
@@ -265,6 +281,17 @@ export default function FacilitiesPage() {
           </Card>
         ))}
       </div>
+
+      {/* 모바일 등록 버튼 (플로팅 버튼) */}
+      {isLoggedIn && (
+        <div className="sm:hidden fixed bottom-20 right-4 z-40">
+          <Button asChild className="rounded-full w-14 h-14 shadow-lg bg-indigo-600 hover:bg-indigo-700">
+            <Link href="/facilities/register">
+              <Plus className="h-6 w-6" />
+            </Link>
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

@@ -36,6 +36,9 @@ export default function LoginPage() {
       //   body: JSON.stringify(formData),
       // })
 
+      // 로그인 상태 저장
+      localStorage.setItem('isLoggedIn', 'true')
+
       // 성공 시 처리
       setTimeout(() => {
         toast({

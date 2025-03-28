@@ -25,7 +25,7 @@ import {
   CreditCard,
   Bookmark,
   Zap,
-  Trophy 
+  Trophy
 } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { usePathname } from "next/navigation"
@@ -146,7 +146,7 @@ export function SiteHeader() {
               <nav className="p-6">
                 <div className="grid gap-6">
                   {isLoggedIn ? (
-                    <>
+                    <>                      
                       <Link href="/profile" className="flex items-center gap-3 text-base font-medium text-gray-700 hover:text-indigo-600">
                         <User className="w-5 h-5 text-gray-400" />
                         <span>내 프로필</span>
@@ -158,10 +158,6 @@ export function SiteHeader() {
                       <Link href="/payments" className="flex items-center gap-3 text-base font-medium text-gray-700 hover:text-indigo-600">
                         <CreditCard className="w-5 h-5 text-gray-400" />
                         <span>결제 내역</span>
-                      </Link>
-                      <Link href="/bookmarks" className="flex items-center gap-3 text-base font-medium text-gray-700 hover:text-indigo-600">
-                        <Bookmark className="w-5 h-5 text-gray-400" />
-                        <span>내 즐겨찾기</span>
                       </Link>
                     </>
                   ) : (
