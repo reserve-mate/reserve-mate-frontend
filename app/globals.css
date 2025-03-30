@@ -121,3 +121,8 @@
   @apply bg-gray-100 text-gray-800;
 }
 
+/* 종료된 매치 스타일 */
+.match-ended {
+  @apply opacity-70 grayscale;
+}
+

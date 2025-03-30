@@ -223,6 +223,23 @@ export default function MatchesPage() {
     }
   }, [])
 
+  // 지난 날짜의 매치 비활성화 처리
+  useEffect(() => {
+    const today = startOfDay(new Date())
+    
+    // 매치 데이터를 복사하여 날짜가 지난 매치의 상태를 '종료'로 변경
+    const updatedMatches = matches.map(match => {
+      const matchDate = parseISO(match.matchDate)
+      if (matchDate < today) {
+        return { ...match, status: "종료" as const }
+      }
+      return match
+    })
+    
+    // 변경된 매치 데이터 설정
+    setMatches(updatedMatches)
+  }, [])
+
   // 검색 및 필터링 처리
   useEffect(() => {
     let filtered = [...matches]
@@ -506,11 +523,13 @@ export default function MatchesPage() {
 
 // 매치 카드 컴포넌트
 function MatchCard({ match, compact = false }: { match: Match; compact?: boolean }) {
+  const isEnded = match.status === "종료"
+  
   return (
-    <Card className="styled-card overflow-hidden h-full">
+    <Card className={`styled-card overflow-hidden h-full ${isEnded ? 'match-ended' : ''}`}>
       <CardContent className={compact ? "p-4" : "p-6"}>
         <div className="flex justify-between items-start mb-4">
-          <h3 className={`${compact ? "text-base" : "text-lg"} font-semibold`}>{match.facilityName}</h3>
+          <h3 className={`${compact ? "text-base" : "text-lg"} font-semibold ${isEnded ? 'text-gray-500' : ''}`}>{match.facilityName}</h3>
           <Badge
             className={`
               ${match.status === "모집중" ? "status-badge status-badge-recruiting" : ""}
@@ -525,19 +544,19 @@ function MatchCard({ match, compact = false }: { match: Match; compact?: boolean
 
         <div className="space-y-2 mb-4">
           <div className="flex items-start">
-            <MapPin className="h-4 w-4 text-indigo-500 mr-2 mt-0.5" />
+            <MapPin className={`h-4 w-4 ${isEnded ? 'text-gray-400' : 'text-indigo-500'} mr-2 mt-0.5`} />
             <span className="text-sm text-gray-500">{match.address}</span>
           </div>
           <div className="flex items-start">
-            <CalendarIcon className="h-4 w-4 text-indigo-500 mr-2 mt-0.5" />
+            <CalendarIcon className={`h-4 w-4 ${isEnded ? 'text-gray-400' : 'text-indigo-500'} mr-2 mt-0.5`} />
             <span className="text-sm text-gray-500">{formatDate(match.matchDate)}</span>
           </div>
           <div className="flex items-start">
-            <Clock className="h-4 w-4 text-indigo-500 mr-2 mt-0.5" />
+            <Clock className={`h-4 w-4 ${isEnded ? 'text-gray-400' : 'text-indigo-500'} mr-2 mt-0.5`} />
             <span className="text-sm text-gray-500">{match.matchTime}</span>
           </div>
           <div className="flex items-start">
-            <Users className="h-4 w-4 text-indigo-500 mr-2 mt-0.5" />
+            <Users className={`h-4 w-4 ${isEnded ? 'text-gray-400' : 'text-indigo-500'} mr-2 mt-0.5`} />
             <span className="text-sm text-gray-500">
               {match.currentTeams}/{match.teamCapacity} 팀 참여 중
             </span>
