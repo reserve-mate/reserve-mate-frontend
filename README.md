@@ -189,11 +189,15 @@ yarn dev
 
 ### 목차
 1. [사용자 관리 API](#1-사용자-관리-api)
-2. [시설 관리 API](#2-시설-관리-api)
+2. [시설 및 코트 관리 API](#2-시설-및-코트-관리-api)
 3. [예약 관리 API](#3-예약-관리-api)
 4. [소셜 매치 API](#4-소셜-매치-api)
 5. [리뷰 API](#5-리뷰-api)
-6. [통계/대시보드 API](#6-통계대시보드-api-관리자-전용)
+6. [결제 API](#6-결제-api)
+7. [알림 API](#7-알림-api)
+8. [대기 목록 API](#8-대기-목록-api)
+9. [팀 관리 API](#9-팀-관리-api)
+10. [통계/대시보드 API](#10-통계대시보드-api-관리자-전용)
 
 ### 1. 사용자 관리 API
 
@@ -208,7 +212,8 @@ yarn dev
   "email": "string", 
   "password": "string",
   "name": "string",
-  "phone": "string"
+  "phone": "string",
+  "profileImage": "string"
 }
 ```
 - **Response**: 
@@ -218,6 +223,7 @@ yarn dev
   "email": "string",
   "name": "string",
   "phone": "string",
+  "profileImage": "string",
   "createdAt": "timestamp"
 }
 ```
@@ -241,7 +247,7 @@ yarn dev
     "id": "long",
     "email": "string",
     "name": "string",
-    "role": "string" // "USER", "ADMIN", "FACILITY_MANAGER"
+    "role": "string" // "ROLE_USER", "ROLE_FACILITY_MANAGER", "ROLE_ADMIN"
   }
 }
 ```
@@ -266,15 +272,14 @@ yarn dev
 - **Status Codes**: 200 OK, 401 Unauthorized
 
 ##### 사용자 정보 수정
-- **Endpoint**: `/api/users/me`
+- **Endpoint**: `/api/users/me/profile`
 - **Method**: PUT
 - **Headers**: Authorization: Bearer {token}
 - **Request Body**:
 ```json
 {
   "name": "string",
-  "phone": "string",
-  "profileImage": "string"
+  "phone": "string"
 }
 ```
 - **Response**:
@@ -284,13 +289,33 @@ yarn dev
   "email": "string",
   "name": "string",
   "phone": "string",
-  "profileImage": "string",
   "updatedAt": "timestamp"
 }
 ```
 - **Status Codes**: 200 OK, 400 Bad Request, 401 Unauthorized
 
-### 2. 시설 관리 API
+##### 비밀번호 변경 (개선)
+- **Endpoint**: `/api/users/me/password`
+- **Method**: PUT
+- **Headers**: Authorization: Bearer {토큰}
+- **요청 본문**:
+```json
+{
+  "currentPassword": "string",
+  "newPassword": "string"
+}
+```
+- **응답**:
+```json
+{
+  "success": "boolean",
+  "message": "string",
+  "updatedAt": "timestamp"
+}
+```
+- **상태 코드**: 200 성공, 400 잘못된 요청, 401 인증 실패
+
+### 2. 시설 및 코트 관리 API
 
 #### 2.1 시설 조회
 
@@ -299,9 +324,8 @@ yarn dev
 - **Method**: GET
 - **Query Parameters**:
   - `search`: 검색어 (시설명, 주소)
-  - `sportType`: 스포츠 종류
-  - `minPrice`: 최소 가격
-  - `maxPrice`: 최대 가격
+  - `city`: 도시
+  - `district`: 지역구
   - `page`: 페이지 번호 (기본값: 0)
   - `size`: 페이지 크기 (기본값: 10)
 - **Response**:
@@ -311,12 +335,15 @@ yarn dev
     {
       "id": "long",
       "name": "string",
-      "address": "string",
-      "sportType": "string",
-      "rating": "double",
-      "priceRange": "string",
-      "imageUrl": "string",
-      "description": "string"
+      "description": "string",
+      "address": {
+        "city": "string",
+        "district": "string",
+        "streetAddress": "string",
+        "detailAddress": "string"
+      },
+      "contactPhone": "string",
+      "mainImage": "string"
     }
   ],
   "pageable": {
@@ -338,29 +365,43 @@ yarn dev
 {
   "id": "long",
   "name": "string",
-  "address": "string",
-  "sportType": "string",
-  "rating": "double",
-  "priceRange": "string",
-  "imageUrl": "string",
   "description": "string",
-  "amenities": ["string"],
-  "operationHours": {
-    "monday": "string",
-    "tuesday": "string",
-    "wednesday": "string",
-    "thursday": "string",
-    "friday": "string",
-    "saturday": "string",
-    "sunday": "string"
+  "address": {
+    "city": "string",
+    "district": "string",
+    "streetAddress": "string",
+    "detailAddress": "string"
   },
+  "contactPhone": "string",
+  "images": [
+    {
+      "id": "long",
+      "imageUrl": "string",
+      "description": "string",
+      "main": "boolean",
+      "displayOrder": "integer",
+      "uploadedAt": "timestamp"
+    }
+  ],
+  "courts": [
+    {
+      "id": "long",
+      "name": "string",
+      "sportType": "string",
+      "description": "string",
+      "capacity": "integer",
+      "indoor": "boolean",
+      "active": "boolean"
+    }
+  ],
+  "averageRating": "double",
   "reviews": [
     {
       "id": "long",
       "userId": "long",
       "userName": "string",
-      "rating": "double",
-      "comment": "string",
+      "rating": "integer",
+      "content": "string",
       "createdAt": "timestamp"
     }
   ]
@@ -368,7 +409,72 @@ yarn dev
 ```
 - **Status Codes**: 200 OK, 404 Not Found
 
-#### 2.2 시설 관리 (관리자/시설 관리자 전용)
+#### 2.2 코트 조회
+
+##### 코트 목록 조회
+- **Endpoint**: `/api/courts`
+- **Method**: GET
+- **Query Parameters**:
+  - `facilityId`: 시설 ID
+  - `sportType`: 스포츠 유형 (SOCCER, BASKETBALL, TENNIS, BADMINTON, BASEBALL, GOLF, TABLE_TENNIS, FUTSAL, FITNESS, SQUASH, OTHER)
+  - `indoor`: 실내 여부
+  - `page`: 페이지 번호 (기본값: 0)
+  - `size`: 페이지 크기 (기본값: 10)
+- **Response**:
+```json
+{
+  "content": [
+    {
+      "id": "long",
+      "name": "string",
+      "sportType": "string",
+      "description": "string",
+      "capacity": "integer",
+      "indoor": "boolean",
+      "active": "boolean",
+      "facilityId": "long",
+      "facilityName": "string"
+    }
+  ],
+  "pageable": {
+    "pageNumber": "int",
+    "pageSize": "int",
+    "totalElements": "long",
+    "totalPages": "int"
+  }
+}
+```
+- **Status Codes**: 200 OK
+
+##### 코트 상세 조회
+- **Endpoint**: `/api/courts/{id}`
+- **Method**: GET
+- **Path Parameters**: id - 코트 ID
+- **Response**:
+```json
+{
+  "id": "long",
+  "name": "string",
+  "sportType": "string",
+  "description": "string",
+  "capacity": "integer",
+  "indoor": "boolean",
+  "active": "boolean",
+  "facility": {
+    "id": "long",
+    "name": "string",
+    "address": {
+      "city": "string",
+      "district": "string",
+      "streetAddress": "string",
+      "detailAddress": "string"
+    }
+  }
+}
+```
+- **Status Codes**: 200 OK, 404 Not Found
+
+#### 2.3 시설 및 코트 관리 (관리자/시설 관리자 전용)
 
 ##### 시설 등록
 - **Endpoint**: `/api/admin/facilities`
@@ -378,25 +484,60 @@ yarn dev
 ```json
 {
   "name": "string",
-  "address": "string",
-  "sportType": "string",
-  "priceRange": "string",
-  "imageUrl": "string",
   "description": "string",
-  "amenities": ["string"],
-  "operationHours": {
-    "monday": "string",
-    "tuesday": "string",
-    "wednesday": "string",
-    "thursday": "string",
-    "friday": "string",
-    "saturday": "string",
-    "sunday": "string"
-  }
+  "address": {
+    "city": "string",
+    "district": "string",
+    "streetAddress": "string",
+    "detailAddress": "string"
+  },
+  "contactPhone": "string"
 }
 ```
-- **Response**: 생성된 시설 정보 (시설 상세 조회 응답과 동일)
+- **Response**: 생성된 시설 정보
 - **Status Codes**: 201 Created, 400 Bad Request, 403 Forbidden
+
+##### 시설 이미지 추가
+- **Endpoint**: `/api/admin/facilities/{facilityId}/images`
+- **Method**: POST
+- **Headers**: Authorization: Bearer {token}
+- **Path Parameters**: facilityId - 시설 ID
+- **Request Body** (multipart/form-data):
+  - `image`: 이미지 파일
+  - `description`: 이미지 설명
+  - `main`: 대표 이미지 여부
+  - `displayOrder`: 표시 순서
+- **Response**:
+```json
+{
+  "id": "long",
+  "imageUrl": "string",
+  "description": "string",
+  "main": "boolean",
+  "displayOrder": "integer",
+  "uploadedAt": "timestamp"
+}
+```
+- **Status Codes**: 201 Created, 400 Bad Request, 403 Forbidden, 404 Not Found
+
+##### 코트 등록
+- **Endpoint**: `/api/admin/facilities/{facilityId}/courts`
+- **Method**: POST
+- **Headers**: Authorization: Bearer {token}
+- **Path Parameters**: facilityId - 시설 ID
+- **Request Body**:
+```json
+{
+  "name": "string",
+  "sportType": "string",
+  "description": "string",
+  "capacity": "integer",
+  "indoor": "boolean",
+  "active": "boolean"
+}
+```
+- **Response**: 생성된 코트 정보
+- **Status Codes**: 201 Created, 400 Bad Request, 403 Forbidden, 404 Not Found
 
 ##### 시설 수정
 - **Endpoint**: `/api/admin/facilities/{id}`
@@ -407,6 +548,15 @@ yarn dev
 - **Response**: 수정된 시설 정보
 - **Status Codes**: 200 OK, 400 Bad Request, 403 Forbidden, 404 Not Found
 
+##### 코트 수정
+- **Endpoint**: `/api/admin/courts/{id}`
+- **Method**: PUT
+- **Headers**: Authorization: Bearer {token}
+- **Path Parameters**: id - 코트 ID
+- **Request Body**: 코트 등록 요청과 동일
+- **Response**: 수정된 코트 정보
+- **Status Codes**: 200 OK, 400 Bad Request, 403 Forbidden, 404 Not Found
+
 ##### 시설 삭제
 - **Endpoint**: `/api/admin/facilities/{id}`
 - **Method**: DELETE
@@ -415,14 +565,22 @@ yarn dev
 - **Response**: 없음
 - **Status Codes**: 204 No Content, 403 Forbidden, 404 Not Found
 
+##### 코트 삭제
+- **Endpoint**: `/api/admin/courts/{id}`
+- **Method**: DELETE
+- **Headers**: Authorization: Bearer {token}
+- **Path Parameters**: id - 코트 ID
+- **Response**: 없음
+- **Status Codes**: 204 No Content, 403 Forbidden, 404 Not Found
+
 ### 3. 예약 관리 API
 
 #### 3.1 예약 조회 및 관리
 
-##### 시설 예약 가능 시간 조회
-- **Endpoint**: `/api/facilities/{facilityId}/available-slots`
+##### 코트 예약 가능 시간 조회
+- **Endpoint**: `/api/courts/{courtId}/available-slots`
 - **Method**: GET
-- **Path Parameters**: facilityId - 시설 ID
+- **Path Parameters**: courtId - 코트 ID
 - **Query Parameters**:
   - `date`: 날짜 (YYYY-MM-DD)
 - **Response**:
@@ -431,7 +589,6 @@ yarn dev
   "date": "string",
   "timeSlots": [
     {
-      "id": "long",
       "startTime": "string",
       "endTime": "string",
       "available": "boolean",
@@ -449,25 +606,30 @@ yarn dev
 - **Request Body**:
 ```json
 {
-  "facilityId": "long",
-  "slotId": "long",
-  "date": "string",
-  "numberOfPeople": "integer",
-  "paymentMethod": "string"
+  "courtId": "long",
+  "startTime": "dateTime",
+  "endTime": "dateTime",
+  "totalPrice": "integer"
 }
 ```
 - **Response**:
 ```json
 {
   "id": "long",
-  "facilityId": "long",
-  "facilityName": "string",
-  "date": "string",
-  "startTime": "string",
-  "endTime": "string",
-  "status": "string", // "PENDING", "CONFIRMED", "CANCELLED"
+  "startTime": "dateTime",
+  "endTime": "dateTime",
+  "status": "string",
   "totalPrice": "integer",
-  "createdAt": "timestamp"
+  "createdAt": "timestamp",
+  "court": {
+    "id": "long",
+    "name": "string",
+    "sportType": "string"
+  },
+  "facility": {
+    "id": "long",
+    "name": "string"
+  }
 }
 ```
 - **Status Codes**: 201 Created, 400 Bad Request, 401 Unauthorized
@@ -477,7 +639,7 @@ yarn dev
 - **Method**: GET
 - **Headers**: Authorization: Bearer {token}
 - **Query Parameters**:
-  - `status`: 예약 상태 (PENDING, CONFIRMED, CANCELLED)
+  - `status`: 예약 상태 (PENDING, CONFIRMED, CANCELED, COMPLETED)
   - `page`: 페이지 번호 (기본값: 0)
   - `size`: 페이지 크기 (기본값: 10)
 - **Response**:
@@ -486,15 +648,20 @@ yarn dev
   "content": [
     {
       "id": "long",
-      "facilityId": "long",
-      "facilityName": "string",
-      "facilityImage": "string",
-      "date": "string",
-      "startTime": "string",
-      "endTime": "string",
+      "startTime": "dateTime",
+      "endTime": "dateTime",
       "status": "string",
       "totalPrice": "integer",
-      "createdAt": "timestamp"
+      "createdAt": "timestamp",
+      "court": {
+        "id": "long",
+        "name": "string",
+        "sportType": "string"
+      },
+      "facility": {
+        "id": "long",
+        "name": "string"
+      }
     }
   ],
   "pageable": {
@@ -516,19 +683,39 @@ yarn dev
 ```json
 {
   "id": "long",
-  "facilityId": "long",
-  "facilityName": "string",
-  "facilityImage": "string",
-  "facilityAddress": "string",
-  "date": "string",
-  "startTime": "string",
-  "endTime": "string",
-  "numberOfPeople": "integer",
+  "startTime": "dateTime",
+  "endTime": "dateTime",
   "status": "string",
+  "cancelReason": "string",
+  "canceledAt": "dateTime",
   "totalPrice": "integer",
-  "paymentMethod": "string",
-  "paymentStatus": "string",
-  "createdAt": "timestamp"
+  "createdAt": "timestamp",
+  "court": {
+    "id": "long",
+    "name": "string",
+    "sportType": "string",
+    "facility": {
+      "id": "long",
+      "name": "string",
+      "address": {
+        "city": "string",
+        "district": "string",
+        "streetAddress": "string",
+        "detailAddress": "string"
+      }
+    }
+  },
+  "payment": {
+    "id": "long",
+    "amount": "integer",
+    "status": "string",
+    "payMethod": "string",
+    "paidAt": "dateTime"
+  },
+  "waitingList": {
+    "id": "long",
+    "status": "string"
+  }
 }
 ```
 - **Status Codes**: 200 OK, 401 Unauthorized, 403 Forbidden, 404 Not Found
@@ -538,13 +725,19 @@ yarn dev
 - **Method**: POST
 - **Headers**: Authorization: Bearer {token}
 - **Path Parameters**: id - 예약 ID
+- **Request Body**:
+```json
+{
+  "reason": "string"
+}
+```
 - **Response**:
 ```json
 {
   "id": "long",
   "status": "string",
-  "cancelledAt": "timestamp",
-  "refundAmount": "integer"
+  "cancelReason": "string",
+  "canceledAt": "dateTime"
 }
 ```
 - **Status Codes**: 200 OK, 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found
@@ -558,9 +751,8 @@ yarn dev
 - **Method**: GET
 - **Query Parameters**:
   - `sportType`: 스포츠 종류
-  - `date`: 날짜 (YYYY-MM-DD)
-  - `minSkillLevel`: 최소 스킬 레벨
-  - `maxSkillLevel`: 최대 스킬 레벨
+  - `matchDate`: 날짜 (YYYY-MM-DD)
+  - `matchStatus`: 매치 상태 (FINISH, CLOSE_TO_DEADLINE, APPLICABLE)
   - `page`: 페이지 번호 (기본값: 0)
   - `size`: 페이지 크기 (기본값: 10)
 - **Response**:
@@ -568,19 +760,24 @@ yarn dev
 {
   "content": [
     {
-      "id": "long",
-      "title": "string",
-      "facilityId": "long",
-      "facilityName": "string",
-      "sportType": "string",
-      "date": "string",
-      "startTime": "string",
-      "endTime": "string",
-      "totalSlots": "integer",
-      "availableSlots": "integer",
-      "skillLevel": "string",
-      "pricePerPerson": "integer",
-      "imageUrl": "string"
+      "matchId": "long",
+      "manager": "string",
+      "matchStatus": "string",
+      "teamCapacity": "integer",
+      "description": "string",
+      "matchDate": "date",
+      "matchTime": "integer",
+      "matchPrice": "integer",
+      "court": {
+        "id": "long",
+        "name": "string",
+        "sportType": "string",
+        "facility": {
+          "id": "long",
+          "name": "string"
+        }
+      },
+      "currentPlayers": "integer"
     }
   ],
   "pageable": {
@@ -600,32 +797,42 @@ yarn dev
 - **Response**:
 ```json
 {
-  "id": "long",
-  "title": "string",
-  "facilityId": "long",
-  "facilityName": "string",
-  "facilityAddress": "string",
-  "sportType": "string",
-  "date": "string",
-  "startTime": "string",
-  "endTime": "string",
-  "totalSlots": "integer",
-  "availableSlots": "integer",
-  "participants": [
-    {
-      "userId": "long",
-      "userName": "string",
-      "skillLevel": "string"
-    }
-  ],
-  "skillLevel": "string",
-  "pricePerPerson": "integer",
+  "matchId": "long",
+  "manager": "string",
+  "matchStatus": "string",
+  "teamCapacity": "integer",
   "description": "string",
-  "host": {
-    "userId": "long",
-    "userName": "string"
+  "matchDate": "date",
+  "matchTime": "integer",
+  "matchPrice": "integer",
+  "court": {
+    "id": "long",
+    "name": "string",
+    "sportType": "string",
+    "capacity": "integer",
+    "indoor": "boolean",
+    "facility": {
+      "id": "long",
+      "name": "string",
+      "address": {
+        "city": "string",
+        "district": "string",
+        "streetAddress": "string",
+        "detailAddress": "string"
+      },
+      "contactPhone": "string"
+    }
   },
-  "createdAt": "timestamp"
+  "players": [
+    {
+      "playerId": "long",
+      "status": "string",
+      "user": {
+        "id": "long",
+        "name": "string"
+      }
+    }
+  ]
 }
 ```
 - **Status Codes**: 200 OK, 404 Not Found
@@ -637,15 +844,12 @@ yarn dev
 - **Request Body**:
 ```json
 {
-  "title": "string",
-  "facilityId": "long",
-  "date": "string",
-  "startTime": "string",
-  "endTime": "string",
-  "totalSlots": "integer",
-  "skillLevel": "string",
-  "pricePerPerson": "integer",
-  "description": "string"
+  "courtId": "long",
+  "teamCapacity": "integer",
+  "description": "string",
+  "matchDate": "date",
+  "matchTime": "integer",
+  "matchPrice": "integer"
 }
 ```
 - **Response**: 생성된 매치 정보
@@ -656,20 +860,18 @@ yarn dev
 - **Method**: POST
 - **Headers**: Authorization: Bearer {token}
 - **Path Parameters**: id - 매치 ID
-- **Request Body**:
-```json
-{
-  "paymentMethod": "string"
-}
-```
 - **Response**:
 ```json
 {
-  "matchId": "long",
-  "userId": "long",
-  "status": "string", // "JOINED"
-  "paymentAmount": "integer",
-  "joinedAt": "timestamp"
+  "playerId": "long",
+  "status": "string",
+  "user": {
+    "id": "long",
+    "name": "string"
+  },
+  "match": {
+    "matchId": "long"
+  }
 }
 ```
 - **Status Codes**: 200 OK, 400 Bad Request, 401 Unauthorized, 404 Not Found
@@ -682,11 +884,15 @@ yarn dev
 - **Response**:
 ```json
 {
-  "matchId": "long",
-  "userId": "long",
-  "status": "string", // "CANCELLED"
-  "refundAmount": "integer",
-  "cancelledAt": "timestamp"
+  "playerId": "long",
+  "status": "string",
+  "user": {
+    "id": "long",
+    "name": "string"
+  },
+  "match": {
+    "matchId": "long"
+  }
 }
 ```
 - **Status Codes**: 200 OK, 400 Bad Request, 401 Unauthorized, 404 Not Found
@@ -701,20 +907,25 @@ yarn dev
 - **Request Body**:
 ```json
 {
-  "rating": "double",
-  "comment": "string"
+  "rating": "integer",
+  "content": "string"
 }
 ```
 - **Response**:
 ```json
 {
   "id": "long",
-  "facilityId": "long",
-  "userId": "long",
-  "userName": "string",
-  "rating": "double",
-  "comment": "string",
-  "createdAt": "timestamp"
+  "rating": "integer",
+  "content": "string",
+  "createdAt": "timestamp",
+  "user": {
+    "id": "long",
+    "name": "string"
+  },
+  "facility": {
+    "id": "long",
+    "name": "string"
+  }
 }
 ```
 - **Status Codes**: 201 Created, 400 Bad Request, 401 Unauthorized
@@ -732,11 +943,13 @@ yarn dev
   "content": [
     {
       "id": "long",
-      "userId": "long",
-      "userName": "string",
-      "rating": "double",
-      "comment": "string",
-      "createdAt": "timestamp"
+      "rating": "integer",
+      "content": "string",
+      "createdAt": "timestamp",
+      "user": {
+        "id": "long",
+        "name": "string"
+      }
     }
   ],
   "pageable": {
@@ -749,7 +962,345 @@ yarn dev
 ```
 - **Status Codes**: 200 OK, 404 Not Found
 
-### 6. 통계/대시보드 API (관리자 전용)
+### 6. 결제 API
+
+##### 결제 생성
+- **Endpoint**: `/api/payments`
+- **Method**: POST
+- **Headers**: Authorization: Bearer {token}
+- **Request Body**:
+```json
+{
+  "reservationId": "long",
+  "amount": "integer",
+  "payMethod": "string" // "CARD", "POINT", "CASH"
+}
+```
+- **Response**:
+```json
+{
+  "id": "long",
+  "impUid": "string",
+  "merchantUid": "string",
+  "amount": "integer",
+  "status": "string",
+  "payMethod": "string",
+  "paidAt": "dateTime",
+  "reservation": {
+    "id": "long"
+  }
+}
+```
+- **Status Codes**: 201 Created, 400 Bad Request, 401 Unauthorized
+
+##### 결제 상세 조회
+- **Endpoint**: `/api/payments/{id}`
+- **Method**: GET
+- **Headers**: Authorization: Bearer {token}
+- **Path Parameters**: id - 결제 ID
+- **Response**:
+```json
+{
+  "id": "long",
+  "impUid": "string",
+  "merchantUid": "string",
+  "amount": "integer",
+  "status": "string",
+  "payMethod": "string",
+  "paidAt": "dateTime",
+  "canceledAt": "dateTime",
+  "cancelReason": "string",
+  "reservation": {
+    "id": "long",
+    "startTime": "dateTime",
+    "endTime": "dateTime",
+    "court": {
+      "id": "long",
+      "name": "string"
+    }
+  }
+}
+```
+- **Status Codes**: 200 OK, 401 Unauthorized, 404 Not Found
+
+##### 결제 취소
+- **Endpoint**: `/api/payments/{id}/cancel`
+- **Method**: POST
+- **Headers**: Authorization: Bearer {token}
+- **Path Parameters**: id - 결제 ID
+- **Request Body**:
+```json
+{
+  "reason": "string"
+}
+```
+- **Response**:
+```json
+{
+  "id": "long",
+  "status": "string",
+  "canceledAt": "dateTime",
+  "cancelReason": "string"
+}
+```
+- **Status Codes**: 200 OK, 400 Bad Request, 401 Unauthorized, 404 Not Found
+
+### 7. 알림 API
+
+##### 알림 목록 조회
+- **Endpoint**: `/api/notifications`
+- **Method**: GET
+- **Headers**: Authorization: Bearer {token}
+- **Query Parameters**:
+  - `read`: 읽음 여부
+  - `page`: 페이지 번호 (기본값: 0)
+  - `size`: 페이지 크기 (기본값: 10)
+- **Response**:
+```json
+{
+  "content": [
+    {
+      "id": "long",
+      "type": "string",
+      "content": "string",
+      "method": "string",
+      "read": "boolean",
+      "sentAt": "dateTime",
+      "readAt": "dateTime",
+      "reservation": {
+        "id": "long"
+      },
+      "payment": {
+        "id": "long"
+      }
+    }
+  ],
+  "pageable": {
+    "pageNumber": "int",
+    "pageSize": "int",
+    "totalElements": "long",
+    "totalPages": "int"
+  }
+}
+```
+- **Status Codes**: 200 OK, 401 Unauthorized
+
+##### 알림 읽음 표시
+- **Endpoint**: `/api/notifications/{id}/read`
+- **Method**: POST
+- **Headers**: Authorization: Bearer {token}
+- **Path Parameters**: id - 알림 ID
+- **Response**:
+```json
+{
+  "id": "long",
+  "read": "boolean",
+  "readAt": "dateTime"
+}
+```
+- **Status Codes**: 200 OK, 401 Unauthorized, 404 Not Found
+
+### 8. 대기 목록 API
+
+##### 대기 목록 등록
+- **Endpoint**: `/api/waiting-lists`
+- **Method**: POST
+- **Headers**: Authorization: Bearer {token}
+- **Request Body**:
+```json
+{
+  "courtId": "long",
+  "date": "date",
+  "startTime": "time",
+  "endTime": "time"
+}
+```
+- **Response**:
+```json
+{
+  "id": "long",
+  "date": "date",
+  "startTime": "time",
+  "endTime": "time",
+  "status": "string",
+  "court": {
+    "id": "long",
+    "name": "string"
+  }
+}
+```
+- **Status Codes**: 201 Created, 400 Bad Request, 401 Unauthorized
+
+##### 사용자 대기 목록 조회
+- **Endpoint**: `/api/users/me/waiting-lists`
+- **Method**: GET
+- **Headers**: Authorization: Bearer {token}
+- **Query Parameters**:
+  - `status`: 대기 상태 (WAITING, NOTIFIED, RESERVED, CANCELED, EXPIRED)
+  - `page`: 페이지 번호 (기본값: 0)
+  - `size`: 페이지 크기 (기본값: 10)
+- **Response**:
+```json
+{
+  "content": [
+    {
+      "id": "long",
+      "date": "date",
+      "startTime": "time",
+      "endTime": "time",
+      "status": "string",
+      "court": {
+        "id": "long",
+        "name": "string",
+        "facility": {
+          "id": "long",
+          "name": "string"
+        }
+      }
+    }
+  ],
+  "pageable": {
+    "pageNumber": "int",
+    "pageSize": "int",
+    "totalElements": "long",
+    "totalPages": "int"
+  }
+}
+```
+- **Status Codes**: 200 OK, 401 Unauthorized
+
+##### 대기 취소
+- **Endpoint**: `/api/waiting-lists/{id}/cancel`
+- **Method**: POST
+- **Headers**: Authorization: Bearer {token}
+- **Path Parameters**: id - 대기 목록 ID
+- **Response**:
+```json
+{
+  "id": "long",
+  "status": "string"
+}
+```
+- **Status Codes**: 200 OK, 401 Unauthorized, 404 Not Found
+
+### 9. 팀 관리 API
+
+##### 팀 생성
+- **Endpoint**: `/api/teams`
+- **Method**: POST
+- **Headers**: Authorization: Bearer {token}
+- **Request Body**:
+```json
+{
+  "name": "string",
+  "description": "string"
+}
+```
+- **Response**:
+```json
+{
+  "id": "long",
+  "name": "string",
+  "description": "string",
+  "createdAt": "timestamp"
+}
+```
+- **Status Codes**: 201 Created, 400 Bad Request, 401 Unauthorized
+
+##### 팀 목록 조회
+- **Endpoint**: `/api/teams`
+- **Method**: GET
+- **Query Parameters**:
+  - `search`: 검색어
+  - `page`: 페이지 번호 (기본값: 0)
+  - `size`: 페이지 크기 (기본값: 10)
+- **Response**:
+```json
+{
+  "content": [
+    {
+      "id": "long",
+      "name": "string",
+      "description": "string",
+      "memberCount": "integer"
+    }
+  ],
+  "pageable": {
+    "pageNumber": "int",
+    "pageSize": "int",
+    "totalElements": "long",
+    "totalPages": "int"
+  }
+}
+```
+- **Status Codes**: 200 OK
+
+##### 팀 상세 조회
+- **Endpoint**: `/api/teams/{id}`
+- **Method**: GET
+- **Path Parameters**: id - 팀 ID
+- **Response**:
+```json
+{
+  "id": "long",
+  "name": "string",
+  "description": "string",
+  "members": [
+    {
+      "id": "long",
+      "role": "string",
+      "joinedAt": "dateTime",
+      "user": {
+        "id": "long",
+        "name": "string",
+        "profileImage": "string"
+      }
+    }
+  ]
+}
+```
+- **Status Codes**: 200 OK, 404 Not Found
+
+##### 팀원 추가
+- **Endpoint**: `/api/teams/{teamId}/members`
+- **Method**: POST
+- **Headers**: Authorization: Bearer {token}
+- **Path Parameters**: teamId - 팀 ID
+- **Request Body**:
+```json
+{
+  "userId": "long",
+  "role": "string" // "OWNER", "ADMIN", "MEMBER"
+}
+```
+- **Response**:
+```json
+{
+  "id": "long",
+  "role": "string",
+  "joinedAt": "dateTime",
+  "team": {
+    "id": "long"
+  },
+  "user": {
+    "id": "long",
+    "name": "string"
+  }
+}
+```
+- **Status Codes**: 201 Created, 400 Bad Request, 401 Unauthorized, 403 Forbidden
+
+##### 팀원 제거
+- **Endpoint**: `/api/teams/{teamId}/members/{memberId}`
+- **Method**: DELETE
+- **Headers**: Authorization: Bearer {token}
+- **Path Parameters**: 
+  - teamId - 팀 ID
+  - memberId - 팀원 ID
+- **Response**: 없음
+- **Status Codes**: 204 No Content, 401 Unauthorized, 403 Forbidden, 404 Not Found
+
+### 10. 통계/대시보드 API (관리자 전용)
 
 ##### 시설별 예약 통계
 - **Endpoint**: `/api/admin/statistics/facilities/{facilityId}`
@@ -767,11 +1318,13 @@ yarn dev
   "totalReservations": "integer",
   "totalRevenue": "integer",
   "averageRating": "double",
-  "popularTimeSlots": [
+  "popularCourts": [
     {
-      "startTime": "string",
-      "endTime": "string",
-      "count": "integer"
+      "courtId": "long",
+      "courtName": "string",
+      "sportType": "string",
+      "reservationCount": "integer",
+      "revenue": "integer"
     }
   ],
   "dailyStats": [
@@ -784,3 +1337,34 @@ yarn dev
 }
 ```
 - **Status Codes**: 200 OK, 401 Unauthorized, 403 Forbidden, 404 Not Found
+
+##### 사용자 통계
+- **Endpoint**: `/api/admin/statistics/users`
+- **Method**: GET
+- **Headers**: Authorization: Bearer {token}
+- **Query Parameters**:
+  - `startDate`: 시작 날짜 (YYYY-MM-DD)
+  - `endDate`: 종료 날짜 (YYYY-MM-DD)
+- **Response**:
+```json
+{
+  "totalUsers": "integer",
+  "newUsers": "integer",
+  "activeUsers": "integer",
+  "topUsers": [
+    {
+      "userId": "long",
+      "userName": "string",
+      "reservationCount": "integer",
+      "totalSpent": "integer"
+    }
+  ],
+  "dailySignups": [
+    {
+      "date": "string",
+      "count": "integer"
+    }
+  ]
+}
+```
+- **Status Codes**: 200 OK, 401 Unauthorized, 403 Forbidden
