@@ -13,8 +13,11 @@ import { Calendar } from "@/components/ui/calendar"
 import { toast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
-import { CalendarIcon, Clock } from "lucide-react"
+import { CalendarIcon, Clock, AlertCircle } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { matchService } from "@/lib/services/matchService"
+import { FacilityManager } from "@/lib/services/userService"
 
 const sportTypes = [
   { value: "soccer", label: "축구" },
@@ -218,6 +221,8 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null)
   const [availableCourts, setAvailableCourts] = useState<Court[]>([])
+  const [facilityManagers, setFacilityManagers] = useState<FacilityManager[]>([])
+  const [loadingManagers, setLoadingManagers] = useState(false)
   const [matchData, setMatchData] = useState({
     title: "",
     sportType: "",
@@ -225,14 +230,16 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
     facilityName: "",
     address: "",
     matchDate: "",
-    matchTime: "",
+    startTime: "",
+    endTime: "",
     maxParticipants: "",
     fee: "",
     description: "",
     equipmentProvided: false,
     images: [] as File[],
     courtId: "",
-    courtName: ""
+    courtName: "",
+    managerId: ""
   })
   
   // 시설 목록 로드
@@ -253,93 +260,156 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
     } else {
       setFilteredFacilities([])
     }
+    
+    // 스포츠 타입이 변경되면 시설 선택 초기화
+    setMatchData(prev => ({
+      ...prev,
+      facilityId: "",
+      facilityName: "",
+      courtId: "",
+      courtName: "",
+      managerId: ""
+    }))
+    setSelectedFacility(null)
+    setAvailableCourts([])
+    setFacilityManagers([])
   }, [matchData.sportType, facilities])
   
-  // 날짜가 변경될 때 state 업데이트 및 가용 시간대 업데이트
+  // 시설 선택에 따라 코트 필터링 및 시설 정보 업데이트
   useEffect(() => {
-    if (date) {
-      const formattedDate = format(date, 'yyyy-MM-dd')
-      setMatchData(prev => ({
-        ...prev,
-        matchDate: formattedDate
-      }))
+    if (matchData.facilityId) {
+      const facility = facilities.find(f => f.id === matchData.facilityId)
+      setSelectedFacility(facility || null)
       
-      updateAvailableTimeSlots(formattedDate)
-    }
-  }, [date, selectedFacility])
-  
-  // 시설이 선택되면 선택된 시설 정보 업데이트 및 위치 채우기
-  useEffect(() => {
-    if (matchData.facilityId && facilities.length > 0) {
-      const selected = facilities.find(f => f.id === matchData.facilityId) || null
-      setSelectedFacility(selected)
+      if (facility && facility.courts) {
+        const activeCourts = facility.courts.filter(court => court.isActive)
+        setAvailableCourts(activeCourts)
+      } else {
+        setAvailableCourts([])
+      }
       
-      if (selected) {
+      // 시설 주소 자동 설정
+      if (facility) {
         setMatchData(prev => ({
           ...prev,
-          facilityName: selected.name,
-          address: selected.address,
-          courtId: "" // 시설이 변경되면 코트 선택 초기화
+          facilityName: facility.name,
+          address: facility.address
         }))
         
-        // 활성화된 코트만 필터링
-        const activeCourts = selected.courts?.filter(court => court.isActive) || []
-        setAvailableCourts(activeCourts)
-        
-        if (date) {
-          updateAvailableTimeSlots(matchData.matchDate)
-        }
+        // 시설 관리자 목록 조회
+        loadFacilityManagers(parseInt(facility.id))
       }
     } else {
       setSelectedFacility(null)
       setAvailableCourts([])
-      setAvailableTimeSlots([])
+      setFacilityManagers([])
     }
-  }, [matchData.facilityId, facilities, date])
+    
+    // 시설이 변경되면 코트 선택 초기화
+    setMatchData(prev => ({
+      ...prev,
+      courtId: "",
+      courtName: "",
+      managerId: ""
+    }))
+  }, [matchData.facilityId, facilities])
   
-  // 코트가 선택되었을 때 가용 시간대 업데이트
+  // 시설 관리자 목록 조회
+  const loadFacilityManagers = async (facilityId: number) => {
+    try {
+      setLoadingManagers(true)
+      // 실제로는 API에서 시설 관리자 목록을 가져옴
+      // 여기서는 더미 데이터 및 서비스 함수 준비
+      
+      // const managers = await matchService.getFacilityManagers(facilityId)
+      // setFacilityManagers(managers)
+      
+      // 더미 데이터 사용 (실제 구현 시 위 코드로 대체)
+      setTimeout(() => {
+        // 시설 ID에 따라 다른 관리자 데이터 표시
+        const dummyManagers: { [key: string]: FacilityManager[] } = {
+          "1": [
+            { id: 101, username: "김테니스", email: "tennis1@example.com", role: { valueOf: () => "ROLE_FACILITY_MANAGER" } as any, facilityId },
+            { id: 102, username: "이테니스", email: "tennis2@example.com", role: { valueOf: () => "ROLE_FACILITY_MANAGER" } as any, facilityId }
+          ],
+          "2": [
+            { id: 103, username: "박풋살", email: "futsal1@example.com", role: { valueOf: () => "ROLE_FACILITY_MANAGER" } as any, facilityId },
+          ],
+          "3": [
+            { id: 104, username: "최농구", email: "basketball@example.com", role: { valueOf: () => "ROLE_FACILITY_MANAGER" } as any, facilityId },
+            { id: 105, username: "정농구", email: "basketball2@example.com", role: { valueOf: () => "ROLE_FACILITY_MANAGER" } as any, facilityId }
+          ],
+          "4": [
+            { id: 106, username: "강배드민턴", email: "badminton@example.com", role: { valueOf: () => "ROLE_FACILITY_MANAGER" } as any, facilityId }
+          ]
+        };
+        
+        // facilityId를 문자열로 변환하여 해당 시설의 관리자 목록 가져오기
+        const facilityIdStr = facilityId.toString();
+        setFacilityManagers(dummyManagers[facilityIdStr] || []);
+        setLoadingManagers(false);
+      }, 500);
+    } catch (error) {
+      toast({
+        title: "관리자 목록 조회 실패",
+        description: "시설 관리자 목록을 불러오는 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+      setLoadingManagers(false);
+      setFacilityManagers([]);
+    }
+  };
+  
+  // 매치 날짜 선택 시 가능한 시간대 업데이트
   useEffect(() => {
-    if (matchData.facilityId && matchData.courtId && matchData.matchDate) {
-      updateAvailableTimeSlots(matchData.matchDate)
-    } else {
-      setAvailableTimeSlots([])
+    if (date && selectedFacility) {
+      updateAvailableTimeSlots(format(date, 'yyyy-MM-dd'))
     }
-  }, [matchData.courtId])
+  }, [date, selectedFacility, reservations])
   
-  // 가용 시간대 업데이트 함수
+  // 사용 가능 시간대 계산
   const updateAvailableTimeSlots = (selectedDate: string) => {
-    if (!selectedFacility || !matchData.courtId) return
+    if (!selectedFacility) return
     
-    // 운영 시간 파싱 (예: 09:00-22:00)
-    const [openingTime, closingTime] = selectedFacility.openingHours.split('-')
-    const openingHour = parseInt(openingTime.split(':')[0])
-    const closingHour = parseInt(closingTime.split(':')[0])
+    // 운영 시간 파싱
+    const [openTime, closeTime] = selectedFacility.openingHours.split('-')
+    const openHour = parseInt(openTime.split(':')[0])
+    const closeHour = parseInt(closeTime.split(':')[0])
     
-    // 해당 날짜에 해당 시설의 해당 코트의 예약 현황 가져오기
-    const dateReservations = reservations.filter(res => 
-      res.facilityId === selectedFacility.id && 
-      res.courtId === matchData.courtId && 
-      res.date === selectedDate
+    // 운영 시간 내 시간대 생성
+    const operatingTimeSlots = Array.from(
+      { length: closeHour - openHour + 1 },
+      (_, i) => {
+        const hour = openHour + i
+        const formattedHour = hour < 10 ? `0${hour}` : `${hour}`
+        return { value: `${formattedHour}:00`, label: `${formattedHour}:00` }
+      }
     )
     
-    // 예약 가능한 시간 계산
-    const reservedTimes = new Set<string>()
-    dateReservations.forEach(res => {
-      const start = parseInt(res.startTime.split(':')[0])
-      const end = parseInt(res.endTime.split(':')[0])
+    // 선택된 코트에 대한 예약 확인
+    if (matchData.courtId) {
+      const courtReservations = reservations.filter(
+        r => r.facilityId === selectedFacility.id && 
+             r.courtId === matchData.courtId && 
+             r.date === selectedDate
+      )
       
-      for (let hour = start; hour < end; hour++) {
-        reservedTimes.add(`${hour < 10 ? '0' + hour : hour}:00`)
-      }
-    })
-    
-    // 운영 시간 내 예약 가능한 시간대 계산
-    const available = timeSlots.filter(slot => {
-      const hour = parseInt(slot.value.split(':')[0])
-      return hour >= openingHour && hour < closingHour && !reservedTimes.has(slot.value)
-    })
-    
-    setAvailableTimeSlots(available)
+      // 예약된 시간대 제외
+      const availableTimes = operatingTimeSlots.filter(slot => {
+        const hour = parseInt(slot.value.split(':')[0])
+        return !courtReservations.some(
+          r => {
+            const startHour = parseInt(r.startTime.split(':')[0])
+            const endHour = parseInt(r.endTime.split(':')[0])
+            return hour >= startHour && hour < endHour
+          }
+        )
+      })
+      
+      setAvailableTimeSlots(availableTimes)
+    } else {
+      setAvailableTimeSlots(operatingTimeSlots)
+    }
   }
   
   // 입력값 변경 처리
@@ -353,6 +423,14 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
   // 셀렉트 변경 처리
   const handleSelectChange = (name: string, value: string) => {
     setMatchData(prev => ({ ...prev, [name]: value }))
+    
+    // 코트 선택 시 코트명 자동 설정
+    if (name === 'courtId' && value) {
+      const court = availableCourts.find(c => c.id === value)
+      if (court) {
+        setMatchData(prev => ({ ...prev, courtName: court.name }))
+      }
+    }
   }
   
   // 체크박스 변경 처리
@@ -366,34 +444,40 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
     setIsLoading(true)
     
     try {
-      // 실제로는 API 호출로 데이터 저장
-      
       // 필수 필드 체크
       if (!matchData.title || !matchData.sportType || !matchData.facilityId || 
-          !matchData.courtId || !matchData.matchDate || !matchData.matchTime || 
-          !matchData.maxParticipants) {
+          !matchData.courtId || !matchData.matchDate || !matchData.startTime || 
+          !matchData.endTime || !matchData.maxParticipants || !matchData.fee) {
         throw new Error("필수 정보를 모두 입력해주세요.")
       }
       
-      // 완료 처리하기 전에 시작/종료 시간 계산
-      const startTime = matchData.matchTime
-      // 기본 2시간 추가 (실제로는 사용자가 지정할 수 있게 할 수 있음)
-      const startHour = parseInt(startTime.split(':')[0])
-      const endHour = startHour + 2
-      const endTime = `${endHour < 10 ? '0' + endHour : endHour}:00`
+      // 시간 유효성 체크
+      const startTime = parseInt(matchData.startTime.split(':')[0])
+      const endTime = parseInt(matchData.endTime.split(':')[0])
+      if (startTime >= endTime) {
+        throw new Error("종료 시간은 시작 시간보다 이후여야 합니다.")
+      }
       
-      // matchTime 포맷 변경
-      const matchTime = `${startTime} - ${endTime}`
-      
-      // 완료 핸들러 호출
-      onComplete({
+      // 매치 정보 생성
+      const matchInfo = {
         ...matchData,
-        matchTime
-      })
+        facilityId: parseInt(matchData.facilityId),
+        courtId: matchData.courtId,
+        maxParticipants: parseInt(matchData.maxParticipants),
+        fee: parseInt(matchData.fee),
+        managerId: matchData.managerId ? parseInt(matchData.managerId) : undefined,
+        matchTime: `${matchData.startTime} - ${matchData.endTime}`,
+        status: "모집중",
+        currentParticipants: 0,
+        id: Date.now() // 임시 ID (실제로는 서버에서 생성)
+      }
+      
+      // 등록 완료 콜백 호출
+      onComplete(matchInfo)
       
       toast({
         title: "매치 등록 완료",
-        description: "성공적으로 매치가 등록되었습니다."
+        description: "매치가 성공적으로 등록되었습니다."
       })
     } catch (error) {
       toast({
@@ -407,97 +491,157 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
   }
   
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-3xl mx-auto">
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-4">
-          <Label htmlFor="title" className="text-base">매치명 *</Label>
-          <Input
-            id="title"
-            name="title"
-            value={matchData.title}
-            onChange={handleInputChange}
-            placeholder="예: 주말 테니스 초보자 매치"
-            className="h-12 text-base"
-            required
-          />
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 max-w-2xl mx-auto p-2 sm:p-0">
+      <h2 className="text-xl sm:text-2xl font-bold">매치 정보 등록</h2>
+      
+      {/* 기본 정보 */}
+      <div className="space-y-3 sm:space-y-4">
+        <div className="grid gap-3 sm:gap-4">
+          <div>
+            <Label htmlFor="title" className="text-sm sm:text-base">매치 제목</Label>
+            <Input
+              id="title"
+              name="title"
+              placeholder="매치 제목을 입력하세요"
+              value={matchData.title}
+              onChange={handleInputChange}
+              required
+              className="mt-1 h-9 sm:h-10 text-sm sm:text-base"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="sportType" className="text-sm sm:text-base">스포츠 종목</Label>
+            <Select
+              value={matchData.sportType}
+              onValueChange={(value) => handleSelectChange("sportType", value)}
+            >
+              <SelectTrigger id="sportType" className="mt-1 h-9 sm:h-10 text-sm sm:text-base">
+                <SelectValue placeholder="종목을 선택하세요" />
+              </SelectTrigger>
+              <SelectContent>
+                {sportTypes.map((sport) => (
+                  <SelectItem key={sport.value} value={sport.value} className="text-sm sm:text-base">
+                    {sport.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+      </div>
+      
+      {/* 시설 정보 */}
+      <div className="space-y-3 sm:space-y-4">
+        <h3 className="text-base sm:text-lg font-medium">시설 정보</h3>
         
-        <div className="space-y-4">
-          <Label htmlFor="sportType" className="text-base">종목 *</Label>
-          <Select 
-            value={matchData.sportType} 
-            onValueChange={(value) => handleSelectChange('sportType', value)}
+        <div>
+          <Label htmlFor="facilityId" className="text-sm sm:text-base">시설 선택</Label>
+          <Select
+            value={matchData.facilityId}
+            onValueChange={(value) => handleSelectChange("facilityId", value)}
+            disabled={!matchData.sportType}
           >
-            <SelectTrigger id="sportType" className="h-12 text-base">
-              <SelectValue placeholder="종목을 선택하세요" />
+            <SelectTrigger id="facilityId" className="mt-1 h-9 sm:h-10 text-sm sm:text-base">
+              <SelectValue placeholder="시설을 선택하세요" />
             </SelectTrigger>
             <SelectContent>
-              {sportTypes.map((type) => (
-                <SelectItem key={type.value} value={type.value} className="text-base py-2">
-                  {type.label}
+              {filteredFacilities.map((facility) => (
+                <SelectItem key={facility.id} value={facility.id} className="text-sm sm:text-base">
+                  {facility.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {!matchData.sportType && (
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">스포츠 종목을 먼저 선택해주세요.</p>
+          )}
         </div>
+        
+        {selectedFacility && (
+          <div className="grid gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-50 p-2 sm:p-3 rounded-md">
+            <p>
+              <span className="font-medium">주소:</span> {selectedFacility.address}
+            </p>
+            <p>
+              <span className="font-medium">운영 시간:</span> {selectedFacility.openingHours}
+            </p>
+          </div>
+        )}
+        
+        {selectedFacility && (
+          <div>
+            <Label htmlFor="courtId" className="text-sm sm:text-base">코트 선택</Label>
+            <Select
+              value={matchData.courtId}
+              onValueChange={(value) => handleSelectChange("courtId", value)}
+            >
+              <SelectTrigger id="courtId" className="mt-1 h-9 sm:h-10 text-sm sm:text-base">
+                <SelectValue placeholder="코트를 선택하세요" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableCourts.map((court) => (
+                  <SelectItem key={court.id} value={court.id} className="text-sm sm:text-base">
+                    {court.name} ({court.type})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        
+        {/* 시설 관리자 선택 */}
+        {selectedFacility && (
+          <div>
+            <Label htmlFor="managerId" className="text-sm sm:text-base">시설 관리자 선택</Label>
+            <Select
+              value={matchData.managerId || undefined}
+              onValueChange={(value) => handleSelectChange("managerId", value)}
+            >
+              <SelectTrigger id="managerId" className="mt-1 h-9 sm:h-10 text-sm sm:text-base">
+                <SelectValue placeholder={loadingManagers ? "로딩 중..." : "매치 관리자를 선택하세요"} />
+              </SelectTrigger>
+              <SelectContent>
+                {facilityManagers.length > 0 ? (
+                  facilityManagers.map((manager) => (
+                    <SelectItem key={manager.id} value={manager.id.toString()} className="text-sm sm:text-base">
+                      {manager.username} ({manager.email})
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no_managers" disabled className="text-sm sm:text-base">
+                    관리자가 없습니다
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            
+            {facilityManagers.length === 0 && !loadingManagers && (
+              <Alert className="mt-2" variant="destructive">
+                <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                <AlertDescription className="text-xs sm:text-sm">
+                  이 시설에 등록된 관리자가 없습니다. 시설 관리 페이지에서 관리자를 추가해주세요.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        )}
       </div>
       
-      <div className="space-y-4">
-        <Label htmlFor="facility" className="text-base">시설 *</Label>
-        <Select 
-          value={matchData.facilityId} 
-          onValueChange={(value) => handleSelectChange('facilityId', value)}
-          disabled={!matchData.sportType}
-        >
-          <SelectTrigger id="facility" className="h-12 text-base">
-            <SelectValue placeholder={!matchData.sportType ? "먼저 종목을 선택하세요" : "시설을 선택하세요"} />
-          </SelectTrigger>
-          <SelectContent>
-            {filteredFacilities.map((facility) => (
-              <SelectItem key={facility.id} value={facility.id} className="text-base py-2">
-                {facility.name} ({facility.address})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="space-y-4">
-        <Label htmlFor="court" className="text-base">코트 *</Label>
-        <Select 
-          value={matchData.courtId} 
-          onValueChange={(value) => {
-            const selectedCourt = availableCourts.find(c => c.id === value)
-            handleSelectChange('courtId', value)
-            if (selectedCourt) {
-              handleSelectChange('courtName', selectedCourt.name)
-            }
-          }}
-          disabled={!matchData.facilityId || availableCourts.length === 0}
-        >
-          <SelectTrigger id="court" className="h-12 text-base">
-            <SelectValue placeholder={!matchData.facilityId ? "먼저 시설을 선택하세요" : "코트를 선택하세요"} />
-          </SelectTrigger>
-          <SelectContent>
-            {availableCourts.map((court) => (
-              <SelectItem key={court.id} value={court.id} className="text-base py-2">
-                {court.name} ({court.width}m × {court.height}m, {court.type})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-4">
-          <Label className="text-base">날짜 *</Label>
+      {/* 날짜 및 시간 */}
+      <div className="space-y-3 sm:space-y-4">
+        <h3 className="text-base sm:text-lg font-medium">날짜 및 시간</h3>
+        
+        <div>
+          <Label className="text-sm sm:text-base">매치 날짜</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-start text-left font-normal h-12 text-base"
+                className="w-full justify-start text-left font-normal mt-1 h-9 sm:h-10 text-xs sm:text-sm"
+                disabled={!selectedFacility}
               >
-                <CalendarIcon className="mr-2 h-5 w-5" />
+                <CalendarIcon className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 {date ? format(date, 'PPP', { locale: ko }) : "날짜를 선택하세요"}
               </Button>
             </PopoverTrigger>
@@ -505,93 +649,128 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={setDate}
+                onSelect={(newDate) => {
+                  setDate(newDate)
+                  if (newDate) {
+                    setMatchData(prev => ({
+                      ...prev,
+                      matchDate: format(newDate, 'yyyy-MM-dd')
+                    }))
+                  }
+                }}
+                disabled={(date) => {
+                  const now = new Date()
+                  now.setHours(0, 0, 0, 0)
+                  return date < now
+                }}
                 initialFocus
-                disabled={(date) => date < new Date()}
-                className="rounded-md border shadow p-3"
               />
             </PopoverContent>
           </Popover>
         </div>
         
-        <div className="space-y-4">
-          <Label htmlFor="matchTime" className="text-base">시작 시간 *</Label>
-          <Select 
-            value={matchData.matchTime} 
-            onValueChange={(value) => handleSelectChange('matchTime', value)}
-            disabled={!matchData.facilityId || !matchData.courtId || !matchData.matchDate}
-          >
-            <SelectTrigger id="matchTime" className="h-12 text-base">
-              <SelectValue placeholder={!matchData.facilityId || !matchData.courtId || !matchData.matchDate ? "먼저 시설, 코트, 날짜를 선택하세요" : "시간을 선택하세요"} />
-            </SelectTrigger>
-            <SelectContent>
-              {availableTimeSlots.map((slot) => (
-                <SelectItem key={slot.value} value={slot.value} className="text-base py-2">
-                  {slot.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div>
+            <Label htmlFor="startTime" className="text-sm sm:text-base">시작 시간</Label>
+            <Select
+              value={matchData.startTime}
+              onValueChange={(value) => handleSelectChange("startTime", value)}
+              disabled={!date || !matchData.courtId}
+            >
+              <SelectTrigger id="startTime" className="mt-1 h-9 sm:h-10 text-sm sm:text-base">
+                <SelectValue placeholder="시작 시간" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableTimeSlots.map((slot) => (
+                  <SelectItem key={slot.value} value={slot.value} className="text-sm sm:text-base">
+                    {slot.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="endTime" className="text-sm sm:text-base">종료 시간</Label>
+            <Select
+              value={matchData.endTime}
+              onValueChange={(value) => handleSelectChange("endTime", value)}
+              disabled={!date || !matchData.startTime}
+            >
+              <SelectTrigger id="endTime" className="mt-1 h-9 sm:h-10 text-sm sm:text-base">
+                <SelectValue placeholder="종료 시간" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableTimeSlots
+                  .filter(slot => {
+                    if (!matchData.startTime) return true
+                    return parseInt(slot.value) > parseInt(matchData.startTime)
+                  })
+                  .map((slot) => (
+                    <SelectItem key={slot.value} value={slot.value} className="text-sm sm:text-base">
+                      {slot.label}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
       
-      <div className="space-y-4">
-        <Label htmlFor="maxParticipants" className="text-base">최대 참가자 수 *</Label>
-        <Input
-          id="maxParticipants"
-          name="maxParticipants"
-          type="number"
-          min="2"
-          value={matchData.maxParticipants}
-          onChange={handleInputChange}
-          placeholder="예: 8"
-          className="h-12 text-base"
-          required
-        />
+      {/* 참가 정보 */}
+      <div className="space-y-3 sm:space-y-4">
+        <h3 className="text-base sm:text-lg font-medium">참가 정보</h3>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div>
+            <Label htmlFor="maxParticipants" className="text-sm sm:text-base">최대 참가 인원</Label>
+            <Input
+              id="maxParticipants"
+              name="maxParticipants"
+              type="number"
+              min="2"
+              placeholder="최대 참가 인원"
+              value={matchData.maxParticipants}
+              onChange={handleInputChange}
+              className="mt-1 h-9 sm:h-10 text-sm sm:text-base"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="fee" className="text-sm sm:text-base">참가비 (원)</Label>
+            <Input
+              id="fee"
+              name="fee"
+              type="number"
+              min="0"
+              placeholder="참가비"
+              value={matchData.fee}
+              onChange={handleInputChange}
+              className="mt-1 h-9 sm:h-10 text-sm sm:text-base"
+            />
+          </div>
+        </div>
       </div>
       
-      <div className="space-y-4">
-        <Label htmlFor="fee" className="text-base">참가비</Label>
-        <Input
-          id="fee"
-          name="fee"
-          value={matchData.fee}
-          onChange={handleInputChange}
-          placeholder="예: 10000"
-          className="h-12 text-base"
-        />
+      {/* 추가 정보 */}
+      <div className="space-y-3 sm:space-y-4">
+        <h3 className="text-base sm:text-lg font-medium">추가 정보</h3>
+        
+        <div>
+          <Label htmlFor="description" className="text-sm sm:text-base">매치 설명</Label>
+          <Textarea
+            id="description"
+            name="description"
+            placeholder="매치에 대한 추가 정보를 입력하세요"
+            value={matchData.description}
+            onChange={handleInputChange}
+            className="mt-1 min-h-24 sm:min-h-32 text-sm sm:text-base"
+          />
+        </div>
       </div>
       
-      <div className="flex items-center space-x-3 mt-6">
-        <Checkbox 
-          id="equipmentProvided" 
-          checked={matchData.equipmentProvided}
-          onCheckedChange={(checked) => 
-            handleCheckboxChange('equipmentProvided', checked as boolean)
-          }
-          className="h-5 w-5"
-        />
-        <Label htmlFor="equipmentProvided" className="text-base">장비 제공 여부</Label>
-      </div>
-      
-      <div className="space-y-4">
-        <Label htmlFor="description" className="text-base">상세 설명</Label>
-        <Textarea
-          id="description"
-          name="description"
-          value={matchData.description}
-          onChange={handleInputChange}
-          placeholder="매치에 대한 상세 설명을 입력하세요"
-          className="min-h-[120px] text-base"
-        />
-      </div>
-      
-      <div className="pt-4">
-        <Button 
-          type="submit" 
-          disabled={isLoading} 
-          className="bg-indigo-600 hover:bg-indigo-700 w-full md:w-auto h-12 text-base"
-        >
+      <div className="flex flex-col sm:flex-row sm:justify-end gap-2 pt-2">
+        <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
           {isLoading ? "등록 중..." : "매치 등록하기"}
         </Button>
       </div>

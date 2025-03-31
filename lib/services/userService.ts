@@ -1,10 +1,18 @@
 import { api } from '../api';
 
+// 사용자 역할 열거형
+export enum UserRole {
+  ROLE_USER = 'ROLE_USER',
+  ROLE_FACILITY_MANAGER = 'ROLE_FACILITY_MANAGER',
+  ROLE_ADMIN = 'ROLE_ADMIN'
+}
+
 // 사용자 타입 정의
 export interface User {
   id: number;
   username: string;
   email: string;
+  role: UserRole;
   // 필요한 필드 추가
 }
 
@@ -18,6 +26,19 @@ export interface LoginRequest {
 export interface LoginResponse {
   token: string;
   user: User;
+}
+
+// 시설 관리자 생성 요청 타입
+export interface CreateManagerRequest {
+  username: string;
+  email: string;
+  password: string;
+  facilityId: number;
+}
+
+// 시설 관리자 타입
+export interface FacilityManager extends User {
+  facilityId: number;
 }
 
 // 사용자 서비스
@@ -41,4 +62,20 @@ export const userService = {
   // 비밀번호 변경
   changePassword: (data: { oldPassword: string; newPassword: string }) =>
     api.post('/users/change-password', data),
+    
+  // 시설 관리자 생성 (ADMIN 전용)
+  createFacilityManager: (data: CreateManagerRequest) =>
+    api.post<FacilityManager>('/admin/facility-managers', data),
+    
+  // 시설의 관리자 목록 조회
+  getFacilityManagers: (facilityId: number) =>
+    api.get<FacilityManager[]>(`/admin/facilities/${facilityId}/managers`),
+    
+  // 시설 관리자 정보 수정
+  updateFacilityManager: (managerId: number, data: Partial<FacilityManager>) =>
+    api.put<FacilityManager>(`/admin/facility-managers/${managerId}`, data),
+    
+  // 시설 관리자 삭제
+  deleteFacilityManager: (managerId: number) =>
+    api.delete(`/admin/facility-managers/${managerId}`),
 }; 

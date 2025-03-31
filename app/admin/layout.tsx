@@ -26,6 +26,11 @@ export default function AdminLayout({
 
   // 관리자 권한 체크
   useEffect(() => {
+    // 개발 테스트를 위해 인증 체크 일시적으로 비활성화
+    // 실제 배포 시에는 아래 주석을 해제하고 이 줄을 삭제하세요
+    setIsAdmin(true); // 개발 중에는 항상 관리자 권한 부여
+    return; // 아래 코드는 실행하지 않음
+
     const loggedIn = localStorage.getItem('isLoggedIn') === 'true'
     const admin = localStorage.getItem('isAdmin') === 'true'
     

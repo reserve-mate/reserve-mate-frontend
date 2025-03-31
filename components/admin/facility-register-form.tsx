@@ -13,16 +13,48 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 
-// 코트 유형 목록
-const courtTypes = [
+// 코트 대분류 유형
+const courtMainTypes = [
   { value: "indoor", label: "실내" },
   { value: "outdoor", label: "실외" },
-  { value: "hardcourt", label: "하드코트" },
-  { value: "clay", label: "클레이코트" },
-  { value: "grass", label: "잔디코트" },
-  { value: "artificial", label: "인조잔디" },
 ]
 
+// 종목별 코트 소분류 유형
+const sportCourtTypes = {
+  tennis: [
+    { value: "hardcourt", label: "하드코트" },
+    { value: "clay", label: "클레이코트" },
+    { value: "grass", label: "잔디코트" },
+  ],
+  futsal: [
+    { value: "artificial", label: "인조잔디" },
+    { value: "concrete", label: "콘크리트" },
+  ],
+  basketball: [
+    { value: "wooden", label: "목재" },
+    { value: "concrete", label: "콘크리트" },
+    { value: "synthetic", label: "합성소재" },
+  ],
+  volleyball: [
+    { value: "wooden", label: "목재" },
+    { value: "synthetic", label: "합성소재" },
+  ],
+  badminton: [
+    { value: "wooden", label: "목재" },
+    { value: "synthetic", label: "합성소재" },
+  ],
+  baseball: [
+    { value: "natural_grass", label: "천연잔디" },
+    { value: "artificial", label: "인조잔디" },
+    { value: "dirt", label: "흙" },
+  ],
+  other: [
+    { value: "multipurpose", label: "다목적" },
+    { value: "other", label: "기타" },
+  ]
+}
+
+// sportTypes 추가
 const sportTypes = [
   { value: "tennis", label: "테니스" },
   { value: "futsal", label: "풋살" },
@@ -37,7 +69,8 @@ const sportTypes = [
 type Court = {
   id: string;
   name: string;
-  type: string;
+  mainType: string;
+  subType: string;
   width: string;
   height: string;
   isActive: boolean;
@@ -73,7 +106,8 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
   const [courtFormData, setCourtFormData] = useState<Court>({
     id: "",
     name: "",
-    type: "",
+    mainType: "",
+    subType: "",
     width: "",
     height: "",
     isActive: true
@@ -132,11 +166,11 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
   // 코트 추가 처리
   const handleAddCourt = () => {
     // 필수 필드 체크
-    if (!courtFormData.name || !courtFormData.type || !courtFormData.width || 
+    if (!courtFormData.name || !courtFormData.mainType || !courtFormData.subType || !courtFormData.width || 
         !courtFormData.height) {
       toast({
         title: "입력 오류",
-        description: "코트 이름, 유형, 가로/세로 길이는 필수 입력 항목입니다.",
+        description: "코트 이름, 대분류, 소분류, 가로/세로 길이는 필수 입력 항목입니다.",
         variant: "destructive"
       })
       return
@@ -163,7 +197,8 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
     setCourtFormData({
       id: "",
       name: "",
-      type: "",
+      mainType: "",
+      subType: "",
       width: "",
       height: "",
       isActive: true
@@ -476,16 +511,16 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                   </div>
                   
                   <div className="space-y-4">
-                    <Label htmlFor="courtType" className="text-base">코트 유형 *</Label>
+                    <Label htmlFor="courtMainType" className="text-base">코트 대분류 *</Label>
                     <Select 
-                      value={courtFormData.type} 
-                      onValueChange={(value) => handleCourtSelectChange('type', value)}
+                      value={courtFormData.mainType} 
+                      onValueChange={(value) => handleCourtSelectChange('mainType', value)}
                     >
-                      <SelectTrigger id="courtType" className="h-12 text-base">
-                        <SelectValue placeholder="코트 유형을 선택하세요" />
+                      <SelectTrigger id="courtMainType" className="h-12 text-base">
+                        <SelectValue placeholder="코트 대분류를 선택하세요" />
                       </SelectTrigger>
                       <SelectContent>
-                        {courtTypes.map((type) => (
+                        {courtMainTypes.map((type) => (
                           <SelectItem key={type.value} value={type.value} className="text-base py-2">
                             {type.label}
                           </SelectItem>
@@ -495,7 +530,35 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                   </div>
                 </div>
                 
-                <div className="grid gap-6 md:grid-cols-2 mt-6">
+                <div className="grid gap-6 md:grid-cols-3 mt-6">
+                  <div className="space-y-4">
+                    <Label htmlFor="courtSubType" className="text-base">코트 소분류 *</Label>
+                    <Select 
+                      value={courtFormData.subType} 
+                      onValueChange={(value) => handleCourtSelectChange('subType', value)}
+                      disabled={!facilityData.sportType || !courtFormData.mainType}
+                    >
+                      <SelectTrigger id="courtSubType" className="h-12 text-base">
+                        <SelectValue placeholder="코트 소분류를 선택하세요" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {facilityData.sportType && 
+                          sportCourtTypes[facilityData.sportType as keyof typeof sportCourtTypes]?.map((type) => (
+                            <SelectItem key={type.value} value={type.value} className="text-base py-2">
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {(!facilityData.sportType || !courtFormData.mainType) && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {!facilityData.sportType 
+                          ? "스포츠 종목을 먼저 선택해주세요." 
+                          : "코트 대분류를 먼저 선택해주세요."}
+                      </p>
+                    )}
+                  </div>
+                  
                   <div className="space-y-4">
                     <Label htmlFor="courtWidth" className="text-base">가로 길이 (m) *</Label>
                     <Input
@@ -562,7 +625,7 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                             <div>
                               <h5 className="font-medium text-base">{court.name}</h5>
                               <p className="text-sm text-gray-500 mt-1">
-                                {courtTypes.find(t => t.value === court.type)?.label || court.type} | 
+                                {court.mainType} | {court.subType} | 
                                 {" "}{parseInt(court.width).toLocaleString()}m × {parseInt(court.height).toLocaleString()}m | 
                                 상태: {court.isActive ? "활성화" : "비활성화"}
                               </p>
