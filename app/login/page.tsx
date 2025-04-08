@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/hooks/use-toast"
+import { userService } from "@/lib/services/userService"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -30,11 +31,10 @@ export default function LoginPage() {
 
     try {
       // API 호출 코드가 여기에 들어갑니다
-      // const response = await fetch("/api/auth/login", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(formData),
-      // })
+      const response = await userService.login({
+        email: formData.email,
+        password: formData.password,
+      })
 
       // 로그인 상태 저장
       localStorage.setItem('isLoggedIn', 'true')
