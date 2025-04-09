@@ -30,6 +30,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { usePathname } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
+import { userService } from "@/lib/services/userService"
 
 export function SiteHeader() {
   // 로그인 상태를 useState로 관리
@@ -68,17 +69,27 @@ export function SiteHeader() {
       description: "환영합니다! 관리자 권한으로 로그인했습니다.",
     })
   }
+  const handleLogout = async () => {
+    try {
+      await userService.logout();
+      setIsLoggedIn(false)
+      setIsAdmin(false)
+      localStorage.removeItem("access");
+      localStorage.setItem('isAdmin', 'false')
 
-  const handleLogout = () => {
-    setIsLoggedIn(false)
-    setIsAdmin(false)
-    localStorage.setItem('isAdmin', 'false')
-    toast({
-      title: "로그아웃 완료",
-      description: "성공적으로 로그아웃되었습니다.",
-    })
+      toast({
+        title: "로그아웃 완료",
+        description: "성공적으로 로그아웃되었습니다.",
+      });  
+    } catch (error) {
+      toast({
+        title: "로그아웃 실패",
+        description: "서버와 통신 중 문제가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+    
   }
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
       <div className="container flex h-14 items-center justify-between max-w-6xl mx-auto px-2 sm:px-6">

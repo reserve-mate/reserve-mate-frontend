@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Image from "next/image"
+import { userService } from "@/lib/services/userService"
 
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -44,18 +45,31 @@ export default function ProfilePage() {
 
   // 초기 데이터 로드 (실제로는 API에서 가져옴)
   useEffect(() => {
-    // API 호출 시뮬레이션
-    // 여기서는 하드코딩된 초기값을 사용
-    setInitialProfileData({
-      name: "홍길동",
-      email: "user@example.com",
-      phone: "010-1234-5678",
-    })
-    setProfileData({
-      name: "홍길동",
-      email: "user@example.com",
-      phone: "010-1234-5678",
-    })
+    const loadUserData = async () => {
+      try {
+        const userData = await userService.getCurrentUser();
+        console.log("userData: "+ userData);
+        setInitialProfileData({
+          name: userData.name,
+          email: userData.email,
+          phone: userData.phone,
+        });
+        setProfileData({
+          name: userData.name,
+          email: userData.email,
+          phone: userData.phone,
+        });
+      } catch (error) {
+        console.log("유저 정보 불러오기 실패", error);
+        toast({
+          title: "불러오기 실패",
+          description: "유저 정보를 불러오는 중 문제가 발생했습니다.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    loadUserData();
   }, [])
   
   // 이미지 선택 시 미리보기 생성

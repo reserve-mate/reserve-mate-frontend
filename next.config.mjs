@@ -21,6 +21,12 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
+  rewrites: async() => [
+      {
+        source: "/api/:path*",
+        destination: "http://localhost:8080/:path*",
+      },
+    ]
 }
 
 mergeConfig(nextConfig, userConfig)

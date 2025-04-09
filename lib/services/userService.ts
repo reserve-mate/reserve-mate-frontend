@@ -10,15 +10,16 @@ export enum UserRole {
 // 사용자 타입 정의
 export interface User {
   id: number;
-  username: string;
+  name: string;
   email: string;
+  phone: string;
   role: UserRole;
   // 필요한 필드 추가
 }
 
 // 로그인 요청 타입
 export interface LoginRequest {
-  username: string;
+  email: string;
   password: string;
 }
 
@@ -45,7 +46,11 @@ export interface FacilityManager extends User {
 export const userService = {
   // 로그인
   login: (data: LoginRequest) => 
-    api.post<LoginResponse>('/auth/login', data),
+    api.post<LoginResponse>('/login', data),
+
+  // 로그아웃
+  logout: () =>
+    api.post('/logout'),
   
   // 회원가입
   register: (data: { username: string; email: string; password: string }) => 
@@ -53,7 +58,7 @@ export const userService = {
   
   // 사용자 정보 조회
   getCurrentUser: () => 
-    api.get<User>('/users/me'),
+    api.get<User>('/users/me/profile'),
   
   // 사용자 정보 업데이트
   updateUser: (userId: number, data: Partial<User>) => 
