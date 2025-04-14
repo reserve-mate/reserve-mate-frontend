@@ -5,7 +5,7 @@ import { userService, LoginRequest } from '../lib/services/userService';
 
 export default function LoginForm() {
   const [formData, setFormData] = useState<LoginRequest>({
-    username: '',
+    email: '',
     password: '',
   });
   const [loading, setLoading] = useState(false);
@@ -57,7 +57,7 @@ export default function LoginForm() {
             type="text"
             id="username"
             name="username"
-            value={formData.username}
+            value={formData.email}
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded-md"
             required

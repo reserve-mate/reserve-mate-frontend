@@ -43,12 +43,16 @@ export default function ProfilePage() {
   const [isImageUploading, setIsImageUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // 유저 id 저장
+  const [userId, setUserId] = useState<number>(0)
+
   // 초기 데이터 로드 (실제로는 API에서 가져옴)
   useEffect(() => {
     const loadUserData = async () => {
       try {
         const userData = await userService.getCurrentUser();
-        console.log("userData: "+ userData);
+        setUserId(userData.id);
+
         setInitialProfileData({
           name: userData.name,
           email: userData.email,
@@ -59,6 +63,7 @@ export default function ProfilePage() {
           email: userData.email,
           phone: userData.phone,
         });
+        setPreviewUrl(`http://localhost:8080${userData.profileImage}`);
       } catch (error) {
         console.log("유저 정보 불러오기 실패", error);
         toast({
@@ -121,14 +126,8 @@ export default function ProfilePage() {
     setIsImageUploading(true)
     
     try {
-      // 실제 API 호출 부분 (여기서는 시뮬레이션)
-      // const formData = new FormData()
-      // formData.append('profileImage', selectedImage)
-      // const response = await fetch('/api/users/profile-image', {
-      //   method: 'POST',
-      //   body: formData
-      // })
-      
+      await userService.updateProfileImage(selectedImage) 
+
       // 성공적인 업로드 시뮬레이션 (2초 후)
       await new Promise(resolve => setTimeout(resolve, 2000))
       
@@ -199,12 +198,11 @@ export default function ProfilePage() {
     setIsLoading(true)
 
     try {
-      // API 호출 코드가 여기에 들어갑니다
-      // const response = await fetch("/api/users/profile", {
-      //   method: "PUT",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(profileData),
-      // })
+      
+      await userService.updateUser(userId,{
+        name: profileData.name,
+        phone: profileData.phone,
+      })
 
       // 성공 시 처리
       toast({
