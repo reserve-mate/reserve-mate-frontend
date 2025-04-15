@@ -3,7 +3,7 @@ import axios,{AxiosRequestConfig, AxiosResponse} from "axios";
 // API 기본 URL 설정
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-//Axios 생성
+// Axios 생성
 const apiInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
@@ -12,12 +12,12 @@ const apiInstance = axios.create({
   }
 });
 
-//요청 인터셉터(AccessToken)
+// 요청 인터셉터 - access 토큰 추가
 apiInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("access");
+    const token = localStorage.getItem("accessToken");
+    console.log("요청"+ token);
     if(token){
-      // config.headers.Authorization = `Bearer ${token}`; 
       config.headers["access"] = token;
     }
     return config;
@@ -25,38 +25,60 @@ apiInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-//응답 인터셉터 - access 토큰 헤더에서 가져와서 저장
+// Refresh Token 으로 토큰 재발급
+async function postRefreshToken(){
+  return await axios.post(`${API_BASE_URL}/reissue`,null,{
+    withCredentials: true,
+  })
+}
+// 응답 인터셉터
 apiInstance.interceptors.response.use(
+  // 200 응답 성공
   (response) => {
     const newAccessToken = response.headers["access"];
-    console.log("accessToken:"+ newAccessToken);
+    console.log("응답 accessToken:"+ newAccessToken);
     if(newAccessToken){
-      localStorage.setItem("access", newAccessToken);
+      localStorage.setItem("accessToken", newAccessToken);
+      apiInstance.defaults.headers.common["access"] = newAccessToken;
     }
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
-    
-    // 로그아웃 예외처리
-    if(originalRequest.url === '/logout'){
-      return Promise.reject(error);
-    }
-
-    // 에러응답,401,재시도x
-    if(error.response && error.response.status === 401 && !originalRequest._retry){
+    if (error.response?.status === 401 && !originalRequest._retry){
       originalRequest._retry = true;
-      
       try {
-        await api.post("/reissue");
-        return apiInstance(originalRequest);  //기존 요청 재시도
-      } catch (reissueError) {
-        //refreshToken 만료 -> 로그인 페이지 이동
-        localStorage.removeItem("access");
+        // const originalRequest = config;
+        const response = await postRefreshToken();
+        // refreshToken 재발급 성공
+        if (response.status === 200){
+          const newAccessToken = response.headers["access"];
+          console.log("재발급 성공, 새로운 accessToken: "+ newAccessToken);
+          if(newAccessToken){
+            localStorage.setItem("accessToken", newAccessToken);
+            // 헤더 갱신
+            apiInstance.defaults.headers.common["access"] = newAccessToken;
+            originalRequest.headers = originalRequest.headers || {};
+            originalRequest.headers["access"] = newAccessToken;
+
+            console.log("재요청 headers:", originalRequest.headers);
+            // originalRequest.headers = {
+            //   ...(originalRequest.headers || {}),
+            //   access: newAccessToken,
+            // };
+            // 기존 요청 재시도
+            return apiInstance(originalRequest);
+          }
+        }
+      // 재발급 실패
+      } catch (error) {
+        console.log("재발급실패", error);
+        localStorage.removeItem("accessToken");
         window.location.href = "/login";
-        return Promise.reject(reissueError);
+        return Promise.reject(error);
       }
     }
+    console.log("응답 인터셉터 error",error);
     return Promise.reject(error);
   }
 );

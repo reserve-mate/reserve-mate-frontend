@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { toast } from "@/hooks/use-toast"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { CheckCircle2 } from "lucide-react"
+import { userService } from "@/lib/services/userService"
 
 export default function SignupPage() {
   const router = useRouter()
@@ -45,12 +46,9 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      // 실제 구현에서는 API를 호출하여 인증 코드를 발송합니다
-      // const response = await fetch("/api/auth/send-verification", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ email: formData.email }),
-      // })
+      const response = await userService.mailSendAuthCode({
+        email: formData.email
+      })
 
       // 성공 시 처리
       setTimeout(() => {
@@ -71,7 +69,7 @@ export default function SignupPage() {
     }
   }
 
-  const handleVerifyCode = () => {
+  const handleVerifyCode = async () => {
     if (!verificationCode || verificationCode.length < 6) {
       toast({
         title: "유효하지 않은 인증 코드",
@@ -80,34 +78,20 @@ export default function SignupPage() {
       })
       return
     }
-
+    
     setIsLoading(true)
 
     try {
-      // 실제 구현에서는 API를 호출하여 인증 코드를 검증합니다
-      // const response = await fetch("/api/auth/verify-code", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ email: formData.email, code: verificationCode }),
-      // })
-
-      // 성공 시 처리 (여기서는 간단히 "123456"을 유효한 코드로 가정)
-      setTimeout(() => {
-        if (verificationCode === "123456") {
-          setIsVerified(true)
-          toast({
-            title: "이메일 인증 성공",
-            description: "이메일 인증이 완료되었습니다.",
-          })
-        } else {
-          toast({
-            title: "인증 코드 불일치",
-            description: "인증 코드가 일치하지 않습니다. 다시 확인해주세요.",
-            variant: "destructive",
-          })
-        }
-        setIsLoading(false)
-      }, 1000)
+      const response = await userService.mailVerifyAuthCode({
+        email : formData.email,
+        authNum : verificationCode,
+      })
+      setIsVerified(true)
+      setIsLoading(false)
+      toast({
+        title: "이메일 인증 성공",
+        description: "이메일 인증이 완료되었습니다.",
+      })
     } catch (error) {
       toast({
         title: "인증 실패",
@@ -142,12 +126,12 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      // API 호출 코드가 여기에 들어갑니다
-      // const response = await fetch("/api/auth/signup", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(formData),
-      // })
+      const response = await userService.register({
+        email: formData.email,
+        password: formData.password,
+        name: formData.name,
+        phone: formData.phone
+      })
 
       // 성공 시 처리
       setTimeout(() => {

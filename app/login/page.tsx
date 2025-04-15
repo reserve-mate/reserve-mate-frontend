@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/hooks/use-toast"
 import { userService } from "@/lib/services/userService"
+import axois,{ AxiosError } from "axios"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -50,9 +51,15 @@ export default function LoginPage() {
         router.push("/")
       }, 1000)
     } catch (error) {
+      const err = error as AxiosError<{ message: string }>;
+
+      // 백에서 내려온 에러 메시지를 우선 보여줌
+      const message = err.response?.data?.message || "이메일 또는 비밀번호가 올바르지 않습니다.";
+      console.log(err.response);
+      console.log(message);
       toast({
         title: "로그인 실패",
-        description: "이메일 또는 비밀번호가 올바르지 않습니다.",
+        description: message,
         variant: "destructive",
       })
     } finally {

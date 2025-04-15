@@ -74,7 +74,7 @@ export function SiteHeader() {
       await userService.logout();
       setIsLoggedIn(false)
       setIsAdmin(false)
-      localStorage.removeItem("access");
+      localStorage.removeItem("accessToken");
       localStorage.setItem('isAdmin', 'false')
 
       toast({

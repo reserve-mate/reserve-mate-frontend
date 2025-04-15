@@ -14,6 +14,7 @@ export interface User {
   email: string;
   phone: string;
   role: UserRole;
+  profileImage: string;
   // 필요한 필드 추가
 }
 
@@ -42,6 +43,11 @@ export interface FacilityManager extends User {
   facilityId: number;
 }
 
+// 메일 인증 타입
+export interface Mail {
+  email: string;
+  authNum: string;
+}
 // 사용자 서비스
 export const userService = {
   // 로그인
@@ -53,16 +59,35 @@ export const userService = {
     api.post('/logout'),
   
   // 회원가입
-  register: (data: { username: string; email: string; password: string }) => 
-    api.post<User>('/auth/register', data),
+  register: (data: { name: string; email: string; password: string; phone: string }) => 
+    api.post<User>('/users/register', data),
   
+  // 메일주소 확인
+  mailSendAuthCode: (data: { email: string}) =>
+    api.post<String>('/mail/send/authCode', data),
+
+  // 메일인증코드 확인
+  mailVerifyAuthCode: (data: {email: string, authNum: string}) =>
+    api.post<String>('/mail/check/authCode', data),
+
   // 사용자 정보 조회
   getCurrentUser: () => 
     api.get<User>('/users/me/profile'),
+
+  // 사용자 프로필 사진 변경
+  updateProfileImage: (file : File) => {
+    const formData = new FormData()
+    formData.append("file", file)
+    api.post("/users/me/update/profileImage", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      }
+    })
+  }, 
   
-  // 사용자 정보 업데이트
+  // 사용자 프로필 정보 업데이트
   updateUser: (userId: number, data: Partial<User>) => 
-    api.put<User>(`/users/${userId}`, data),
+    api.put<User>(`/users/me/update/profile/${userId}`, data),
   
   // 비밀번호 변경
   changePassword: (data: { oldPassword: string; newPassword: string }) =>
