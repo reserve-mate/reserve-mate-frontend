@@ -9,12 +9,24 @@ const apiInstance = axios.create({
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
+    "Accept": "application/json, text/plain, */*"
   }
 });
 
 // 요청 인터셉터 - access 토큰 추가
 apiInstance.interceptors.request.use(
   (config) => {
+    // 인증이 필요없는 엔드포인트 목록
+    const publicEndpoints = ['/api/mail/send/authCode', '/api/mail/check/authCode', '/users/register', '/login'];
+    
+    // 현재 요청 URL 확인 (baseURL 제외)
+    const requestPath = config.url || '';
+    
+    // 인증이 필요없는 엔드포인트인 경우 토큰을 추가하지 않음
+    if (publicEndpoints.some(endpoint => requestPath.includes(endpoint))) {
+      return config;
+    }
+    
     const token = localStorage.getItem("accessToken");
     console.log("요청"+ token);
     if(token){
@@ -45,28 +57,26 @@ apiInstance.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    console.log("인터셉터 에러 상태:", error.response?.status);
+    console.log("원본 요청 헤더:", originalRequest?.headers);
+    
     if (error.response?.status === 401 && !originalRequest._retry){
       originalRequest._retry = true;
       try {
-        // const originalRequest = config;
+        console.log("토큰 재발급 시도");
         const response = await postRefreshToken();
-        // refreshToken 재발급 성공
         if (response.status === 200){
           const newAccessToken = response.headers["access"];
           console.log("재발급 성공, 새로운 accessToken: "+ newAccessToken);
           if(newAccessToken){
             localStorage.setItem("accessToken", newAccessToken);
-            // 헤더 갱신
-            apiInstance.defaults.headers.common["access"] = newAccessToken;
-            originalRequest.headers = originalRequest.headers || {};
-            originalRequest.headers["access"] = newAccessToken;
-
+            
+            originalRequest.headers = { 
+              ...originalRequest.headers,
+              "access": newAccessToken
+            };
+            
             console.log("재요청 headers:", originalRequest.headers);
-            // originalRequest.headers = {
-            //   ...(originalRequest.headers || {}),
-            //   access: newAccessToken,
-            // };
-            // 기존 요청 재시도
             return apiInstance(originalRequest);
           }
         }
