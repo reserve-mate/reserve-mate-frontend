@@ -16,6 +16,7 @@ const apiInstance = axios.create({
 apiInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("accessToken");
+    console.log("요청"+ token);
     if(token){
       config.headers["access"] = token;
     }
@@ -35,10 +36,10 @@ apiInstance.interceptors.response.use(
   // 200 응답 성공
   (response) => {
     const newAccessToken = response.headers["access"];
-    console.log("accessToken:"+ newAccessToken);
+    console.log("응답 accessToken:"+ newAccessToken);
     if(newAccessToken){
       localStorage.setItem("accessToken", newAccessToken);
-      axios.defaults.headers.common["access"] = newAccessToken;
+      apiInstance.defaults.headers.common["access"] = newAccessToken;
     }
     return response;
   },
@@ -52,27 +53,32 @@ apiInstance.interceptors.response.use(
         // refreshToken 재발급 성공
         if (response.status === 200){
           const newAccessToken = response.headers["access"];
+          console.log("재발급 성공, 새로운 accessToken: "+ newAccessToken);
           if(newAccessToken){
             localStorage.setItem("accessToken", newAccessToken);
             // 헤더 갱신
-            axios.defaults.headers.common["access"] = newAccessToken;
-            originalRequest.headers = {
-              ...originalRequest.headers,
-              access: newAccessToken,
-            };
+            apiInstance.defaults.headers.common["access"] = newAccessToken;
+            originalRequest.headers = originalRequest.headers || {};
+            originalRequest.headers["access"] = newAccessToken;
+
+            console.log("재요청 headers:", originalRequest.headers);
+            // originalRequest.headers = {
+            //   ...(originalRequest.headers || {}),
+            //   access: newAccessToken,
+            // };
             // 기존 요청 재시도
             return apiInstance(originalRequest);
           }
         }
       // 재발급 실패
       } catch (error) {
+        console.log("재발급실패", error);
         localStorage.removeItem("accessToken");
         window.location.href = "/login";
-        console.log(error);
         return Promise.reject(error);
       }
     }
-    console.log("인터셉터 error",error);
+    console.log("응답 인터셉터 error",error);
     return Promise.reject(error);
   }
 );

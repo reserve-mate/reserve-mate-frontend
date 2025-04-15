@@ -51,6 +51,7 @@ export default function ProfilePage() {
     const loadUserData = async () => {
       try {
         const userData = await userService.getCurrentUser();
+        console.log("userDataId:"+userData.id);
         setUserId(userData.id);
 
         setInitialProfileData({
