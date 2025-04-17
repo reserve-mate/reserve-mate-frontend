@@ -40,6 +40,9 @@ export default function LoginPage() {
       // 로그인 상태 저장
       localStorage.setItem('isLoggedIn', 'true')
 
+      // 개발하는 동안 관리자 상태로 저장, 추후 삭제 요망
+      localStorage.setItem('isAdmin', 'true')
+      
       // 성공 시 처리
       setTimeout(() => {
         toast({
