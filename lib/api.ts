@@ -52,6 +52,13 @@ apiInstance.interceptors.response.use(
     if(newAccessToken){
       localStorage.setItem("accessToken", newAccessToken);
       apiInstance.defaults.headers.common["access"] = newAccessToken;
+
+      const payload = JSON.parse(atob(newAccessToken.split('.')[1]));
+      const role = payload.role;
+      
+      //ROLE_USER 가 아닌경우, isAdmin == true 로 처리
+      const isAdmin = role !== "ROLE_USER";
+      localStorage.setItem("isAdmin", isAdmin.toString());
     }
     return response;
   },
