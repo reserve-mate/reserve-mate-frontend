@@ -1,7 +1,7 @@
 import axios,{AxiosRequestConfig, AxiosResponse} from "axios";
 
 // API 기본 URL 설정
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sportmate.site';
 
 // Axios 생성
 const apiInstance = axios.create({
