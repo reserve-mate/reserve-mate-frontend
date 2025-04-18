@@ -24,7 +24,7 @@ import {
 
 // 시설 등록 폼 컴포넌트 import
 import RegisterFacilityForm from "@/components/admin/facility-register-form"
-
+import { toast } from "@/hooks/use-toast"
 // 더미 시설 데이터
 const dummyFacilities = [
   {
@@ -117,6 +117,23 @@ export default function AdminFacilitiesPage() {
   
   // 시설 등록 폼 토글
   const toggleRegisterForm = () => {
+    // 시설 등록 ROLE_ADMIN 만 접근가능, 개발중 임시 주석 처리
+    /*
+    const token = localStorage.getItem("accessToken");
+    if (token){
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      const role = payload.role;
+      console.log("회원 role : "+ role);
+      if (role !== 'ROLE_ADMIN'){
+        toast({
+          title: "권한 없음",
+          description: "시설 등록은 관리자만 가능합니다.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    */
     setShowRegisterForm(!showRegisterForm)
   }
   
