@@ -12,6 +12,7 @@ import { CircleDot, MapPin, Clock, Plus, Trash2, Edit2 } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import DaumPostcode from "react-daum-postcode"
 
 // 코트 대분류 유형
 const courtMainTypes = [
@@ -99,6 +100,17 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
     hasCafe: false,
     images: [] as File[]
   })
+
+  // 주소 검색 창 열기 상태
+  const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
+  const handlePostcodeComplete = (data: any) => {
+    console.log(data);
+    setFacilityData(prev => ({
+      ...prev,
+      address: data.address
+    }))
+    setIsPostcodeOpen(false)
+  }
 
   // 코트 정보를 관리하기 위한 상태
   const [courts, setCourts] = useState<Court[]>([])
@@ -328,11 +340,24 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                 className="flex-1 h-12 text-base"
                 required
               />
-              <Button type="button" variant="outline" className="h-12 text-base md:w-auto w-full">
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="h-12 text-base md:w-auto w-full"
+                onClick={()=> setIsPostcodeOpen(true)}
+              >
                 <MapPin className="mr-2 h-5 w-5" /> 주소 검색
               </Button>
             </div>
           </div>
+          {isPostcodeOpen && (
+            <div className="mt-4 border p-4 rounded-md shadow-sm bg-white">
+              <DaumPostcode onComplete={handlePostcodeComplete} />
+              <div className="text-right mt-2">
+                <Button variant="ghost" onClick={() => setIsPostcodeOpen(false)}>닫기</Button>
+              </div>
+            </div>
+          )}
           
           <div className="space-y-4">
             <Label htmlFor="detailAddress" className="text-base">상세 주소</Label>
