@@ -546,7 +546,7 @@ export default function RegisterMatchPage() {
                 <Label
                   htmlFor="equipmentProvided"
                   className="text-sm font-medium leading-none cursor-pointer"
-                >
+                > 
                   장비 제공
                 </Label>
               </div>
