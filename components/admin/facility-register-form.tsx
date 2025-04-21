@@ -101,6 +101,52 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
     images: [] as File[]
   })
 
+  // Tab 변경
+  const changeTab = (nextTab: string) => {
+    // 현재 탭 유효성 검사
+    if (activeTab === "basic") {
+      const { name, sportType, address } = facilityData;
+      if (!name || !sportType || !address){
+        toast({
+          title: "입력오류",
+          description: "시설명, 종목 또는 주소를 확인해주세요.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else if (activeTab === "details"){
+      const { openingHours, closingHours} = facilityData;
+      if (!openingHours || !closingHours){
+        toast({
+          title: "입력오류",
+          description: "운영 시작 시간, 종료 시간을 확인해주세요.",
+          variant: "destructive"
+        });
+        return;
+      }
+      if (closingHours <= openingHours){
+        toast({
+          title: "입력오류",
+          description: "종료 시간이 시작 시간 이후이어야 합니다.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else if (activeTab === "courts"){
+      const { courtsCount} = facilityData;
+      if (!courtsCount || parseInt(courtsCount) <= 0){
+        toast({
+          title: "입력오류",
+          description: "코트를 추가해주세요.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+  
+    setActiveTab(nextTab); // 조건 만족 시에만 탭 전환
+  };
+  
   // 주소 검색 창 열기 상태
   const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
   const handlePostcodeComplete = (data: any) => {
@@ -287,7 +333,7 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-3xl mx-auto">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={changeTab} className="w-full">
         <TabsList className="w-full mb-4 grid grid-cols-2 md:grid-cols-4 gap-1">
           <TabsTrigger value="basic" className="py-3 text-sm md:text-base">기본 정보</TabsTrigger>
           <TabsTrigger value="details" className="py-3 text-sm md:text-base">상세 정보</TabsTrigger>
@@ -374,7 +420,7 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
           <Button 
             type="button" 
             className="mt-6 w-full md:w-auto h-12 text-base" 
-            onClick={() => setActiveTab("details")}
+            onClick={() => changeTab("details")}
           >
             다음: 상세 정보
           </Button>
@@ -495,15 +541,15 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => setActiveTab("basic")}
+              onClick={() => changeTab("basic")}
               className="w-full md:w-auto h-12 text-base"
             >
               이전: 기본 정보
             </Button>
             <Button 
-              type="button" 
-              onClick={() => setActiveTab("courts")}
-              className="w-full md:w-auto h-12 text-base"
+              type="button"
+              className="w-full md:w-auto h-12 text-base" 
+              onClick={() => changeTab("courts")}
             >
               다음: 코트 정보
             </Button>
@@ -689,14 +735,14 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => setActiveTab("details")}
+              onClick={() => changeTab("details")}
               className="w-full md:w-auto h-12 text-base"
             >
               이전: 상세 정보
             </Button>
             <Button 
               type="button" 
-              onClick={() => setActiveTab("images")}
+              onClick={() => changeTab("images")}
               className="w-full md:w-auto h-12 text-base"
             >
               다음: 이미지
