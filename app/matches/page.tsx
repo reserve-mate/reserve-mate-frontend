@@ -14,7 +14,7 @@ import { format, addDays, subDays, isSameDay, parseISO, isToday, isTomorrow, sta
 import { ko } from "date-fns/locale"
 import { matchService, MathDateCount, MatchSearch, SportType } from "@/lib/services/matchService" 
 
-// 매치 데이터 타입
+// 매치 데이터 타입 
 type Match = {
   id: string
   courtName: string
