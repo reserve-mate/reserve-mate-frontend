@@ -5,6 +5,7 @@ import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { SiteHeader } from "@/components/site-header"
 import ClientFooter from "../components/client-footer"  // 상대 경로로 변경
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -28,6 +29,7 @@ export default function RootLayout({
             <main className="flex-1 pb-8 sm:pb-10 lg:pb-12">{children}</main>
             <ClientFooter />
           </div>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
