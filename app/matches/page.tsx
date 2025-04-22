@@ -12,6 +12,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { MapPin, CalendarIcon, Clock, Users, Search, Filter, ChevronLeft, ChevronRight, PlusCircle, Plus } from "lucide-react"
 import { format, addDays, subDays, isSameDay, parseISO, isToday, isTomorrow, startOfDay } from "date-fns"
 import { ko } from "date-fns/locale"
+import { matchService, MathDateCount, MatchSearch, SportType } from "@/lib/services/matchService" 
 
 // 매치 데이터 타입
 type Match = {
@@ -26,6 +27,21 @@ type Match = {
   currentTeams: number
   matchPrice: string
   status: "모집중" | "모집완료" | "진행중" | "종료"
+}
+
+type Match1 = {
+  matchId: number;
+  matchName: string;
+  matchStatus: string;
+  facilityName: string;
+  fullAddress: string;
+  matchDate: string;
+  matchTime: number;
+  matchEndTime: number;
+  sportType: SportType;
+  matchPrice: number;
+  teamCapacity: number;
+  playerCnt: number;
 }
 
 // 시간별로 그룹화된 매치 타입
@@ -185,9 +201,12 @@ export default function MatchesPage() {
   const [sportType, setSportType] = useState("")
   const [matches, setMatches] = useState<Match[]>(dummyMatches)
   const [filteredMatches, setFilteredMatches] = useState<Match[]>([])
+
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [dateRange, setDateRange] = useState<Date[]>([])
   const [startDate, setStartDate] = useState<Date>(startOfDay(new Date()))
+  const [matchDate, setMatchDate] = useState<MathDateCount[]>([]);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   // 로그인 상태를 관리
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -207,6 +226,32 @@ export default function MatchesPage() {
     }
 
     setDateRange(range)
+
+    const fetchMatchDates = async () => {
+      try{
+        const dateParams: MatchSearch = {
+          searchValue: "",
+          matchDate: startDate.toISOString().slice(0, 10) // YYYY-MM-DD
+        };
+
+        const listParams: MatchSearch = {
+          searchValue: "",
+          matchDate: "2025-04-02", // YYYY-MM-DD
+          pageNumber: 0,
+        };
+
+        const matchDates: MathDateCount[] = await matchService.getMatchDates(dateParams);
+
+        const matches = await matchService.getMatches(listParams);
+
+        setMatchDate(matchDates);
+      }catch(err) {
+        console.log(`매치 날짜 조회 실패: ${err}`)
+      }
+    };
+
+    fetchMatchDates();
+
   }, [startDate])
 
   // 초기 선택된 날짜 설정
@@ -276,6 +321,17 @@ export default function MatchesPage() {
       count: dateMatches.length,
     }
   })
+
+  // 날짜별 매치 그룹화
+  const matchDates = matchDate.map((matchDate) => {
+
+    const date: Date = new Date(matchDate.matchDate);
+
+    return {
+      matchDate: date,
+      count: matchDate.matchCnt
+    }
+  });
 
   // 시간별로 매치 그룹화
   const groupMatchesByTime = (matches: Match[]): GroupedMatches => {

@@ -17,7 +17,7 @@ const apiInstance = axios.create({
 apiInstance.interceptors.request.use(
   (config) => {
     // 인증이 필요없는 엔드포인트 목록
-    const publicEndpoints = ['/api/mail/send/authCode', '/api/mail/check/authCode', '/users/register', '/login'];
+    const publicEndpoints = ['/api/mail/send/authCode', '/api/mail/check/authCode', '/users/register', '/login', '/match/matcheDates', '/match/matches'];
     
     // 현재 요청 URL 확인 (baseURL 제외)
     const requestPath = config.url || '';
