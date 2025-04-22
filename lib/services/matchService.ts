@@ -1,92 +1,17 @@
 import { api } from '../api';
+import { MatchStatus } from '../enum/matchEnum';
+import { Slice } from '../types/commonTypes';
+import { CreateMatchRequest, Match, MatchList, MatchSearch, MathDateCount } from '../types/matchTypes';
 import { FacilityManager } from './userService';
-
-// 스포츠 종류
-export enum SportType {
-  SOCCER,
-  BASKETBALL,
-  TENNIS,
-  BADMINTON,
-  BASEBALL,
-  FUTSAL
-}
-
-// 매치 상태 열거형
-export enum MatchStatus {
-  RECRUITING = '모집중',
-  CLOSED = '마감',
-  COMPLETED = '종료',
-  CANCELED = '취소'
-}
-
-// 매치 타입 정의
-export interface Match {
-  id: number;
-  title: string;
-  sportType: string;
-  facilityId: number;
-  facilityName: string;
-  address: string;
-  matchDate: string;
-  matchTime: string;
-  maxParticipants: number;
-  currentParticipants: number;
-  fee: number;
-  description?: string;
-  equipmentProvided: boolean;
-  courtId: number;
-  courtName: string;
-  managerId?: number;
-  managerName?: string;
-  status: MatchStatus;
-  createdAt: string;
-  images?: string[];
-}
-
-// 날짜별 매치 개수
-export interface MathDateCount {
-  matchDate: string;
-  matchCnt: number;
-}
-
-// 매치 생성 요청 타입
-export interface CreateMatchRequest {
-  title: string;
-  sportType: string;
-  facilityId: number;
-  matchDate: string;
-  startTime: string;
-  endTime: string;
-  maxParticipants: number;
-  fee: number;
-  description?: string;
-  equipmentProvided: boolean;
-  courtId: number;
-  managerId?: number;
-  images?: File[];
-}
-
-// 매치 검색
-export interface MatchSearchRequest {
-  searchValue: string;
-  sportType: SportType;
-  matchDate: string;
-  pageNumber: number;  // 선택적 프로퍼티
-}
-
-// MatchSearchRequest 모든 프로퍼티를 선택적 프로퍼티로 설정
-export type MatchSearch = {
-  [key in keyof MatchSearchRequest]?: MatchSearchRequest[key];
-}
 
 // 매치 서비스
 export const matchService = {
   // 매치 목록 조회
   getMatches: (params: MatchSearch) => {
     let endpoint = '/match/matches';
-    console.log(params)
     
-    return api.post<Match[]>(endpoint, { params: params});
+    return api.post<Slice<MatchList>>(endpoint, params)
+    .then(res => res.content);
   },
 
   // 매치 날짜별 조회

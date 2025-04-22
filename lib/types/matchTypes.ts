@@ -1,0 +1,76 @@
+import { MatchStatus, SportType } from "../enum/matchEnum";
+
+// 매치 검색
+export interface MatchSearchRequest {
+    searchValue: string;
+    sportType: SportType;
+    matchDate: string;
+    pageNumber: number;  // 선택적 프로퍼티
+}
+
+// MatchSearchRequest 모든 프로퍼티를 선택적 프로퍼티로 설정
+export type MatchSearch = {
+    [key in keyof MatchSearchRequest]?: MatchSearchRequest[key];
+}
+
+export interface MathDateCount {
+    matchDate: string;
+    matchCnt: number;
+}
+
+// 매치 생성 요청 타입
+export interface CreateMatchRequest {
+    title: string;
+    sportType: string;
+    facilityId: number;
+    matchDate: string;
+    startTime: string;
+    endTime: string;
+    maxParticipants: number;
+    fee: number;
+    description?: string;
+    equipmentProvided: boolean;
+    courtId: number;
+    managerId?: number;
+    images?: File[];
+}
+
+// 매치 리스트
+export type MatchList = {
+    matchId: number;
+    matchName: string;
+    matchStatus: string;
+    facilityName: string;
+    fullAddress: string;
+    matchDate: string;
+    matchTime: number;
+    matchEndTime: number;
+    sportType: SportType;
+    matchPrice: number;
+    teamCapacity: number;
+    playerCnt: number;
+}
+
+// 매치 타입 정의
+export interface Match {
+    id: number;
+    title: string;
+    sportType: string;
+    facilityId: number;
+    facilityName: string;
+    address: string;
+    matchDate: string;
+    matchTime: string;
+    maxParticipants: number;
+    currentParticipants: number;
+    fee: number;
+    description?: string;
+    equipmentProvided: boolean;
+    courtId: number;
+    courtName: string;
+    managerId?: number;
+    managerName?: string;
+    status: MatchStatus;
+    createdAt: string;
+    images?: string[];
+}
