@@ -18,7 +18,7 @@ export const matchService = {
   getMatchDates: (params: MatchSearch) => {
     let endpoint = "/match/matcheDates";
 
-    return api.post<MathDateCount[]>(endpoint, {params});
+    return api.post<MathDateCount[]>(endpoint, params);
   },
   
   // 관리자용 매치 목록 조회

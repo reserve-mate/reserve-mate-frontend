@@ -213,26 +213,17 @@ export default function MatchesPage() {
     for (let i = 0; i < 14; i++) {
       range.push(addDays(startDate, i))
     }
-
     setDateRange(range)
 
     const fetchMatchDates = async () => {
       try{
         const dateParams: MatchSearch = {
-          matchDate: startDate.toISOString().slice(0, 10) // YYYY-MM-DD
-        };
-
-        const listParams: MatchSearch = {
-          matchDate: "2025-04-02", // YYYY-MM-DD
-          pageNumber: 0,
+          matchDate: format(startDate, 'yyyy-MM-dd') // YYYY-MM-DD
         };
 
         const matchDates: MathDateCount[] = await matchService.getMatchDates(dateParams);
 
-        const matches = await matchService.getMatches(listParams);
-
         setMatchDate(matchDates);
-        setMatches(matches);
       }catch(err) {
         console.log(`매치 날짜 조회 실패: ${err}`)
       }
@@ -301,25 +292,16 @@ export default function MatchesPage() {
 
   // 날짜별 매치 그룹화 (날짜 뱃지용)
   const matchesByDate = dateRange.map((date) => {
-    const dateMatches = matches.filter((match) => isSameDay(parseISO(match.matchDate), date))
-    console.log(dateMatches);
+    const dateObj = typeof date === 'string' ? parseISO(date) : date;
+  
+    const dateMatch = matchDate.find((match) => {
+      return isSameDay(parseISO(match.matchDate), dateObj);
+    });
 
     return {
-      date,
-      matches: dateMatches,
-      count: dateMatches.length,
-    }
-  })
-
-  // 날짜별 매치 그룹화
-  const matchDates = matchDate.map((matchDate) => {
-
-    const date: Date = new Date(matchDate.matchDate);
-
-    return {
-      matchDate: date,
-      count: matchDate.matchCnt
-    }
+      date: dateObj,
+      count: dateMatch?.matchCnt ?? 0, // matchCnt가 없으면 0으로 처리
+    };
   });
 
   // 시간별로 매치 그룹화
@@ -383,6 +365,18 @@ export default function MatchesPage() {
   // 날짜 탭 클릭 처리
   const handleDateClick = (date: Date) => {
     setSelectedDate(date)
+
+    const listParams: MatchSearch = {
+      matchDate: format(date, 'yyyy-MM-dd'), // YYYY-MM-DD
+      pageNumber: 0,
+    };
+
+    const fetchMatches = async() => {
+      const matches = await matchService.getMatches(listParams);
+      setMatches(matches);
+    }
+
+    fetchMatches();
   }
 
   // 이전 주로 이동
@@ -464,7 +458,6 @@ export default function MatchesPage() {
         <div ref={scrollContainerRef} className="overflow-x-auto pb-4 scrollbar-thin">
           <div className="flex space-x-2 min-w-max">
             {dateRange.map((date, index) => {
-              console.log(date);
               const isToday = isSameDay(date, new Date());
               const isFirstDay = index === 0;
               // 이전 날짜와 월이 다른 경우(월이 바뀐 경우)를 체크
