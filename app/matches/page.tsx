@@ -479,7 +479,7 @@ export default function MatchesPage() {
 
 // 매치 카드 컴포넌트
 function MatchCard({ match, compact = false }: { match: MatchList; compact?: boolean }) {
-  const isEnded = match.matchStatus === "종료"
+  const isEnded = match.matchStatus === "END"
   
   return (
     <Card className={`styled-card overflow-hidden h-full ${isEnded ? 'match-ended' : ''}`}>
@@ -525,7 +525,13 @@ function MatchCard({ match, compact = false }: { match: MatchList; compact?: boo
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">{match.sportType}</span>
+          <span className="text-sm font-medium">{`
+            ${match.sportType === SportType.TENNIS ? "테니스" : ""}
+            ${match.sportType === SportType.SOCCER ? "축구" : ""}
+            ${match.sportType === SportType.FUTSAL ? "풋살" : ""}
+            ${match.sportType === SportType.BASEBALL ? "농구" : ""}
+            ${match.sportType === SportType.BADMINTON ? "배드민턴" : ""}
+          `}</span>
           <span className="text-sm font-medium">{match.matchPrice}/인</span>
         </div>
       </CardContent>
@@ -534,10 +540,10 @@ function MatchCard({ match, compact = false }: { match: MatchList; compact?: boo
           <Button
             asChild
             className="w-full primary-button"
-            variant={match.matchStatus === "모집완료" ? "secondary" : "default"}
-            disabled={match.matchStatus === "모집완료" || match.matchStatus === "종료"}
+            variant={match.matchStatus === "FINISH" ? "secondary" : "default"}
+            disabled={match.matchStatus === "FINISH" || match.matchStatus === "END"}
           >
-            <Link href={`/matches/${match.matchId}`}>{match.matchStatus === "모집중" ? "참가 신청하기" : "상세 보기"}</Link>
+            <Link href={`/matches/${match.matchId}`}>{match.matchStatus === "APPLICABLE" || match.matchStatus === "CLOSE_TO_DEADLINE" ? "참가 신청하기" : "상세 보기"}</Link>
           </Button>
         </CardFooter>
       )}
