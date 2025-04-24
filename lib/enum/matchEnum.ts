@@ -1,5 +1,6 @@
 // 스포츠 종류
 export enum SportType {
+    ALL = "ALL",
     SOCCER = "SOCCER",
     BASKETBALL = "BASKETBALL",
     TENNIS = "TENNIS",

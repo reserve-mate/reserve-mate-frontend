@@ -10,8 +10,7 @@ export const matchService = {
   getMatches: (params: MatchSearch) => {
     let endpoint = '/match/matches';
     
-    return api.post<Slice<MatchList>>(endpoint, params)
-    .then(res => res.content);
+    return api.post<Slice<MatchList>>(endpoint, params);
   },
 
   // 매치 날짜별 조회
