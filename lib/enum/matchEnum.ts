@@ -11,8 +11,8 @@ export enum SportType {
 
 // 매치 상태 열거형
 export enum MatchStatus {
-    RECRUITING = '모집중',
-    CLOSED = '마감',
-    COMPLETED = '종료',
-    CANCELED = '취소'
+    FINISH = 'FINISH',
+    CLOSE_TO_DEADLINE = 'CLOSE_TO_DEADLINE',
+    APPLICABLE = 'APPLICABLE',
+    END = 'END'
 }

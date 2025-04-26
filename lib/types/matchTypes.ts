@@ -51,6 +51,52 @@ export type MatchList = {
     playerCnt: number;
 }
 
+export interface MatchDetailRespone {
+    matchDataDto: MatchDataDto;
+    facilityDataDto: FacilityDataDto;
+    playerCnt: number;
+    playerDtos: PlayerDto[];        // 현재 비어 있지만 타입 선언은 필요
+    userDataDto: UserDataDto | null;
+}
+
+interface MatchDataDto {
+    matchId: number;
+    manager: string;
+    mangerImage: string;
+    matchStatus: MatchStatus; // enum으로 정의하면 더 좋음
+    teamCapacity: number;
+    description: string | null;
+    matchDate: string; // "2025년 04월 16일 수" 같은 문자열
+    matchTime: number;
+    matchEndTime: number;
+    matchPrice: number;
+}
+
+interface FacilityDataDto {
+    facilityName: string;
+    address: string;
+    courtName: string;
+    sportType: SportType // 필요 시 enum 처리
+    imageDtos: string[];
+}
+
+// interface ImageDto {
+//     imageUrl?: string; // 빈 배열일 경우도 있으니 optional로 선언
+// }
+
+interface PlayerDto {
+    // 실제 응답 구조에 맞게 채워주세요
+    playerId: number;
+    userName: string;
+    profileImage?: string;
+}
+
+interface UserDataDto {
+    userName: string;
+    phone: string;
+    isMatchApply: boolean;
+}
+
 // 매치 타입 정의
 export interface Match {
     id: number;

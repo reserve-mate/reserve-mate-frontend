@@ -66,7 +66,7 @@ apiInstance.interceptors.response.use(
     const originalRequest = error.config;
     console.log("인터셉터 에러 상태:", error.response?.status);
     console.log("원본 요청 헤더:", originalRequest?.headers);
-    
+
     if (error.response?.status === 401 && !originalRequest._retry){
       originalRequest._retry = true;
       try {
@@ -93,6 +93,10 @@ apiInstance.interceptors.response.use(
         localStorage.removeItem("accessToken");
         window.location.href = "/login";
         return Promise.reject(error);
+      }
+    }else{
+      if(error.response.data) {
+        return Promise.reject(error.response.data);
       }
     }
     console.log("응답 인터셉터 error",error);

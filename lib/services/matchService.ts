@@ -1,7 +1,7 @@
 import { api } from '../api';
 import { MatchStatus } from '../enum/matchEnum';
-import { Slice } from '../types/commonTypes';
-import { CreateMatchRequest, Match, MatchList, MatchSearch, MathDateCount } from '../types/matchTypes';
+import { ApiError, ApiResonse, Slice } from '../types/commonTypes';
+import { CreateMatchRequest, Match, MatchDetailRespone, MatchList, MatchSearch, MathDateCount } from '../types/matchTypes';
 import { FacilityManager } from './userService';
 
 // 매치 서비스
@@ -25,8 +25,9 @@ export const matchService = {
     api.get<Match[]>('/admin/matches'),
   
   // 매치 상세 조회
-  getMatch: (id: number) => 
-    api.get<Match>(`/matches/${id}`),
+  getMatch: (matchId: number) => {
+    return api.get<MatchDetailRespone>(`/match/matches/${matchId}`)
+  },
   
   // 매치 생성 (관리자 전용)
   createMatch: (data: CreateMatchRequest) => {
