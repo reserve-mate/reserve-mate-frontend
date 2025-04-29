@@ -12,8 +12,11 @@ import { Calendar } from "@/components/ui/calendar"
 import { MapPin, CalendarIcon, Clock, Users, Search, Filter, ChevronLeft, ChevronRight, PlusCircle, Plus } from "lucide-react"
 import { format, addDays, subDays, isSameDay, parseISO, isToday, isTomorrow, startOfDay } from "date-fns"
 import { ko } from "date-fns/locale"
+import { matchService } from "@/lib/services/matchService" 
+import { MatchList, MatchSearch, MathDateCount } from "@/lib/types/matchTypes"
+import { SportType } from "@/lib/enum/matchEnum"
 
-// 매치 데이터 타입
+// 매치 데이터 타입 
 type Match = {
   id: string
   courtName: string
@@ -30,167 +33,109 @@ type Match = {
 
 // 시간별로 그룹화된 매치 타입
 type GroupedMatches = {
-  [timeSlot: string]: Match[]
+  [timeSlot: string]: MatchList[]
 }
 
-// 더미 데이터
-const dummyMatches: Match[] = [
-  {
-    id: "1",
-    courtName: "코트 A",
-    facilityName: "서울 테니스 센터",
-    address: "서울시 강남구 테헤란로 123",
-    sportType: "테니스",
-    matchDate: "2025-03-28",
-    matchTime: "18:00 - 20:00",
-    teamCapacity: 4,
-    currentTeams: 2,
-    matchPrice: "15,000원",
-    status: "모집중",
-  },
-  {
-    id: "2",
-    courtName: "실내 코트 1",
-    facilityName: "강남 풋살장",
-    address: "서울시 강남구 역삼동 456",
-    sportType: "풋살",
-    matchDate: "2025-03-29",
-    matchTime: "19:00 - 21:00",
-    teamCapacity: 6,
-    currentTeams: 6,
-    matchPrice: "20,000원",
-    status: "모집완료",
-  },
-  {
-    id: "3",
-    courtName: "코트 B",
-    facilityName: "종로 농구코트",
-    address: "서울시 종로구 종로 789",
-    sportType: "농구",
-    matchDate: "2025-03-30",
-    matchTime: "14:00 - 16:00",
-    teamCapacity: 4,
-    currentTeams: 1,
-    matchPrice: "10,000원",
-    status: "모집중",
-  },
-  {
-    id: "4",
-    courtName: "코트 2",
-    facilityName: "한강 배드민턴장",
-    address: "서울시 영등포구 여의도동 101",
-    sportType: "배드민턴",
-    matchDate: "2025-03-31",
-    matchTime: "20:00 - 22:00",
-    teamCapacity: 8,
-    currentTeams: 5,
-    matchPrice: "12,000원",
-    status: "모집중",
-  },
-  {
-    id: "5",
-    courtName: "코트 C",
-    facilityName: "서울 테니스 센터",
-    address: "서울시 강남구 테헤란로 123",
-    sportType: "테니스",
-    matchDate: "2025-03-28",
-    matchTime: "14:00 - 16:00",
-    teamCapacity: 4,
-    currentTeams: 3,
-    matchPrice: "15,000원",
-    status: "모집중",
-  },
-  {
-    id: "6",
-    courtName: "실외 코트 2",
-    facilityName: "강남 풋살장",
-    address: "서울시 강남구 역삼동 456",
-    sportType: "풋살",
-    matchDate: "2025-03-28",
-    matchTime: "16:00 - 18:00",
-    teamCapacity: 6,
-    currentTeams: 4,
-    matchPrice: "20,000원",
-    status: "모집중",
-  },
-  {
-    id: "7",
-    courtName: "코트 A",
-    facilityName: "종로 농구코트",
-    address: "서울시 종로구 종로 789",
-    sportType: "농구",
-    matchDate: "2025-03-29",
-    matchTime: "10:00 - 12:00",
-    teamCapacity: 4,
-    currentTeams: 2,
-    matchPrice: "10,000원",
-    status: "모집중",
-  },
-  {
-    id: "8",
-    courtName: "코트 1",
-    facilityName: "한강 배드민턴장",
-    address: "서울시 영등포구 여의도동 101",
-    sportType: "배드민턴",
-    matchDate: "2025-03-30",
-    matchTime: "18:00 - 20:00",
-    teamCapacity: 8,
-    currentTeams: 6,
-    matchPrice: "12,000원",
-    status: "모집중",
-  },
-  {
-    id: "9",
-    courtName: "실내 코트 3",
-    facilityName: "강북 스포츠센터",
-    address: "서울시 강북구 수유동 123",
-    sportType: "테니스",
-    matchDate: "2025-03-28",
-    matchTime: "10:00 - 12:00",
-    teamCapacity: 4,
-    currentTeams: 1,
-    matchPrice: "18,000원",
-    status: "모집중",
-  },
-  {
-    id: "10",
-    courtName: "실내 코트 2",
-    facilityName: "송파 스포츠센터",
-    address: "서울시 송파구 잠실동 456",
-    sportType: "배드민턴",
-    matchDate: "2025-03-29",
-    matchTime: "10:00 - 12:00",
-    teamCapacity: 6,
-    currentTeams: 3,
-    matchPrice: "12,000원",
-    status: "모집중",
-  },
-  {
-    id: "11",
-    courtName: "메인 코트",
-    facilityName: "강서 테니스장",
-    address: "서울시 강서구 마곡동 789",
-    sportType: "테니스",
-    matchDate: "2025-03-29",
-    matchTime: "10:00 - 12:00",
-    teamCapacity: 4,
-    currentTeams: 2,
-    matchPrice: "15,000원",
-    status: "모집중",
-  },
-]
-
 export default function MatchesPage() {
+  // 검색 세팅
   const [searchTerm, setSearchTerm] = useState("")
-  const [sportType, setSportType] = useState("")
-  const [matches, setMatches] = useState<Match[]>(dummyMatches)
-  const [filteredMatches, setFilteredMatches] = useState<Match[]>([])
+  const [sportType, setSportType] = useState<SportType>(SportType.ALL);
+
+  // 매치 조회 및 검색 필터링
+  const [matches, setMatches] = useState<MatchList[]>([])
+  const [filteredMatches, setFilteredMatches] = useState<MatchList[]>([])
+
+  // 무한 스크롤 상태 정의
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false); // loading 없는 경우 중복 요청, ui깨짐, 데이터 덮어쓰기 에러 발생
+
+  // 날짜별 매치 개수 조회
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [dateRange, setDateRange] = useState<Date[]>([])
   const [startDate, setStartDate] = useState<Date>(startOfDay(new Date()))
+  const [matchDate, setMatchDate] = useState<MathDateCount[]>([]);
+
+  // 날짜 스크롤
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // 매치 카드 스크롤
+  const observeRef = useRef<HTMLDivElement | null>(null);
+  
   // 로그인 상태를 관리
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  // 사용자 매치 목록 조회
+  const getMatchDatesScroll = (date: Date, pageNumber: number) => {
+    const listParams: MatchSearch = {
+      matchDate: format(date, 'yyyy-MM-dd', { locale: ko }), // YYYY-MM-DD
+      searchValue: searchTerm,
+      sportType: sportType,
+      pageNumber: pageNumber
+    };
+
+    const fetchMatches = async () => {
+      if( loading ) return; // 로딩 중이면 return
+
+      setLoading(true); // 데이터 요청 시작
+
+      try{
+        const matches = await matchService.getMatches(listParams);
+        setMatches((prev) => [...prev, ...matches.content]); // 최신 상태를 기반으로 업데이트, 자바스크립트에서 기존 배열을 복사해서 새로운 배열을 만드는 spread 문법
+        setPage(matches.number);
+        setHasMore(!matches.last);  // 마지막 페이지가 아니면 true
+      }catch(err){
+        console.log(err);
+      }
+      finally{
+        setLoading(false); // 
+      }
+    }
+
+    fetchMatches();
+  }
+
+  // 날짜별 매치 개수 조회
+  const getMatchDateCnt = () => {
+    const dateParams: MatchSearch = {
+      matchDate: format(startDate, 'yyyy-MM-dd', { locale: ko }), // YYYY-MM-DD
+      searchValue: searchTerm,
+      sportType: sportType
+    };
+    
+    const fetchMatchDates = async () => {
+      try {
+        const matchDates: MathDateCount[] = await matchService.getMatchDates(dateParams);
+        setMatchDate(matchDates);
+      } catch (error) {
+        console.log(`매치 날짜 조회 실패: ${error}`)
+      }
+    }
+    fetchMatchDates();
+  }
+
+  useEffect(() => {
+    if( !hasMore || loading ) return;  // 더이상 데이터가 없거나 데이터를 불러오는 중인 경우 중단
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if(entries[0].isIntersecting){
+          getMatchDatesScroll(selectedDate, page + 1);  // 무한 스크롤 조회
+        }
+      }, { threshold: 1 }
+    );
+
+    if(observeRef.current){
+      observer.observe(observeRef.current);
+    }
+
+    return () => {
+      if(observeRef.current){
+        observer.unobserve(observeRef.current);
+      }
+    }
+
+  }, [ page, hasMore, loading ]);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -205,8 +150,10 @@ export default function MatchesPage() {
     for (let i = 0; i < 14; i++) {
       range.push(addDays(startDate, i))
     }
-
     setDateRange(range)
+
+    getMatchDateCnt();
+
   }, [startDate])
 
   // 초기 선택된 날짜 설정
@@ -214,9 +161,10 @@ export default function MatchesPage() {
     // 처음 로드될 때만 오늘 날짜로 설정
     const today = startOfDay(new Date())
     setSelectedDate(today)
+    getMatchDatesScroll(today, 0);
     
     // 이미 날짜가 필터링되어 있다면 다시 필터링
-    if (matches.length > 0) {
+    if ( matches && matches?.length > 0) {
       let filtered = [...matches]
       filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), today))
       setFilteredMatches(filtered)
@@ -231,59 +179,66 @@ export default function MatchesPage() {
     const updatedMatches = matches.map(match => {
       const matchDate = parseISO(match.matchDate)
       if (matchDate < today) {
-        return { ...match, status: "종료" as const }
+        return { ...match, status: "END" as const }
       }
       return match
     })
     
     // 변경된 매치 데이터 설정
-    setMatches(updatedMatches)
+    //setMatches(updatedMatches)
   }, [])
 
   // 검색 및 필터링 처리
   useEffect(() => {
     let filtered = [...matches]
 
-    // 검색어 필터링
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (match) =>
-          match.facilityName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          match.address.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-    }
-
-    // 스포츠 종류 필터링
-    if (sportType && sportType !== "all") {
-      filtered = filtered.filter((match) => match.sportType === sportType)
-    }
-
-    // 선택된 날짜의 매치만 필터링
-    if (selectedDate) {
-      filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), selectedDate))
-    }
-
     setFilteredMatches(filtered)
-  }, [searchTerm, sportType, matches, selectedDate])
+  }, [matches, selectedDate])
+
+  const applyFilter = () => {
+    let filtered = [...matches];
+
+    // 검색어 필터링
+    if(searchTerm){
+      filtered = filtered.filter((match) => match.facilityName.toLowerCase().includes(searchTerm.toLowerCase()) 
+      || match.fullAddress.toLowerCase().includes(searchTerm.toLowerCase()))
+    }
+
+    if(sportType && sportType !== SportType.ALL) {
+      filtered = filtered.filter((match) => match.sportType === sportType);
+    }
+
+    setMatches([]);
+    setPage(0);
+    setHasMore(true);
+    getMatchDateCnt();
+    getMatchDatesScroll(selectedDate, 0);
+
+    //setFilteredMatches(filtered);
+  }
 
   // 날짜별 매치 그룹화 (날짜 뱃지용)
   const matchesByDate = dateRange.map((date) => {
-    const dateMatches = matches.filter((match) => isSameDay(parseISO(match.matchDate), date))
+    const dateObj = typeof date === 'string' ? parseISO(date) : date;
+  
+    const dateMatch = matchDate.find((match) => {
+      return isSameDay(parseISO(match.matchDate), dateObj);
+    });
 
     return {
-      date,
-      matches: dateMatches,
-      count: dateMatches.length,
-    }
-  })
+      date: dateObj,
+      count: dateMatch?.matchCnt ?? 0, // matchCnt가 없으면 0으로 처리
+    };
+  });
 
   // 시간별로 매치 그룹화
-  const groupMatchesByTime = (matches: Match[]): GroupedMatches => {
+  const groupMatchesByTime = (matches: MatchList[]): GroupedMatches => {
     const grouped: GroupedMatches = {}
     
     matches.forEach(match => {
       // 시간만 추출 (18:00 - 20:00 → 18:00)
-      const timeSlot = match.matchTime.split(' ')[0]
+      const paddedHour = String(match.matchTime).padStart(2, '0') + ":00";
+      const timeSlot = paddedHour.split(' ')[0];
       
       if (!grouped[timeSlot]) {
         grouped[timeSlot] = []
@@ -296,8 +251,8 @@ export default function MatchesPage() {
   }
   
   // 시간순으로 정렬된 그룹화된 매치
-  const sortedGroupedMatches = (): [string, Match[]][] => {
-    const grouped = groupMatchesByTime(filteredMatches)
+  const sortedGroupedMatches = (): [string, MatchList[]][] => {
+    const grouped = groupMatchesByTime(filteredMatches);
     
     // 시간을 키로 정렬
     return Object.entries(grouped).sort((a, b) => {
@@ -314,20 +269,6 @@ export default function MatchesPage() {
     })
   }
 
-  const handleSearch = () => {
-    // 실제 구현에서는 API 호출을 통해 검색 결과를 가져옵니다
-    const filtered = dummyMatches.filter((match) => {
-      const matchesSearch =
-        match.facilityName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        match.address.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesSport = sportType === "" || sportType === "all" || match.sportType === sportType
-
-      return matchesSearch && matchesSport
-    })
-
-    setMatches(filtered)
-  }
-
   // 날짜 포맷 함수
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -337,6 +278,12 @@ export default function MatchesPage() {
   // 날짜 탭 클릭 처리
   const handleDateClick = (date: Date) => {
     setSelectedDate(date)
+
+    setMatches([]);
+    setPage(0);
+    setHasMore(true);
+    getMatchDatesScroll(date, 0);
+
   }
 
   // 이전 주로 이동
@@ -364,7 +311,12 @@ export default function MatchesPage() {
     const today = startOfDay(new Date())
     setStartDate(today)
     setSelectedDate(today)
-    
+
+    setMatches([]);
+    setHasMore(true);
+    setPage(0);
+    getMatchDatesScroll(today, 0);
+
     // 선택된 날짜가 화면에 표시되도록 스크롤 조정
     setTimeout(() => {
       const todayButton = document.querySelector(`.date-button-today`)
@@ -473,20 +425,21 @@ export default function MatchesPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             </div>
 
-            <Select value={sportType} onValueChange={setSportType}>
+            <Select value={sportType} onValueChange={(value) => setSportType(value as SportType)}>
               <SelectTrigger>
                 <SelectValue placeholder="스포츠 종류" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">전체</SelectItem>
-                <SelectItem value="테니스">테니스</SelectItem>
-                <SelectItem value="풋살">풋살</SelectItem>
-                <SelectItem value="농구">농구</SelectItem>
-                <SelectItem value="배드민턴">배드민턴</SelectItem>
+                <SelectItem value={SportType.ALL}>전체 종목</SelectItem>
+                <SelectItem value={SportType.TENNIS}>테니스</SelectItem>
+                <SelectItem value={SportType.SOCCER}>축구</SelectItem>
+                <SelectItem value={SportType.FUTSAL}>풋살</SelectItem>
+                <SelectItem value={SportType.BASEBALL}>농구</SelectItem>
+                <SelectItem value={SportType.BADMINTON}>배드민턴</SelectItem>
               </SelectContent>
             </Select>
 
-            <Button onClick={handleSearch} className="primary-button">
+            <Button onClick={applyFilter} className="primary-button">
               <Filter className="mr-2 h-4 w-4" /> 필터 적용
             </Button>
           </div>
@@ -495,7 +448,7 @@ export default function MatchesPage() {
 
       {/* 날짜별 매치 목록 */}
       <div className="mt-4">
-        {filteredMatches.length > 0 ? (
+        {( filteredMatches && filteredMatches?.length) > 0 ? (
           <div className="space-y-8">
             {sortedGroupedMatches().map(([timeSlot, matches]) => (
               <div key={timeSlot} className="space-y-4">
@@ -505,7 +458,7 @@ export default function MatchesPage() {
                 </div>
                 <div className="grid grid-cols-1 gap-4">
                   {matches.map((match) => (
-                    <MatchCard key={match.id} match={match} />
+                    <MatchCard key={match.matchId} match={match} />
                   ))}
                 </div>
               </div>
@@ -517,13 +470,16 @@ export default function MatchesPage() {
           </div>
         )}
       </div>
+         {/* 무한 스크롤 트리거 지점 */}
+        <div ref={observeRef} className="h-10" />
+        {loading && <p className="text-muted-foreground">불러오는 중...</p>}
     </div>
   )
 }
 
 // 매치 카드 컴포넌트
-function MatchCard({ match, compact = false }: { match: Match; compact?: boolean }) {
-  const isEnded = match.status === "종료"
+function MatchCard({ match, compact = false }: { match: MatchList; compact?: boolean }) {
+  const isEnded = match.matchStatus === "END"
   
   return (
     <Card className={`styled-card overflow-hidden h-full ${isEnded ? 'match-ended' : ''}`}>
@@ -532,20 +488,25 @@ function MatchCard({ match, compact = false }: { match: Match; compact?: boolean
           <h3 className={`${compact ? "text-base" : "text-lg"} font-semibold ${isEnded ? 'text-gray-500' : ''}`}>{match.facilityName}</h3>
           <Badge
             className={`
-              ${match.status === "모집중" ? "status-badge status-badge-recruiting" : ""}
-              ${match.status === "모집완료" ? "status-badge status-badge-completed" : ""}
-              ${match.status === "진행중" ? "status-badge status-badge-in-progress" : ""}
-              ${match.status === "종료" ? "status-badge status-badge-ended" : ""}
-            `}
+              ${match.matchStatus === "APPLICABLE" ? "status-badge status-badge-recruiting" : ""}
+              ${match.matchStatus === "FINISH" ? "status-badge status-badge-completed" : ""}
+              ${match.matchStatus === "CLOSE_TO_DEADLINE" ? "status-badge status-badge-in-progress" : ""}
+              ${match.matchStatus === "END" ? "status-badge status-badge-ended" : ""}
+            `} // CLOSE_TO_DEADLINE -> 모집 마감
           >
-            {match.status}
+            {`
+              ${match.matchStatus === "APPLICABLE" ? "모집중" : ""}
+              ${match.matchStatus === "CLOSE_TO_DEADLINE" ? "마감 임박" : ""}
+              ${match.matchStatus === "FINISH" ? "모집 마감" : ""}
+              ${match.matchStatus === "END" ? "종료" : ""}
+            `}
           </Badge>
         </div>
 
         <div className="space-y-2 mb-4">
           <div className="flex items-start">
             <MapPin className={`h-4 w-4 ${isEnded ? 'text-gray-400' : 'text-indigo-500'} mr-2 mt-0.5`} />
-            <span className="text-sm text-gray-500">{match.address}</span>
+            <span className="text-sm text-gray-500">{match.fullAddress}</span>
           </div>
           <div className="flex items-start">
             <CalendarIcon className={`h-4 w-4 ${isEnded ? 'text-gray-400' : 'text-indigo-500'} mr-2 mt-0.5`} />
@@ -553,18 +514,24 @@ function MatchCard({ match, compact = false }: { match: Match; compact?: boolean
           </div>
           <div className="flex items-start">
             <Clock className={`h-4 w-4 ${isEnded ? 'text-gray-400' : 'text-indigo-500'} mr-2 mt-0.5`} />
-            <span className="text-sm text-gray-500">{match.matchTime}</span>
+            <span className="text-sm text-gray-500">{match.matchTime + ":00 - " + match.matchEndTime + ":00"}</span>
           </div>
           <div className="flex items-start">
             <Users className={`h-4 w-4 ${isEnded ? 'text-gray-400' : 'text-indigo-500'} mr-2 mt-0.5`} />
             <span className="text-sm text-gray-500">
-              {match.currentTeams}/{match.teamCapacity} 팀 참여 중
+              {match.playerCnt}/{match.teamCapacity} 팀 참여 중
             </span>
           </div>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">{match.sportType}</span>
+          <span className="text-sm font-medium">{`
+            ${match.sportType === SportType.TENNIS ? "테니스" : ""}
+            ${match.sportType === SportType.SOCCER ? "축구" : ""}
+            ${match.sportType === SportType.FUTSAL ? "풋살" : ""}
+            ${match.sportType === SportType.BASEBALL ? "농구" : ""}
+            ${match.sportType === SportType.BADMINTON ? "배드민턴" : ""}
+          `}</span>
           <span className="text-sm font-medium">{match.matchPrice}/인</span>
         </div>
       </CardContent>
@@ -573,10 +540,10 @@ function MatchCard({ match, compact = false }: { match: Match; compact?: boolean
           <Button
             asChild
             className="w-full primary-button"
-            variant={match.status === "모집완료" ? "secondary" : "default"}
-            disabled={match.status === "모집완료" || match.status === "종료"}
+            variant={match.matchStatus === "FINISH" ? "secondary" : "default"}
+            disabled={match.matchStatus === "FINISH" || match.matchStatus === "END"}
           >
-            <Link href={`/matches/${match.id}`}>{match.status === "모집중" ? "참가 신청하기" : "상세 보기"}</Link>
+            <Link href={`/matches/${match.matchId}`}>{match.matchStatus === "APPLICABLE" || match.matchStatus === "CLOSE_TO_DEADLINE" ? "참가 신청하기" : "상세 보기"}</Link>
           </Button>
         </CardFooter>
       )}

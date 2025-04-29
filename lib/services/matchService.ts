@@ -1,70 +1,23 @@
 import { api } from '../api';
+import { MatchStatus } from '../enum/matchEnum';
+import { ApiError, ApiResonse, Slice } from '../types/commonTypes';
+import { CreateMatchRequest, Match, MatchDetailRespone, MatchList, MatchSearch, MathDateCount } from '../types/matchTypes';
 import { FacilityManager } from './userService';
-
-// 매치 상태 열거형
-export enum MatchStatus {
-  RECRUITING = '모집중',
-  CLOSED = '마감',
-  COMPLETED = '종료',
-  CANCELED = '취소'
-}
-
-// 매치 타입 정의
-export interface Match {
-  id: number;
-  title: string;
-  sportType: string;
-  facilityId: number;
-  facilityName: string;
-  address: string;
-  matchDate: string;
-  matchTime: string;
-  maxParticipants: number;
-  currentParticipants: number;
-  fee: number;
-  description?: string;
-  equipmentProvided: boolean;
-  courtId: number;
-  courtName: string;
-  managerId?: number;
-  managerName?: string;
-  status: MatchStatus;
-  createdAt: string;
-  images?: string[];
-}
-
-// 매치 생성 요청 타입
-export interface CreateMatchRequest {
-  title: string;
-  sportType: string;
-  facilityId: number;
-  matchDate: string;
-  startTime: string;
-  endTime: string;
-  maxParticipants: number;
-  fee: number;
-  description?: string;
-  equipmentProvided: boolean;
-  courtId: number;
-  managerId?: number;
-  images?: File[];
-}
 
 // 매치 서비스
 export const matchService = {
   // 매치 목록 조회
-  getMatches: (params?: { status?: MatchStatus, sportType?: string }) => {
-    let endpoint = '/matches';
-    const queryParams: string[] = [];
+  getMatches: (params: MatchSearch) => {
+    let endpoint = '/match/matches';
     
-    if (params?.status) queryParams.push(`status=${params.status}`);
-    if (params?.sportType) queryParams.push(`sportType=${params.sportType}`);
-    
-    if (queryParams.length > 0) {
-      endpoint += `?${queryParams.join('&')}`;
-    }
-    
-    return api.get<Match[]>(endpoint);
+    return api.post<Slice<MatchList>>(endpoint, params);
+  },
+
+  // 매치 날짜별 조회
+  getMatchDates: (params: MatchSearch) => {
+    let endpoint = "/match/matcheDates";
+
+    return api.post<MathDateCount[]>(endpoint, params);
   },
   
   // 관리자용 매치 목록 조회
@@ -72,8 +25,9 @@ export const matchService = {
     api.get<Match[]>('/admin/matches'),
   
   // 매치 상세 조회
-  getMatch: (id: number) => 
-    api.get<Match>(`/matches/${id}`),
+  getMatch: (matchId: number) => {
+    return api.get<MatchDetailRespone>(`/match/matches/${matchId}`)
+  },
   
   // 매치 생성 (관리자 전용)
   createMatch: (data: CreateMatchRequest) => {
