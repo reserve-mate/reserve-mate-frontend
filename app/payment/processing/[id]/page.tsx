@@ -1,9 +1,50 @@
+"use client"
+
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Payment } from "@/lib/types/commonTypes";
+import { paymentService } from "@/lib/services/paymentService"
 
-export default function PaymentProcessingPage() {
+export default function PaymentProcessingPage({ params }: { params: { id: number } }) {
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [ payment, setPayment ] = useState<Payment | null>(null);
+
+  const savePayment = async(payment: Payment) => {
+
+    try {
+      await paymentService.paymentApprove(payment);
+      console.log("결제 성공")
+    } catch (error) {
+      console.log(error);
+      router.push("/payment/failed");
+    }
+
+  }
+
+  // 결제 요청
+  useEffect(() => {
+    const orderId = String(searchParams.get("orderId"));
+    const paymentKey = String(searchParams.get("paymentKey"));
+    const amount = Number(searchParams.get("amount"));
+    //const matchId = Number(searchParams.get("matchId"));
+
+    const payment: Payment = {
+      orderId: orderId,
+      paymentKey: paymentKey,
+      amount: amount,
+      matchId: params.id
+    }
+
+    savePayment(payment);
+
+  }, []);
+
   return (
     <div className="page-container flex flex-col items-center justify-center min-h-[70vh]">
       <Card className="w-full max-w-md styled-card">

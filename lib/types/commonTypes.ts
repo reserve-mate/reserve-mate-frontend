@@ -26,4 +26,5 @@ export interface Payment {
     orderId: string;
     paymentKey: string;
     amount: number;
+    matchId: number;
 }
