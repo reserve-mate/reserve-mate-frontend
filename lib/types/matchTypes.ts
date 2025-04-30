@@ -35,6 +35,14 @@ export interface CreateMatchRequest {
     images?: File[];
 }
 
+export interface MatchPayment {
+    orderName: string;
+    customerEmail: string;
+    customerName: string;
+    customerMobilePhone: string;
+    amount: number;
+}
+
 // 매치 리스트
 export type MatchList = {
     matchId: number;
@@ -61,6 +69,7 @@ export interface MatchDetailRespone {
 
 interface MatchDataDto {
     matchId: number;
+    matchName: string;
     manager: string;
     mangerImage: string;
     matchStatus: MatchStatus; // enum으로 정의하면 더 좋음
@@ -80,10 +89,6 @@ interface FacilityDataDto {
     imageDtos: string[];
 }
 
-// interface ImageDto {
-//     imageUrl?: string; // 빈 배열일 경우도 있으니 optional로 선언
-// }
-
 interface PlayerDto {
     // 실제 응답 구조에 맞게 채워주세요
     playerId: number;
@@ -94,6 +99,7 @@ interface PlayerDto {
 interface UserDataDto {
     userName: string;
     phone: string;
+    userEmail: string;
     isMatchApply: boolean;
 }
 

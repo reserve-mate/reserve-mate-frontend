@@ -20,3 +20,10 @@ export type ApiResonse<T> = {
     success: false;
     error: ApiError;
 };
+
+// 페이 요청 성공 후 데이터
+export interface Payment {
+    orderId: string;
+    paymentKey: string;
+    amount: number;
+}

@@ -16,21 +16,6 @@ import { matchService } from "@/lib/services/matchService"
 import { MatchList, MatchSearch, MathDateCount } from "@/lib/types/matchTypes"
 import { SportType } from "@/lib/enum/matchEnum"
 
-// 매치 데이터 타입 
-type Match = {
-  id: string
-  courtName: string
-  facilityName: string
-  address: string
-  sportType: string
-  matchDate: string
-  matchTime: string
-  teamCapacity: number
-  currentTeams: number
-  matchPrice: string
-  status: "모집중" | "모집완료" | "진행중" | "종료"
-}
-
 // 시간별로 그룹화된 매치 타입
 type GroupedMatches = {
   [timeSlot: string]: MatchList[]
@@ -471,8 +456,9 @@ export default function MatchesPage() {
         )}
       </div>
          {/* 무한 스크롤 트리거 지점 */}
-        <div ref={observeRef} className="h-10" />
+        <div ref={observeRef} className="text-center">
         {loading && <p className="text-muted-foreground">불러오는 중...</p>}
+        </div>
     </div>
   )
 }
