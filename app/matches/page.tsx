@@ -34,6 +34,7 @@ export default function MatchesPage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false); // loading 없는 경우 중복 요청, ui깨짐, 데이터 덮어쓰기 에러 발생
+  const [isError, setIsError] = useState(false);
 
   // 날짜별 매치 개수 조회
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -71,6 +72,7 @@ export default function MatchesPage() {
         setHasMore(!matches.last);  // 마지막 페이지가 아니면 true
       }catch(err){
         console.log(err);
+        setIsError(true);
       }
       finally{
         setLoading(false); // 
@@ -100,7 +102,7 @@ export default function MatchesPage() {
   }
 
   useEffect(() => {
-    if( !hasMore || loading ) return;  // 더이상 데이터가 없거나 데이터를 불러오는 중인 경우 중단
+    if( !hasMore || loading || isError ) return;  // 더이상 데이터가 없거나 데이터를 불러오는 중인 경우 중단
 
     const observer = new IntersectionObserver(
       (entries) => {
