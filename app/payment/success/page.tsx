@@ -27,9 +27,13 @@ export default function PaymentSuccessPage() {
               <span className="text-sm text-muted-foreground">예약 시설</span>
               <span className="text-sm font-medium">체육관 A</span>
             </div>
+            <div className="flex justify-between mb-2">
+              <span className="text-sm text-muted-foreground">예약 날짜</span>
+              <span className="text-sm font-medium">2024.06.15</span>
+            </div>
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">예약 일시</span>
-              <span className="text-sm font-medium">2024.06.15 14:00-16:00</span>
+              <span className="text-sm text-muted-foreground">예약 시간</span>
+              <span className="text-sm font-medium">14:00-16:00</span>
             </div>
           </div>
         </CardContent>
