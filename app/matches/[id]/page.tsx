@@ -54,7 +54,7 @@ type Comment = {
   createdAt: string
 }
 
-const clientKey = "test_ck_Z1aOwX7K8mBDMZd1KJlq3yQxzvNP";
+const clientKey = process.env.NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY || '';
 const customerKey = crypto.randomUUID();
 
 export default function MatchDetailPage({ params }: { params: { id: number } }) {
@@ -122,6 +122,8 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
 
   useEffect(() => {
     async function fetchPayment() {
+
+      console.log('clientKey >>> ' + clientKey)
       try {
         const tossPayments = await loadTossPayments(clientKey);
 
@@ -175,7 +177,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
           orderId: customerKey, // 고유 주문번호
           orderName: matchDetail.matchDataDto.matchName,
           successUrl: window.location.origin + "/payment/processing/" + params.id, // 결제 요청이 성공하면 리다이렉트되는 URL
-          failUrl: window.location.origin + "/fail", // 결제 요청이 실패하면 리다이렉트되는 URL
+          failUrl: window.location.origin + "/payment/failed", // 결제 요청이 실패하면 리다이렉트되는 URL
           customerEmail: (matchDetail.userDataDto) ? matchDetail.userDataDto.userEmail : "",
           customerName: (matchDetail.userDataDto) ? matchDetail.userDataDto.userName : "",
           customerMobilePhone: (matchDetail.userDataDto) ? matchDetail.userDataDto.phone : "",

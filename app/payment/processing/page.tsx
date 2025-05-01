@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Payment } from "@/lib/types/commonTypes";
 import { paymentService } from "@/lib/services/paymentService"
-import { MatchPaymentSuccess } from "@/lib/types/matchTypes"
 
 export default function PaymentProcessingPage({ params }: { params: { id: number } }) {
 
@@ -16,18 +15,14 @@ export default function PaymentProcessingPage({ params }: { params: { id: number
   const router = useRouter();
   const [ payment, setPayment ] = useState<Payment | null>(null);
 
-  const ref = useRef(false);
-
-  const orderId = String(searchParams.get("orderId"));
-
   const savePayment = async(payment: Payment) => {
 
     try {
       const paymentRes = await paymentService.paymentApprove(payment);
       if(paymentRes.status === 'success') {
         if(paymentRes.type === 'matchPaymentSuccess') {
-          localStorage.setItem("paymentResult", JSON.stringify(paymentRes));
-          router.push("/payment/success/" + params.id + "?orderId=" + orderId);
+          console.log("결제 성공")
+          console.log("매치 이름 >>> " + paymentRes.matchName)
         }
       }
     } catch (error) {
@@ -39,11 +34,10 @@ export default function PaymentProcessingPage({ params }: { params: { id: number
 
   // 결제 요청
   useEffect(() => {
-    if(ref.current) return;
-    ref.current = true;
-
+    const orderId = String(searchParams.get("orderId"));
     const paymentKey = String(searchParams.get("paymentKey"));
     const amount = Number(searchParams.get("amount"));
+    //const matchId = Number(searchParams.get("matchId"));
 
     const payment: Payment = {
       orderId: orderId,

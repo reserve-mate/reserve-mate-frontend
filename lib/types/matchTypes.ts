@@ -1,4 +1,15 @@
 import { MatchStatus, SportType } from "../enum/matchEnum";
+import { PaymentResponse } from "./payment";
+
+// 페이 실패 데이터
+export interface MatchPaymentSuccess extends PaymentResponse {
+    type: 'matchPaymentSuccess';
+    matchName: string;
+    matchDate: string;
+    matchTime: number;
+    matchEndTime: number;
+    facilityCourt: string;
+}
 
 // 매치 검색
 export interface MatchSearchRequest {
