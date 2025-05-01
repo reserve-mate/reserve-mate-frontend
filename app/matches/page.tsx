@@ -16,21 +16,6 @@ import { matchService } from "@/lib/services/matchService"
 import { MatchList, MatchSearch, MathDateCount } from "@/lib/types/matchTypes"
 import { SportType } from "@/lib/enum/matchEnum"
 
-// 매치 데이터 타입 
-type Match = {
-  id: string
-  courtName: string
-  facilityName: string
-  address: string
-  sportType: string
-  matchDate: string
-  matchTime: string
-  teamCapacity: number
-  currentTeams: number
-  matchPrice: string
-  status: "모집중" | "모집완료" | "진행중" | "종료"
-}
-
 // 시간별로 그룹화된 매치 타입
 type GroupedMatches = {
   [timeSlot: string]: MatchList[]
@@ -49,6 +34,7 @@ export default function MatchesPage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false); // loading 없는 경우 중복 요청, ui깨짐, 데이터 덮어쓰기 에러 발생
+  const [isError, setIsError] = useState(false);
 
   // 날짜별 매치 개수 조회
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -86,6 +72,7 @@ export default function MatchesPage() {
         setHasMore(!matches.last);  // 마지막 페이지가 아니면 true
       }catch(err){
         console.log(err);
+        setIsError(true);
       }
       finally{
         setLoading(false); // 
@@ -115,7 +102,7 @@ export default function MatchesPage() {
   }
 
   useEffect(() => {
-    if( !hasMore || loading ) return;  // 더이상 데이터가 없거나 데이터를 불러오는 중인 경우 중단
+    if( !hasMore || loading || isError ) return;  // 더이상 데이터가 없거나 데이터를 불러오는 중인 경우 중단
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -471,8 +458,9 @@ export default function MatchesPage() {
         )}
       </div>
          {/* 무한 스크롤 트리거 지점 */}
-        <div ref={observeRef} className="h-10" />
+        <div ref={observeRef} className="text-center">
         {loading && <p className="text-muted-foreground">불러오는 중...</p>}
+        </div>
     </div>
   )
 }

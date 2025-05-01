@@ -15,9 +15,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/hooks/use-toast"
 import { MapPin, Calendar, Clock, Users, DollarSign, Share2, ChevronLeft, ChevronUp, ChevronDown } from "lucide-react"
 import { matchService } from "@/lib/services/matchService"
-import { MatchDetailRespone } from "@/lib/types/matchTypes"
+import { MatchDetailRespone, MatchPayment } from "@/lib/types/matchTypes"
 import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
-import { ApiResonse } from "@/lib/types/commonTypes"
+import { loadTossPayments, ANONYMOUS, TossPaymentsWidgets, TossPaymentsPayment } from "@tosspayments/tosspayments-sdk";
+import { matchPlayerService } from "@/lib/services/matchplayerService"
 
 // 매치 데이터 타입
 type Match = {
@@ -53,13 +54,29 @@ type Comment = {
   createdAt: string
 }
 
+const clientKey = process.env.NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY || '';
+const customerKey = crypto.randomUUID();
+
 export default function MatchDetailPage({ params }: { params: { id: number } }) {
+  const numberFormat = /\B(?=(\d{3})+(?!\d))/g; // 천원단위 숫자 포맷
+
   const router = useRouter()
   const [match, setMatch] = useState<Match | null>(null)
   const [loading, setLoading] = useState(true)
   const [comment, setComment] = useState("")
   const [isJoining, setIsJoining] = useState(false)
   const [showMobileJoinPanel, setShowMobileJoinPanel] = useState(false)
+
+  // 매치 토스 결제 모달
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+
+  // 토스 결제
+  const [payment, setPayment] = useState<TossPaymentsPayment | null>(null);
+  const [amount, setAmount] = useState({
+    currency: "KRW",
+    value: 50000,
+  });
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
 
   // 매치 상세조회 데이터
   const [matchDetail, setMatchDetail] = useState<MatchDetailRespone | null>(null);
@@ -68,6 +85,10 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   const ref = useRef(false);
+
+  function selectPaymentMethod(method: any) {
+    setSelectedPaymentMethod(method);
+  }
 
   // 매치 상세 조회
   const getMatchDetail = (matchId: number) => {
@@ -99,6 +120,84 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     setIsLoggedIn(loggedInStatus === 'true')
   }, [])
 
+  useEffect(() => {
+    async function fetchPayment() {
+
+      console.log('clientKey >>> ' + clientKey)
+      try {
+        const tossPayments = await loadTossPayments(clientKey);
+
+        // 회원 결제
+        // @docs https://docs.tosspayments.com/sdk/v2/js#tosspaymentspayment
+        const payment = tossPayments.payment({
+          customerKey,
+        });
+        // 비회원 결제
+        // const payment = tossPayments.payment({ customerKey: ANONYMOUS });
+
+        setPayment(payment);
+      } catch (error) {
+        console.error("Error fetching payment:", error);
+      }
+    }
+
+    fetchPayment();
+  }, [clientKey, customerKey]);
+
+  // 토스 결제 요청창 노출출
+  const requestPayment = async () => {
+    if (!matchDetail) return;
+
+    if ( !isLoggedIn ) {
+      alert("로그인 후 참가 신청을 하실 수 있습니다.");
+      router.push("/login");
+      return false;
+    }
+
+    setIsJoining(true);
+
+    const requeMatch = {
+      matchId: params.id,
+      amount: matchDetail.matchDataDto.matchPrice
+    }
+
+    try{
+      let verifyMatch = await matchPlayerService.verifyMatch(requeMatch);
+
+      if( verifyMatch ) {
+        alert("이미 해당 매치에 신청한 이력이 존재합니다.");
+        setIsJoining(false);
+      }else{
+        await payment?.requestPayment({
+          method: "CARD", // 카드 및 간편결제
+          amount: {
+            currency: "KRW",
+            value: matchDetail.matchDataDto.matchPrice,
+          },
+          orderId: customerKey, // 고유 주문번호
+          orderName: matchDetail.matchDataDto.matchName,
+          successUrl: window.location.origin + "/payment/processing/" + params.id, // 결제 요청이 성공하면 리다이렉트되는 URL
+          failUrl: window.location.origin + "/payment/failed", // 결제 요청이 실패하면 리다이렉트되는 URL
+          customerEmail: (matchDetail.userDataDto) ? matchDetail.userDataDto.userEmail : "",
+          customerName: (matchDetail.userDataDto) ? matchDetail.userDataDto.userName : "",
+          customerMobilePhone: (matchDetail.userDataDto) ? matchDetail.userDataDto.phone : "",
+          // 카드 결제에 필요한 정보
+          card: {
+            useEscrow: false,
+            flowMode: "DEFAULT", // 통합결제창 여는 옵션
+            useCardPoint: false,
+            useAppCardOnly: false,
+          },
+        })
+      }
+
+    } catch (err) {
+      setIsJoining(false);
+      console.log(err)
+    }
+    
+  }
+
   // api 응답
   useEffect(() => {
     if(ref.current) return;
@@ -106,6 +205,10 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
 
     getMatchDetail(params.id);
   }, [params.id, isLoggedIn])
+
+  const closeModal = () => {
+    setCheckoutOpen(false);
+  } 
 
   const handleJoinMatch = () => {
     if (!matchDetail) return;
@@ -179,6 +282,11 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     }).format(date)
   }
 
+  // 가격 천원단위
+  const priceFormat = (price: number): string => {
+    return price.toString().replace(numberFormat, ',');
+  }
+
   if (loading || !matchDetail) {
     return (
       <div className="container py-8">
@@ -220,7 +328,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
             <Button
               className="w-36 h-11 bg-indigo-600 hover:bg-indigo-700 font-medium"
               disabled={!canJoin || isJoining}
-              onClick={handleJoinMatch}
+              onClick={requestPayment}
             >
               {isJoining
                 ? "처리 중..."
@@ -385,7 +493,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                   <DollarSign className="h-5 w-5 text-indigo-600 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium text-sm sm:text-base">참가비</p>
-                    <p className="text-gray-500 text-sm sm:text-base">{matchDetail.matchDataDto.matchPrice}/인</p>
+                    <p className="text-gray-500 text-sm sm:text-base">{priceFormat(matchDetail.matchDataDto.matchPrice)}/인</p>
                   </div>
                 </div>
               </div>
@@ -539,7 +647,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">참가비</p>
-                  <p className="font-bold text-indigo-700">{matchDetail.matchDataDto.matchPrice}/인</p>
+                  <p className="font-bold text-indigo-700">{priceFormat(matchDetail.matchDataDto.matchPrice)}/인</p>
                 </div>
               </div>
 
@@ -566,7 +674,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
               <Button
                 className="w-full py-6 text-lg font-bold"
                 disabled={!canJoin || isJoining}
-                onClick={handleJoinMatch}
+                onClick={requestPayment}
               >
                 {isJoining
                 ? "처리 중..."
@@ -597,3 +705,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   )
 }
 
+function formatMoney(price: number): string{
+  
+  return "";
+}
