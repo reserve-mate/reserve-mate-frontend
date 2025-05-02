@@ -19,6 +19,15 @@ import { MatchDetailRespone, MatchPayment } from "@/lib/types/matchTypes"
 import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
 import { loadTossPayments, ANONYMOUS, TossPaymentsWidgets, TossPaymentsPayment } from "@tosspayments/tosspayments-sdk";
 import { matchPlayerService } from "@/lib/services/matchplayerService"
+import Script from "next/script"
+import { Map, MapMarker } from 'react-kakao-maps-sdk';
+import { Location } from "@/lib/types/commonTypes"
+
+declare global {              // Property 'kakao' does not exist on type 'Window & typeof globalThis'. 에러 방지
+  interface Window {          // kakao 라는 객체가 window에 존재하고 있다고 인식
+    kakao: any;
+  }
+}
 
 // 매치 데이터 타입
 type Match = {
@@ -57,6 +66,8 @@ type Comment = {
 const clientKey = process.env.NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY || '';
 const customerKey = crypto.randomUUID();
 
+const KAKAO_SDK_URL = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&libraries=services&autoload=false`;
+
 export default function MatchDetailPage({ params }: { params: { id: number } }) {
   const numberFormat = /\B(?=(\d{3})+(?!\d))/g; // 천원단위 숫자 포맷
 
@@ -67,8 +78,8 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   const [isJoining, setIsJoining] = useState(false)
   const [showMobileJoinPanel, setShowMobileJoinPanel] = useState(false)
 
-  // 매치 토스 결제 모달
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  // 지도 위도 경도
+  const [ location, setLocation ] = useState<Location | null>(null);
 
   // 토스 결제
   const [payment, setPayment] = useState<TossPaymentsPayment | null>(null);
@@ -98,7 +109,6 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     const fetchMatchDetail = async () => {
       try {
         const matchInfo = await matchService.getMatch(params.id);
-        console.log(matchInfo.userDataDto)
         setMatchDetail(matchInfo);
       } catch (error: any) {
         alert(error.message);
@@ -120,10 +130,36 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     setIsLoggedIn(loggedInStatus === 'true')
   }, [])
 
+  // 지도 위도 경도
+  useEffect(() => {
+    if(!matchDetail) return;
+
+    const matchAddress = matchDetail.facilityDataDto.address;
+
+    window.kakao.maps.load(() => {
+      const geocoder = new window.kakao.maps.services.Geocoder();
+
+      geocoder.addressSearch(matchAddress, function (result: any, status: any){
+        if (status === window.kakao.maps.services.Status.OK) {
+          console.log(result[0].y)
+          console.log(result[0].x)
+
+          const coords: Location = {
+            latitude: result[0].y,
+            longitude: result[0].x
+          } 
+
+          setLocation(coords)
+        }
+
+      })
+    });
+
+  }, [matchDetail])
+
+  // 토스 결제창 초기화
   useEffect(() => {
     async function fetchPayment() {
-
-      console.log('clientKey >>> ' + clientKey)
       try {
         const tossPayments = await loadTossPayments(clientKey);
 
@@ -144,7 +180,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     fetchPayment();
   }, [clientKey, customerKey]);
 
-  // 토스 결제 요청창 노출출
+  // 토스 결제 요청창 노출
   const requestPayment = async () => {
     if (!matchDetail) return;
 
@@ -205,10 +241,6 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
 
     getMatchDetail(params.id);
   }, [params.id, isLoggedIn])
-
-  const closeModal = () => {
-    setCheckoutOpen(false);
-  } 
 
   const handleJoinMatch = () => {
     if (!matchDetail) return;
@@ -559,17 +591,14 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
               <CardTitle className="text-lg sm:text-xl font-semibold">위치 정보</CardTitle>
             </CardHeader>
             <CardContent className="px-4 sm:px-6 pt-2">
-              <div className="relative h-56 sm:h-64 bg-gray-200 rounded-lg overflow-hidden">
-                <Image 
-                  src="/placeholder.svg?height=300&width=600&text=지도" 
-                  alt="지도" 
-                  fill 
-                  className="object-cover"
-                  priority 
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <p className="text-gray-500">지도 정보</p>
-                </div>
+              <div id="map" className="relative h-56 sm:h-64 bg-gray-200 rounded-lg overflow-hidden">
+                <Map center={location ? {lat: location?.latitude, lng: location?.longitude } : {lat: 37.497930, lng: 127.027596 }}
+                style={{ width: '100%', height: '100%' }}
+                level={3}
+                >
+                  <MapMarker position={location ? {lat: location?.latitude, lng: location?.longitude } : {lat: 37.497930, lng: 127.027596 }}>
+                  </MapMarker>
+                </Map>
               </div>
               <div className="mt-4">
                 <p className="font-medium text-sm sm:text-base">{matchDetail.facilityDataDto.facilityName}</p>
