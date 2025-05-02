@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { usePathname } from 'next/router'
+import { usePathname } from 'next/navigation'
 
 // 로그인 상태를 useState로 관리
 const [isLoggedIn, setIsLoggedIn] = useState(false)
