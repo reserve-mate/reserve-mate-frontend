@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import DaumPostcode from "react-daum-postcode"
+import { facilityService } from "@/lib/services/facilityService"
 
 // 코트 대분류 유형
 const courtMainTypes = [
@@ -22,48 +23,68 @@ const courtMainTypes = [
 
 // 종목별 코트 소분류 유형
 const sportCourtTypes = {
-  tennis: [
-    { value: "hardcourt", label: "하드코트" },
-    { value: "clay", label: "클레이코트" },
-    { value: "grass", label: "잔디코트" },
+  TENNIS: [
+    { value: "HARD", label: "하드코트" },
+    { value: "CLAY_TENNIS", label: "클레이코트" },
+    { value: "GRASS", label: "잔디코트" },
+    { value: "SYNTHETIC_TENNIS", label: "합성소재" },
   ],
-  futsal: [
-    { value: "artificial", label: "인조잔디" },
-    { value: "concrete", label: "콘크리트" },
+  FUTSAL: [
+    { value: "RUBBER_FUTSAL", label: "고무바닥" },
+    { value: "SYNTHETIC_FUTSAL", label: "합성표면" },
+    { value: "ARTIFICIAL_TURF_FUTSAL", label: "인조잔디" },
   ],
-  basketball: [
-    { value: "wooden", label: "목재" },
-    { value: "concrete", label: "콘크리트" },
-    { value: "synthetic", label: "합성소재" },
+  BASKETBALL: [
+    { value: "WOODEN_BASKET", label: "목재바닥" },
+    { value: "SYNTHETIC_BASKET", label: "합성소재" },
   ],
-  volleyball: [
-    { value: "wooden", label: "목재" },
-    { value: "synthetic", label: "합성소재" },
+  VOLLEYBALL: [
+    { value: "WOODEN_VOLLEY", label: "목재바닥" },
+    { value: "SYNTHETIC_VOLLEY", label: "합성소재" },
   ],
-  badminton: [
-    { value: "wooden", label: "목재" },
-    { value: "synthetic", label: "합성소재" },
+  BADMINTON: [
+    { value: "WOODEN_BM", label: "목재바닥" },
+    { value: "SYNTHETIC_BM", label: "합성소재" },
+    { value: "RUBBER_BM", label: "고무바닥" },
   ],
-  baseball: [
-    { value: "natural_grass", label: "천연잔디" },
-    { value: "artificial", label: "인조잔디" },
-    { value: "dirt", label: "흙" },
+  BASEBALL: [
+    { value: "NATURE_GRASS_BASE", label: "천연잔디" },
+    { value: "ARTIFICIAL_TURF_BASE", label: "인조잔디" },
+    { value: "DIRT_BASE", label: "흙" },
+    { value: "CLAY_BASE", label: "점토" },
   ],
-  other: [
-    { value: "multipurpose", label: "다목적" },
-    { value: "other", label: "기타" },
+  SOCCER: [
+    { value: "NATURE_GRASS_FB", label: "천연잔디" },
+    { value: "ARTIFICIAL_TURF_FB", label: "인조잔디" },
+    { value: "DIRT_FB", label: "흙" },
+  ],
+  OTHER: [
+    { value: "MULTIPURPOSE", label: "다목적" },
+    { value: "OTHER", label: "기타" },
   ]
 }
 
 // sportTypes 추가
 const sportTypes = [
-  { value: "tennis", label: "테니스" },
-  { value: "futsal", label: "풋살" },
-  { value: "basketball", label: "농구" },
-  { value: "volleyball", label: "배구" },
-  { value: "badminton", label: "배드민턴" },
-  { value: "baseball", label: "야구" },
-  { value: "other", label: "기타" },
+  { value: "TENNIS", label: "테니스" },
+  { value: "FUTSAL", label: "풋살" },
+  { value: "BASKETBALL", label: "농구" },
+  { value: "VOLLEYBALL", label: "배구" },
+  { value: "BADMINTON", label: "배드민턴" },
+  { value: "BASEBALL", label: "야구" },
+  { value: "SOCCER", label: "축구"},
+  { value: "OTHER", label: "기타" },
+]
+
+// 운영요일 추가
+const daysOfWeek = [
+  { label: "월", value: "MONDAY" },
+  { label: "화", value: "TUESDAY" },
+  { label: "수", value: "WEDNESDAY" },
+  { label: "목", value: "THURSDAY" },
+  { label: "금", value: "FRIDAY" },
+  { label: "토", value: "SATURDAY" },
+  { label: "일", value: "SUNDAY" },
 ]
 
 // 코트 타입 정의
@@ -77,6 +98,16 @@ type Court = {
   isActive: boolean;
 }
 
+// 주소 타입 정의
+type Address = {
+  zipcode: string,
+  city: string,
+  district: string,
+  streetAddress: string,
+  detailAddress: string,
+  address: string,
+}
+
 // 시설 등록 폼 props 타입
 type RegisterFacilityFormProps = {
   onComplete: (facilityData: any) => void;
@@ -88,10 +119,9 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
   const [facilityData, setFacilityData] = useState({
     name: "",
     sportType: "",
-    address: "",
-    detailAddress: "",
     description: "",
     courtsCount: "",
+    openingDays: [] as string[],
     openingHours: "",
     closingHours: "",
     hasParking: false,
@@ -104,6 +134,7 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
   // Tab 변경
   const changeTab = (nextTab: string) => {
     // 현재 탭 유효성 검사
+    /*
     if (activeTab === "basic") {
       const { name, sportType, address } = facilityData;
       if (!name || !sportType || !address){
@@ -143,19 +174,52 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
         return;
       }
     }
-  
+    */
     setActiveTab(nextTab); // 조건 만족 시에만 탭 전환
   };
-  
+
+  // 운영 요일 관리
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const toggleDay = (day: string) => {
+    setSelectedDays((prev) => {
+      const updated = prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day];
+      return updated;
+    });
+  }
+
+  // 주소 정보 관리
+  const [addressData, setAddressData] = useState<Address>({
+    zipcode: "",
+    city: "",
+    district: "",
+    streetAddress: "",
+    detailAddress: "",
+    address: "",
+  })
+
   // 주소 검색 창 열기 상태
   const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
   const handlePostcodeComplete = (data: any) => {
-    console.log(data);
-    setFacilityData(prev => ({
+    setAddressData(prev => ({
       ...prev,
-      address: data.address
-    }))
-    setIsPostcodeOpen(false)
+      zipcode: data.zonecode,
+      city: data.sido,
+      district: data.sigungu,
+      streetAddress: data.roadAddress,
+      address: data.address,
+    }));
+    setIsPostcodeOpen(false);
+  }
+
+  // 주소 입력값 변경 처리
+  const handleAddressChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { name, value} = e.target;
+    setAddressData(prev => ({
+      ...prev,
+      [name]:value
+    }));
   }
 
   // 코트 정보를 관리하기 위한 상태
@@ -287,15 +351,26 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
   }
   
   // 시설 등록 제출 처리
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     
     try {
       // 필수 필드 체크
-      if (!facilityData.name || !facilityData.sportType || !facilityData.address || 
+      if (!facilityData.name || !facilityData.sportType || !addressData.address || 
           !facilityData.openingHours || !facilityData.closingHours) {
         throw new Error("필수 정보를 모두 입력해주세요.")
+      }
+
+      // 운영 요일 체크
+      if (selectedDays.length === 0) {
+        toast({
+          title: "운영 요일 없음",
+          description: "운영 요일을 하나 이상 선택해주세요.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
       }
 
       // 코트 정보 체크
@@ -303,16 +378,42 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
         throw new Error("최소 하나 이상의 코트 정보를 등록해주세요.")
       }
       
-      // API 호출 및 데이터 저장 (실제로는 서버 API 호출)
+      // 운영 요일 별 데이터 생성
+      const allDays = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+      const operatingHours = allDays.map((day) => {
+        const isOperating = selectedDays.includes(day);
+        return {
+          dayOfWeek: day,
+          openTime: facilityData.openingHours,
+          closeTime: facilityData.closingHours,
+          holiday: !isOperating, 
+        };
+      });
       
+      // Court 변환
+      const saveCourts = courts.map((court) => ({
+        id: court.id,
+        name: court.name,
+        courtType: court.subType,
+        width: parseInt(court.width),
+        height: parseInt(court.height),
+        indoor: court.mainType === "INDOOR",
+        active: court.isActive,
+      }));
+
       // 변환된 데이터 형식으로 전달
       const processedData = {
         ...facilityData,
         courtsCount: courts.length,
-        courts: courts,
-        openingHours: `${facilityData.openingHours}-${facilityData.closingHours}`
+        courts: saveCourts,
+        address: addressData,
+        operatingHours: operatingHours,
       }
+
+      console.log("전송 데이터 : ", JSON.stringify(processedData, null, 2));
       
+      // API 호출 및 데이터 저장 (실제로는 서버 API 호출)
+      await facilityService.createFacility(processedData);
       // 완료 핸들러 호출
       onComplete(processedData)
       
@@ -380,8 +481,8 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
               <Input
                 id="address"
                 name="address"
-                value={facilityData.address}
-                onChange={handleInputChange}
+                value={addressData.address}
+                onChange={handleAddressChange}
                 placeholder="예: 서울시 강남구 테헤란로 123"
                 className="flex-1 h-12 text-base"
                 required
@@ -410,8 +511,8 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
             <Input
               id="detailAddress"
               name="detailAddress"
-              value={facilityData.detailAddress}
-              onChange={handleInputChange}
+              value={addressData.detailAddress}
+              onChange={handleAddressChange}
               placeholder="예: 2층 테니스 코트"
               className="h-12 text-base"
             />
@@ -427,6 +528,25 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
         </TabsContent>
         
         <TabsContent value="details" className="space-y-6 pt-2">
+        <Label htmlFor="openingDays" className="text-base">운영 요일 *</Label>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="border rounded-md p-4 space-y-3">
+              <div className="grid grid-cols-7 gap-2">
+                {daysOfWeek.map((day) => (
+                  <div key={day.value} className="flex items-center space-x-1">
+                    <Checkbox
+                      id={day.value}
+                      checked={selectedDays.includes(day.value)}
+                      onCheckedChange={(checked) => toggleDay(day.value)}
+                      className="h-5 w-5"
+                    />
+                    <label htmlFor={day.value}>{day.label}</label>
+                  </div>
+                ))}
+              </div>
+            </div>  
+          </div>  
+          
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-4">
               <Label htmlFor="openingHours" className="text-base">운영 시작 시간 *</Label>
