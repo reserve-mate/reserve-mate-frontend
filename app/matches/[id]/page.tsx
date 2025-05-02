@@ -114,6 +114,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     const fetchMatchDetail = async () => {
       try {
         const matchInfo = await matchService.getMatch(params.id);
+        console.log(matchInfo.matchDataDto.matchId)
         setMatchDetail(matchInfo);
       } catch (error: any) {
         alert(error.message);
@@ -247,44 +248,6 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     getMatchDetail(params.id);
   }, [params.id, isLoggedIn])
 
-  const handleJoinMatch = () => {
-    if (!matchDetail) return;
-    if ( !isLoggedIn ) {
-      alert("로그인 후 참가 신청을 하실 수 있습니다.");
-      router.push("/login");
-    }
-    if (!match) return;
-
-    setIsJoining(true)
-
-    // 실제 구현에서는 API를 통해 참가 신청을 처리합니다
-    setTimeout(() => {
-      const updatedMatch = { ...match }
-      updatedMatch.currentTeams += 1
-
-      // 모집 완료 상태 체크
-      if (updatedMatch.currentTeams >= updatedMatch.teamCapacity) {
-        updatedMatch.status = "모집완료"
-      }
-
-      // 참가자 추가 (실제로는 로그인한 사용자 정보를 사용)
-      updatedMatch.participants.push({
-        id: `p${updatedMatch.participants.length + 1}`,
-        name: "홍길동", // 로그인한 사용자 이름
-        level: "초급", // 사용자 레벨
-        joinedAt: new Date().toISOString().split("T")[0],
-      })
-
-      setMatch(updatedMatch)
-      setIsJoining(false)
-
-      toast({
-        title: "참가 신청 완료",
-        description: "매치 참가 신청이 완료되었습니다.",
-      })
-    }, 1000)
-  }
-
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault()
     if (!match || !comment.trim()) return
@@ -388,21 +351,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
             </div>
           </div>
           <div className="flex flex-col items-end gap-1.5">
-            <Button
-              className="w-36 h-11 bg-indigo-600 hover:bg-indigo-700 font-medium"
-              disabled={!canJoin || isJoining}
-              onClick={requestPayment}
-            >
-              {isJoining
-                ? "처리 중..."
-                : matchDetail.matchDataDto.matchStatus === MatchStatus.FINISH
-                  ? "모집 완료"
-                  : matchDetail.matchDataDto.matchStatus === MatchStatus.CLOSE_TO_DEADLINE
-                    ? "마감 임박"
-                    : matchDetail.matchDataDto.matchStatus === MatchStatus.END
-                      ? "종료됨"
-                      : "참가 신청하기"}
-            </Button>
+          {isMatchApplyBtn()}
             <Button 
               variant="ghost" 
               size="sm" 
