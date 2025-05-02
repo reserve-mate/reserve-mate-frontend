@@ -64,9 +64,14 @@ type Comment = {
 }
 
 const clientKey = process.env.NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY || '';
-const customerKey = crypto.randomUUID();
+const customerKey: string = generateUniqueString();
 
-const KAKAO_SDK_URL = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&libraries=services&autoload=false`;
+// 무작위 문자열 생성
+function generateUniqueString(): string {
+  return (
+    Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10)
+  );
+}
 
 export default function MatchDetailPage({ params }: { params: { id: number } }) {
   const numberFormat = /\B(?=(\d{3})+(?!\d))/g; // 천원단위 숫자 포맷
@@ -317,6 +322,32 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   // 가격 천원단위
   const priceFormat = (price: number): string => {
     return price.toString().replace(numberFormat, ',');
+  }
+
+  // 참가여부 버튼
+  const isMatchApplyBtn = () => {
+    if(!matchDetail) return;
+    console.log(matchDetail.userDataDto?.isMatchApply)
+    if(matchDetail.userDataDto && matchDetail.userDataDto.isMatchApply) {
+      return (<Button
+          className="w-full py-6 text-lg font-bold"
+          disabled={!canJoin || isJoining}
+          onClick={requestPayment}
+        >
+          매치 취소하기
+        </Button>)
+    }else{
+      return (<Button
+        className="w-full py-6 text-lg font-bold"
+        disabled={!canJoin || isJoining}
+        onClick={requestPayment}
+      >
+        {isJoining
+          ? "처리 중..."
+          : "참가 신청하기"}
+      </Button>)
+    }
+    
   }
 
   if (loading || !matchDetail) {
@@ -689,32 +720,28 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm text-gray-500 mb-1">이름</p>
-                      <Input placeholder={`${matchDetail.userDataDto.userName}`} disabled />
+                      <Input value={`${matchDetail.userDataDto.userName}`} disabled />
                     </div>
                     <div>
                       <p className="text-sm text-gray-500 mb-1">연락처</p>
-                      <Input placeholder={matchDetail.userDataDto.phone} disabled />
+                      <Input value={matchDetail.userDataDto.phone} disabled />
                     </div>
                   </div>
                   <p className="text-xs text-gray-500">* 회원 정보에 등록된 정보로 자동 입력됩니다.</p>
                 </div> : ""
               }
 
-              <Button
+              {isMatchApplyBtn()}
+
+              {/* <Button
                 className="w-full py-6 text-lg font-bold"
                 disabled={!canJoin || isJoining}
                 onClick={requestPayment}
               >
                 {isJoining
                 ? "처리 중..."
-                : matchDetail.matchDataDto.matchStatus === MatchStatus.FINISH
-                  ? "모집 완료"
-                  : matchDetail.matchDataDto.matchStatus === MatchStatus.CLOSE_TO_DEADLINE
-                    ? "마감 임박"
-                    : matchDetail.matchDataDto.matchStatus === MatchStatus.END
-                      ? "종료됨"
-                      : "참가 신청하기"}
-              </Button>
+                : "참가 신청하기"}
+              </Button> */}
 
               {!canJoin && (
                 <p className="text-center text-red-500 text-sm">모집이 마감되었습니다.</p>
