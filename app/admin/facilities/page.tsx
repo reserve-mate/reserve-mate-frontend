@@ -139,6 +139,9 @@ export default function AdminFacilitiesPage() {
   
   // 시설 등록 완료 후 처리
   const handleFacilityRegisterComplete = (newFacility: any) => {
+    // 주소 데이터 추가 확인
+    console.log(newFacility.address);
+
     // 새 시설을 목록에 추가
     setFacilities(prev => [...prev, {
       id: String(prev.length + 1),
@@ -149,6 +152,11 @@ export default function AdminFacilitiesPage() {
     setShowRegisterForm(false)
     
     // 성공 메시지 처리 등...
+    toast({
+      title: "시설 등록 완료",
+      description: `${newFacility.name} 시설이 등록되었습니다.`,
+      variant: "default",
+    })
   }
 
   // 시설 관리 목록 UI

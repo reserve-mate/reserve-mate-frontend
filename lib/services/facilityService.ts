@@ -25,26 +25,39 @@ export interface Court {
   id: number;
   facilityId: number;
   name: string;
-  type: string;
+  courtType: string;
   width: number;
   height: number;
-  isActive: boolean;
+  indoor: boolean;
+  active: boolean;
+}
+
+// 주소 타입 정의
+export interface Address {
+  zipcode: string,
+  city: string,
+  district: string,
+  streetAddress: string,
+  detailAddress: string,
 }
 
 // 시설 등록 요청 타입
 export interface CreateFacilityRequest {
   name: string;
   sportType: string;
-  address: string;
-  detailAddress?: string;
+  address: Address;
   description?: string;
-  openingHours: string;
-  closingHours: string;
   hasParking: boolean;
   hasShower: boolean;
   hasEquipmentRental: boolean;
   hasCafe: boolean;
   courts: Omit<Court, 'id' | 'facilityId'>[];
+  operatingHours: {
+    dayOfWeek: string;
+    openTime: string | null;
+    closeTime: string | null;
+    holiday: boolean;
+  }[];
   images?: File[];
 }
 
@@ -61,34 +74,45 @@ export const facilityService = {
   // 시설 등록 (관리자 전용)
   createFacility: (data: CreateFacilityRequest) => {
     const formData = new FormData();
-    
+    console.log(data.images);
     // JSON 데이터를 FormData에 추가
-    formData.append('facilityData', JSON.stringify({
+    formData.append(
+      'facilityData', 
+      new Blob([JSON.stringify({
       name: data.name,
       sportType: data.sportType,
       address: data.address,
-      detailAddress: data.detailAddress,
       description: data.description,
-      operatingHours: `${data.openingHours}-${data.closingHours}`,
       hasParking: data.hasParking,
       hasShower: data.hasShower,
       hasEquipmentRental: data.hasEquipmentRental,
       hasCafe: data.hasCafe,
       courts: data.courts,
-    }));
+      operatingHours: data.operatingHours,
+    })],{ type : 'application/json'})
+  );
     
     // 이미지 파일 추가
+    // 이미지 상세 정보
+    const imageMeta: {displayOrder: number; isMain: boolean}[] = [];
     if (data.images && data.images.length > 0) {
       data.images.forEach((image, index) => {
         formData.append(`images`, image);
+        imageMeta.push({
+          displayOrder: index,
+          isMain: index === 0 // 첫번째 이미지를 메인으로
+        })
       });
     }
-    
+    // 이미지 상세 정보 추가
+    formData.append(`imageMeta`, new Blob([JSON.stringify(imageMeta)], {type: 'application/json'}));
+
     return api.post<Facility>('/admin/facilities', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+    
   },
   
   // 시설 정보 수정 (관리자 전용)
