@@ -106,6 +106,10 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     setSelectedPaymentMethod(method);
   }
 
+  const generateUniqueString = (): string => {
+    return Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
+  }
+
   // 매치 상세 조회
   const getMatchDetail = (matchId: number) => {
     // todo 로컬 스토리지 가져와서 변수에 저장하기
@@ -117,9 +121,10 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
         console.log(matchInfo.matchDataDto.matchId)
         setMatchDetail(matchInfo);
       } catch (error: any) {
-        alert(error.message);
+        alert(error.errorCode + ":" + error.message);
         if(error.errorCode === "UNAUTHORIZED"){
-          window.location.href = "/login";
+          window.location.reload();
+          return;
         }
         router.push("/matches");
       } finally {
@@ -290,7 +295,6 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   // 참가여부 버튼
   const isMatchApplyBtn = () => {
     if(!matchDetail) return;
-    console.log(matchDetail.userDataDto?.isMatchApply)
     if(matchDetail.userDataDto && matchDetail.userDataDto.isMatchApply) {
       return (<Button
           className="w-full py-6 text-lg font-bold"

@@ -24,14 +24,60 @@ export default function PaymentProcessingPage({ params }: { params: { id: number
 
     try {
       const paymentRes = await paymentService.paymentApprove(payment);
-      if(paymentRes.status === 'success') {
-        if(paymentRes.type === 'matchPaymentSuccess') {
-          localStorage.setItem("paymentResult", JSON.stringify(paymentRes));
-          router.push("/payment/success/" + params.id + "?orderId=" + orderId);
+
+      if(paymentRes.status === 'fail') {  // 결제를 실패한 경우
+        if(paymentRes.type === 'failPayment') {
+
+          const paymentFail = {
+            errorCode: paymentRes.errorCode,
+            message: paymentRes.errorMsg,
+            id: params.id,
+            type: "match"
+          };
+
+          localStorage.setItem("paymentFail", JSON.stringify(paymentFail));
+          router.push("/payment/failed");
+        }
+      }else {
+        localStorage.setItem("paymentResult", JSON.stringify(paymentRes));
+
+        if(paymentRes.status === 'success') { // 결제를 성공한 경우
+          if(paymentRes.type === 'matchPaymentSuccess') {
+            router.push("/payment/success/" + params.id + "?orderId=" + orderId);
+          }
+        }else if(paymentRes.status === 'cancel'){ // toss에 결제를 시도했지만 모종의 이유로 실패해 결제가 취소된 경우
+          if(paymentRes.type === 'cancelPayment') {
+            router.push("/payment/cancel?orderId=" + orderId);
+          }
         }
       }
-    } catch (error) {
-      console.log(error);
+
+      // if(paymentRes.status === 'success') {
+      //   if(paymentRes.type === 'matchPaymentSuccess') {
+      //     router.push("/payment/success/" + params.id + "?orderId=" + orderId);
+      //   }
+      // }else if(paymentRes.status === 'cancel'){
+      //   if(paymentRes.type === 'cancelPayment') {
+      //     router.push("/payment/cancel?orderId=" + orderId);
+      //   }
+      // }else if(paymentRes.status === 'fail'){
+      //   if(paymentRes.type === 'failPayment') {
+
+      //     // const paymentFail = {
+      //     //   errorCode: paymentRes.errorCode,
+      //     //   message: paymentRes.errorMsg,
+      //     //   id: params.id,
+      //     //   type: "match"
+      //     // };
+
+      //     // localStorage.setItem("paymentFail", JSON.stringify(paymentFail));
+      //     router.push("/payment/failed");
+      //   }
+      // }
+    } catch (error: any) {
+      error.type = "match"
+      error.id = params.id;
+      localStorage.setItem("paymentFail", JSON.stringify(error));
       router.push("/payment/failed");
     }
 

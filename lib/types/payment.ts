@@ -20,8 +20,11 @@ interface PaymentFail extends PaymentResponse {
     errorMsg: string;
 }
 
+//export interface 
+
 // 취소 이유
 interface CancelResponse extends PaymentResponse {
     type: 'cancelPayment';
+    orderId: string;
     cancelReason: string;
 }

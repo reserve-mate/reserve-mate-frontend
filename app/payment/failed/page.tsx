@@ -1,9 +1,50 @@
+"use client"
+
 import { AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
+import { useEffect, useState } from "react"
+
+interface PaymentFail {
+  type: string;
+  id: number;
+  errorCode: string;
+  message: string;
+}
 
 export default function PaymentFailedPage() {
+
+  const [ paymentFail, setPaymentFail ] = useState<PaymentFail | null>(null);
+
+  // 실패 사유
+  useEffect(() => {
+
+    const payFail = localStorage.getItem("paymentFail");
+
+    if(!payFail) return;
+
+    console.log(payFail);
+
+    setPaymentFail(JSON.parse(payFail));
+
+  }, []);
+
+  if(!paymentFail) return null;
+
+  // 매치 또는 시설 예약에 따른 경로
+  const getReturnPath = (): string => {
+    let returnPath = "";
+
+    if(paymentFail.type === 'match'){
+      returnPath = `/matches/${paymentFail.id}`;
+    }else{
+      returnPath = ``;
+    }
+
+    return returnPath;
+  }
+
   return (
     <div className="page-container flex flex-col items-center justify-center min-h-[70vh]">
       <Card className="w-full max-w-md styled-card">
@@ -25,9 +66,9 @@ export default function PaymentFailedPage() {
           <ul className="w-full bg-secondary p-4 rounded-lg mb-6 space-y-2">
             <li className="text-sm flex items-start gap-2">
               <span className="text-red-500">•</span>
-              <span>카드 잔액 부족</span>
+              <span>{paymentFail.message}</span>
             </li>
-            <li className="text-sm flex items-start gap-2">
+            {/* <li className="text-sm flex items-start gap-2">
               <span className="text-red-500">•</span>
               <span>결제 정보가 올바르지 않음</span>
             </li>
@@ -38,12 +79,12 @@ export default function PaymentFailedPage() {
             <li className="text-sm flex items-start gap-2">
               <span className="text-red-500">•</span>
               <span>네트워크 연결 문제</span>
-            </li>
+            </li> */}
           </ul>
         </CardContent>
         <CardFooter className="flex flex-col gap-2 pb-6">
           <Button asChild className="w-full">
-            <Link href="/reservations/new">다시 시도하기</Link>
+            <Link href={getReturnPath()}>다시 시도하기</Link>
           </Button>
           <Button asChild variant="outline" className="w-full">
             <Link href="/">홈으로 돌아가기</Link>

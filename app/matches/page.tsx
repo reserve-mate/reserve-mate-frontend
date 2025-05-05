@@ -23,7 +23,7 @@ type GroupedMatches = {
 
 export default function MatchesPage() {
   // 검색 세팅
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState<string>("")
   const [sportType, setSportType] = useState<SportType>(SportType.ALL);
 
   // 매치 조회 및 검색 필터링
@@ -47,6 +47,8 @@ export default function MatchesPage() {
 
   // 매치 카드 스크롤
   const observeRef = useRef<HTMLDivElement | null>(null);
+
+  const ref = useRef(false);
   
   // 로그인 상태를 관리
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -145,6 +147,8 @@ export default function MatchesPage() {
 
   // 초기 선택된 날짜 설정
   useEffect(() => {
+    if(ref.current) return;
+    ref.current = true;
     // 처음 로드될 때만 오늘 날짜로 설정
     const today = startOfDay(new Date())
     setSelectedDate(today)
