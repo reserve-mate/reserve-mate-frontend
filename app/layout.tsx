@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { SiteHeader } from "@/components/site-header"
 import ConditionalFooter from "../components/conditional-footer"
 import { Toaster } from "@/components/ui/toaster"
+import Script from "next/script"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -15,11 +16,14 @@ export const metadata = {
   generator: 'v0.dev'
 }
 
+const KAKAO_SDK_URL = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&libraries=services,clusterer&autoload=false`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen bg-white`}>
@@ -30,6 +34,7 @@ export default function RootLayout({
             <ConditionalFooter />
           </div>
           <Toaster />
+          <Script src={KAKAO_SDK_URL} strategy='beforeInteractive'/>
         </ThemeProvider>
       </body>
     </html>

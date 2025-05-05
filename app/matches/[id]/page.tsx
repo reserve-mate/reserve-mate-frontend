@@ -19,6 +19,15 @@ import { MatchDetailRespone, MatchPayment } from "@/lib/types/matchTypes"
 import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
 import { loadTossPayments, ANONYMOUS, TossPaymentsWidgets, TossPaymentsPayment } from "@tosspayments/tosspayments-sdk";
 import { matchPlayerService } from "@/lib/services/matchplayerService"
+import Script from "next/script"
+import { Map, MapMarker } from 'react-kakao-maps-sdk';
+import { Location } from "@/lib/types/commonTypes"
+
+declare global {              // Property 'kakao' does not exist on type 'Window & typeof globalThis'. 에러 방지
+  interface Window {          // kakao 라는 객체가 window에 존재하고 있다고 인식
+    kakao: any;
+  }
+}
 
 // 매치 데이터 타입
 type Match = {
@@ -55,7 +64,14 @@ type Comment = {
 }
 
 const clientKey = process.env.NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY || '';
-const customerKey = crypto.randomUUID();
+const customerKey: string = generateUniqueString();
+
+// 무작위 문자열 생성
+function generateUniqueString(): string {
+  return (
+    Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10)
+  );
+}
 
 export default function MatchDetailPage({ params }: { params: { id: number } }) {
   const numberFormat = /\B(?=(\d{3})+(?!\d))/g; // 천원단위 숫자 포맷
@@ -67,8 +83,8 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   const [isJoining, setIsJoining] = useState(false)
   const [showMobileJoinPanel, setShowMobileJoinPanel] = useState(false)
 
-  // 매치 토스 결제 모달
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  // 지도 위도 경도
+  const [ location, setLocation ] = useState<Location | null>(null);
 
   // 토스 결제
   const [payment, setPayment] = useState<TossPaymentsPayment | null>(null);
@@ -90,6 +106,10 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     setSelectedPaymentMethod(method);
   }
 
+  const generateUniqueString = (): string => {
+    return Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
+  }
+
   // 매치 상세 조회
   const getMatchDetail = (matchId: number) => {
     // todo 로컬 스토리지 가져와서 변수에 저장하기
@@ -98,12 +118,13 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     const fetchMatchDetail = async () => {
       try {
         const matchInfo = await matchService.getMatch(params.id);
-        console.log(matchInfo.userDataDto)
+        console.log(matchInfo.matchDataDto.matchId)
         setMatchDetail(matchInfo);
       } catch (error: any) {
-        alert(error.message);
+        alert(error.errorCode + ":" + error.message);
         if(error.errorCode === "UNAUTHORIZED"){
-          window.location.href = "/login";
+          window.location.reload();
+          return;
         }
         router.push("/matches");
       } finally {
@@ -120,10 +141,36 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     setIsLoggedIn(loggedInStatus === 'true')
   }, [])
 
+  // 지도 위도 경도
+  useEffect(() => {
+    if(!matchDetail) return;
+
+    const matchAddress = matchDetail.facilityDataDto.address;
+
+    window.kakao.maps.load(() => {
+      const geocoder = new window.kakao.maps.services.Geocoder();
+
+      geocoder.addressSearch(matchAddress, function (result: any, status: any){
+        if (status === window.kakao.maps.services.Status.OK) {
+          console.log(result[0].y)
+          console.log(result[0].x)
+
+          const coords: Location = {
+            latitude: result[0].y,
+            longitude: result[0].x
+          } 
+
+          setLocation(coords)
+        }
+
+      })
+    });
+
+  }, [matchDetail])
+
+  // 토스 결제창 초기화
   useEffect(() => {
     async function fetchPayment() {
-
-      console.log('clientKey >>> ' + clientKey)
       try {
         const tossPayments = await loadTossPayments(clientKey);
 
@@ -144,7 +191,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     fetchPayment();
   }, [clientKey, customerKey]);
 
-  // 토스 결제 요청창 노출출
+  // 토스 결제 요청창 노출
   const requestPayment = async () => {
     if (!matchDetail) return;
 
@@ -206,48 +253,6 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     getMatchDetail(params.id);
   }, [params.id, isLoggedIn])
 
-  const closeModal = () => {
-    setCheckoutOpen(false);
-  } 
-
-  const handleJoinMatch = () => {
-    if (!matchDetail) return;
-    if ( !isLoggedIn ) {
-      alert("로그인 후 참가 신청을 하실 수 있습니다.");
-      router.push("/login");
-    }
-    if (!match) return;
-
-    setIsJoining(true)
-
-    // 실제 구현에서는 API를 통해 참가 신청을 처리합니다
-    setTimeout(() => {
-      const updatedMatch = { ...match }
-      updatedMatch.currentTeams += 1
-
-      // 모집 완료 상태 체크
-      if (updatedMatch.currentTeams >= updatedMatch.teamCapacity) {
-        updatedMatch.status = "모집완료"
-      }
-
-      // 참가자 추가 (실제로는 로그인한 사용자 정보를 사용)
-      updatedMatch.participants.push({
-        id: `p${updatedMatch.participants.length + 1}`,
-        name: "홍길동", // 로그인한 사용자 이름
-        level: "초급", // 사용자 레벨
-        joinedAt: new Date().toISOString().split("T")[0],
-      })
-
-      setMatch(updatedMatch)
-      setIsJoining(false)
-
-      toast({
-        title: "참가 신청 완료",
-        description: "매치 참가 신청이 완료되었습니다.",
-      })
-    }, 1000)
-  }
-
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault()
     if (!match || !comment.trim()) return
@@ -285,6 +290,31 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   // 가격 천원단위
   const priceFormat = (price: number): string => {
     return price.toString().replace(numberFormat, ',');
+  }
+
+  // 참가여부 버튼
+  const isMatchApplyBtn = () => {
+    if(!matchDetail) return;
+    if(matchDetail.userDataDto && matchDetail.userDataDto.isMatchApply) {
+      return (<Button
+          className="w-full py-6 text-lg font-bold"
+          disabled={!canJoin || isJoining}
+          onClick={requestPayment}
+        >
+          매치 취소하기
+        </Button>)
+    }else{
+      return (<Button
+        className="w-full py-6 text-lg font-bold"
+        disabled={!canJoin || isJoining}
+        onClick={requestPayment}
+      >
+        {isJoining
+          ? "처리 중..."
+          : "참가 신청하기"}
+      </Button>)
+    }
+    
   }
 
   if (loading || !matchDetail) {
@@ -325,21 +355,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
             </div>
           </div>
           <div className="flex flex-col items-end gap-1.5">
-            <Button
-              className="w-36 h-11 bg-indigo-600 hover:bg-indigo-700 font-medium"
-              disabled={!canJoin || isJoining}
-              onClick={requestPayment}
-            >
-              {isJoining
-                ? "처리 중..."
-                : matchDetail.matchDataDto.matchStatus === MatchStatus.FINISH
-                  ? "모집 완료"
-                  : matchDetail.matchDataDto.matchStatus === MatchStatus.CLOSE_TO_DEADLINE
-                    ? "마감 임박"
-                    : matchDetail.matchDataDto.matchStatus === MatchStatus.END
-                      ? "종료됨"
-                      : "참가 신청하기"}
-            </Button>
+          {isMatchApplyBtn()}
             <Button 
               variant="ghost" 
               size="sm" 
@@ -559,17 +575,14 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
               <CardTitle className="text-lg sm:text-xl font-semibold">위치 정보</CardTitle>
             </CardHeader>
             <CardContent className="px-4 sm:px-6 pt-2">
-              <div className="relative h-56 sm:h-64 bg-gray-200 rounded-lg overflow-hidden">
-                <Image 
-                  src="/placeholder.svg?height=300&width=600&text=지도" 
-                  alt="지도" 
-                  fill 
-                  className="object-cover"
-                  priority 
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <p className="text-gray-500">지도 정보</p>
-                </div>
+              <div id="map" className="relative h-56 sm:h-64 bg-gray-200 rounded-lg overflow-hidden">
+                <Map center={location ? {lat: location?.latitude, lng: location?.longitude } : {lat: 37.497930, lng: 127.027596 }}
+                style={{ width: '100%', height: '100%' }}
+                level={3}
+                >
+                  <MapMarker position={location ? {lat: location?.latitude, lng: location?.longitude } : {lat: 37.497930, lng: 127.027596 }}>
+                  </MapMarker>
+                </Map>
               </div>
               <div className="mt-4">
                 <p className="font-medium text-sm sm:text-base">{matchDetail.facilityDataDto.facilityName}</p>
@@ -660,32 +673,28 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm text-gray-500 mb-1">이름</p>
-                      <Input placeholder={`${matchDetail.userDataDto.userName}`} disabled />
+                      <Input value={`${matchDetail.userDataDto.userName}`} disabled />
                     </div>
                     <div>
                       <p className="text-sm text-gray-500 mb-1">연락처</p>
-                      <Input placeholder={matchDetail.userDataDto.phone} disabled />
+                      <Input value={matchDetail.userDataDto.phone} disabled />
                     </div>
                   </div>
                   <p className="text-xs text-gray-500">* 회원 정보에 등록된 정보로 자동 입력됩니다.</p>
                 </div> : ""
               }
 
-              <Button
+              {isMatchApplyBtn()}
+
+              {/* <Button
                 className="w-full py-6 text-lg font-bold"
                 disabled={!canJoin || isJoining}
                 onClick={requestPayment}
               >
                 {isJoining
                 ? "처리 중..."
-                : matchDetail.matchDataDto.matchStatus === MatchStatus.FINISH
-                  ? "모집 완료"
-                  : matchDetail.matchDataDto.matchStatus === MatchStatus.CLOSE_TO_DEADLINE
-                    ? "마감 임박"
-                    : matchDetail.matchDataDto.matchStatus === MatchStatus.END
-                      ? "종료됨"
-                      : "참가 신청하기"}
-              </Button>
+                : "참가 신청하기"}
+              </Button> */}
 
               {!canJoin && (
                 <p className="text-center text-red-500 text-sm">모집이 마감되었습니다.</p>

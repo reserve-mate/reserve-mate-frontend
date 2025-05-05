@@ -1,7 +1,7 @@
 import axios,{AxiosRequestConfig, AxiosResponse} from "axios";
 
 // API 기본 URL 설정
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sportmate.site';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sportmate.site'; 
 
 // Axios 생성
 const apiInstance = axios.create({
@@ -17,7 +17,7 @@ const apiInstance = axios.create({
 apiInstance.interceptors.request.use(
   (config) => {
     // 인증이 필요없는 엔드포인트 목록
-    const publicEndpoints = ['/api/mail/send/authCode', '/api/mail/check/authCode', '/users/register', '/login', '/match/matcheDates', '/match/matches'];
+    const publicEndpoints = ['/api/mail/send/authCode', '/api/mail/check/authCode', '/users/register', '/login'];
     
     // 현재 요청 URL 확인 (baseURL 제외)
     const requestPath = config.url || '';
