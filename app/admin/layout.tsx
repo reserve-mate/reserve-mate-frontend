@@ -58,97 +58,99 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* 사이드바 */}
-      <div className={`bg-white shadow-md ${menuOpen ? 'w-64' : 'w-20'} transition-all duration-300 overflow-hidden`}>
-        <div className="p-6 pb-4 flex items-center justify-between">
-          <h2 className={`font-bold text-xl text-indigo-600 ${!menuOpen && 'hidden'}`}>
-            관리자 모드
-          </h2>
-          <Button variant="ghost" size="icon" onClick={toggleMenu}>
-            {menuOpen ? (
-              <ChevronLeft className="h-6 w-6" />
-            ) : (
-              <ChevronRight className="h-6 w-6" />
-            )}
-          </Button>
+    <div className="flex flex-col min-h-screen bg-gray-100">
+      <div className="flex flex-1">
+        {/* 사이드바 */}
+        <div className={`bg-white shadow-md ${menuOpen ? 'w-64' : 'w-20'} transition-all duration-300 h-screen sticky top-0`}>
+          <div className="p-6 pb-4 flex items-center justify-between">
+            <h2 className={`font-bold text-xl text-indigo-600 ${!menuOpen && 'hidden'}`}>
+              관리자 모드
+            </h2>
+            <Button variant="ghost" size="icon" onClick={toggleMenu}>
+              {menuOpen ? (
+                <ChevronLeft className="h-6 w-6" />
+              ) : (
+                <ChevronRight className="h-6 w-6" />
+              )}
+            </Button>
+          </div>
+          
+          <nav className="mt-2">
+            <ul className="space-y-2 px-4">
+              <li>
+                <Link 
+                  href="/admin/dashboard" 
+                  className="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-md"
+                >
+                  <LayoutDashboard className="h-5 w-5 mr-3" />
+                  <span className={`${!menuOpen && 'hidden'}`}>대시보드</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  href="/admin/facilities" 
+                  className="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-md"
+                >
+                  <Building className="h-5 w-5 mr-3" />
+                  <span className={`${!menuOpen && 'hidden'}`}>시설 관리</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  href="/admin/matches" 
+                  className="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-md"
+                >
+                  <Calendar className="h-5 w-5 mr-3" />
+                  <span className={`${!menuOpen && 'hidden'}`}>매치 관리</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  href="/admin/users" 
+                  className="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-md"
+                >
+                  <Users className="h-5 w-5 mr-3" />
+                  <span className={`${!menuOpen && 'hidden'}`}>사용자 관리</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  href="/admin/reservations" 
+                  className="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-md"
+                >
+                  <CreditCard className="h-5 w-5 mr-3" />
+                  <span className={`${!menuOpen && 'hidden'}`}>예약 관리</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  href="/admin/settings" 
+                  className="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-md"
+                >
+                  <Settings className="h-5 w-5 mr-3" />
+                  <span className={`${!menuOpen && 'hidden'}`}>설정</span>
+                </Link>
+              </li>
+            </ul>
+          </nav>
+          
+          <div className="absolute bottom-0 w-full p-4 border-t">
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 ${!menuOpen && 'justify-center'}`}
+              onClick={() => router.push('/')}
+            >
+              <LogOut className="h-5 w-5 mr-3" />
+              {menuOpen && <span>나가기</span>}
+            </Button>
+          </div>
         </div>
         
-        <nav className="mt-2">
-          <ul className="space-y-2 px-4">
-            <li>
-              <Link 
-                href="/admin/dashboard" 
-                className="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-md"
-              >
-                <LayoutDashboard className="h-5 w-5 mr-3" />
-                <span className={`${!menuOpen && 'hidden'}`}>대시보드</span>
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/admin/facilities" 
-                className="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-md"
-              >
-                <Building className="h-5 w-5 mr-3" />
-                <span className={`${!menuOpen && 'hidden'}`}>시설 관리</span>
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/admin/matches" 
-                className="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-md"
-              >
-                <Calendar className="h-5 w-5 mr-3" />
-                <span className={`${!menuOpen && 'hidden'}`}>매치 관리</span>
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/admin/users" 
-                className="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-md"
-              >
-                <Users className="h-5 w-5 mr-3" />
-                <span className={`${!menuOpen && 'hidden'}`}>사용자 관리</span>
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/admin/reservations" 
-                className="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-md"
-              >
-                <CreditCard className="h-5 w-5 mr-3" />
-                <span className={`${!menuOpen && 'hidden'}`}>예약 관리</span>
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/admin/settings" 
-                className="flex items-center p-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-md"
-              >
-                <Settings className="h-5 w-5 mr-3" />
-                <span className={`${!menuOpen && 'hidden'}`}>설정</span>
-              </Link>
-            </li>
-          </ul>
-        </nav>
-        
-        <div className="absolute bottom-0 w-full p-4 border-t">
-          <Button 
-            variant="ghost" 
-            className={`w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 ${!menuOpen && 'justify-center'}`}
-            onClick={() => router.push('/')}
-          >
-            <LogOut className="h-5 w-5 mr-3" />
-            {menuOpen && <span>나가기</span>}
-          </Button>
-        </div>
-      </div>
-      
-      {/* 메인 콘텐츠 */}
-      <div className="flex-1 overflow-auto">
-        <div className="container py-8">
-          {children}
+        {/* 메인 콘텐츠 */}
+        <div className={`flex-1 ${menuOpen ? 'ml-64' : 'ml-20'} transition-all duration-300`}>
+          <div className="container py-8">
+            {children}
+          </div>
         </div>
       </div>
     </div>
