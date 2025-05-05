@@ -8,15 +8,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Payment } from "@/lib/types/commonTypes";
 import { paymentService } from "@/lib/services/paymentService"
+import { Suspense } from "react";
 
-export default function PaymentProcessingPage({ params }: { params: { id: number } }) {
-
+// Client component that uses useSearchParams
+function PaymentProcessing({ params }: { params: { id: number } }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [ payment, setPayment ] = useState<Payment | null>(null);
 
   const savePayment = async(payment: Payment) => {
-
     try {
       const paymentRes = await paymentService.paymentApprove(payment);
       if(paymentRes.status === 'success') {
@@ -29,7 +29,6 @@ export default function PaymentProcessingPage({ params }: { params: { id: number
       console.log(error);
       router.push("/payment/failed");
     }
-
   }
 
   // 결제 요청
@@ -47,7 +46,6 @@ export default function PaymentProcessingPage({ params }: { params: { id: number
     }
 
     savePayment(payment);
-
   }, []);
 
   return (
@@ -73,5 +71,34 @@ export default function PaymentProcessingPage({ params }: { params: { id: number
         </CardFooter>
       </Card>
     </div>
+  )
+}
+
+// Loading fallback component
+function PaymentProcessingLoading() {
+  return (
+    <div className="page-container flex flex-col items-center justify-center min-h-[70vh]">
+      <Card className="w-full max-w-md styled-card">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">결제 정보 로딩 중</CardTitle>
+          <CardDescription>잠시만 기다려주세요.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center py-6">
+          <Loader2 className="h-16 w-16 text-primary animate-spin mb-6" />
+          <p className="text-center text-muted-foreground mb-2">
+            결제 정보를 처리하고 있습니다.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Page component with Suspense boundary
+export default function PaymentProcessingPage({ params }: { params: { id: number } }) {
+  return (
+    <Suspense fallback={<PaymentProcessingLoading />}>
+      <PaymentProcessing params={params} />
+    </Suspense>
   )
 } 
