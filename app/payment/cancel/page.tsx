@@ -7,9 +7,10 @@ import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { PaymentResultResponse } from "@/lib/types/payment";
+import { Suspense } from "react";
 
-export default function PaymentSuccessPage({params} : {params: {id: number}}) {
-
+// Client Component that uses useSearchParams
+function PaymentCancel({params} : {params: {id: number}}) {
   const [paymentInfo, setPaymentInfo] = useState<PaymentResultResponse | null>(null);
   const queryParam = useSearchParams();
   const router = useRouter();
@@ -107,5 +108,33 @@ export default function PaymentSuccessPage({params} : {params: {id: number}}) {
         </CardFooter>
       </Card>
     </div>
+  )
+}
+
+// Loading component for Suspense fallback
+function PaymentCancelLoading() {
+  return (
+    <div className="page-container flex flex-col items-center justify-center min-h-[70vh]">
+      <Card className="w-full max-w-md styled-card">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">결제 정보 로딩 중</CardTitle>
+          <CardDescription>잠시만 기다려주세요.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center py-6">
+          <div className="h-16 w-16 animate-pulse rounded-full bg-muted mb-6"></div>
+          <div className="w-full h-4 animate-pulse rounded bg-muted mb-4"></div>
+          <div className="w-3/4 h-4 animate-pulse rounded bg-muted"></div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Page component with Suspense boundary
+export default function PaymentSuccessPage({params} : {params: {id: number}}) {
+  return (
+    <Suspense fallback={<PaymentCancelLoading />}>
+      <PaymentCancel params={params} />
+    </Suspense>
   )
 } 

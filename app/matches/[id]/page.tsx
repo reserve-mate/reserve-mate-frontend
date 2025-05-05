@@ -297,9 +297,10 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     if(!matchDetail) return;
     if(matchDetail.userDataDto && matchDetail.userDataDto.isMatchApply) {
       return (<Button
+          variant="destructive"
           className="w-full py-6 text-lg font-bold"
           disabled={!canJoin || isJoining}
-          onClick={requestPayment}
+          onClick={() => router.push(`/matches/cancel/${params.id}`)}
         >
           매치 취소하기
         </Button>)

@@ -1,0 +1,181 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription, 
+  CardContent, 
+  CardFooter 
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { AlertCircle, ArrowLeft } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { matchPlayerService } from "@/lib/services/matchplayerService"
+import { useToast } from "@/components/ui/use-toast"
+
+export default function MatchCancellationPage({ params }: { params: { id: string } }) {
+  const router = useRouter()
+  const { toast } = useToast()
+  const [selectedReason, setSelectedReason] = useState("")
+  const [otherReason, setOtherReason] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showError, setShowError] = useState(false)
+
+  const cancellationReasons = [
+    "개인 일정 변경",
+    "건강상 이유 (부상, 컨디션 저하 등)",
+    "중복 예약 / 실수로 예약",
+    "팀원 부족 / 동행자 불참",
+    "팀원 사정으로 일정 조율 실패",
+    "시설 상태 불만족 (코트 상태, 장비 등)",
+    "날씨 문제 (우천, 폭염 등 / 야외 시설일 경우)",
+    "시스템 오류로 인한 잘못된 예약",
+    "다른 시간대/장소로 변경 예정",
+    "기타 (직접 입력)"
+  ]
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // 유효성 검사
+    if (!selectedReason) {
+      setShowError(true)
+      return
+    }
+
+    setIsSubmitting(true)
+    
+    try {
+      const reason = selectedReason === "기타 (직접 입력)" ? otherReason : selectedReason
+      
+      const response = await matchPlayerService.cancelMatch({ 
+        matchId: parseInt(params.id),
+        reason
+      })
+      
+      if (response.success) {
+        toast({
+          title: "취소 요청이 접수되었습니다",
+          description: "잠시만 기다려주세요. 결제 취소를 진행합니다.",
+        })
+        
+        // 취소 처리 페이지로 리다이렉트
+        router.push(`/matches/cancel/processing/${params.id}?refundId=${response.refundId}`)
+      } else {
+        throw new Error("취소 요청이 실패했습니다.")
+      }
+    } catch (error) {
+      console.error("매치 취소 중 오류가 발생했습니다:", error)
+      toast({
+        variant: "destructive",
+        title: "매치 취소 실패",
+        description: "매치 취소 처리 중 문제가 발생했습니다. 다시 시도해주세요.",
+      })
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="container max-w-3xl mx-auto py-8 px-4">
+      <Button 
+        variant="ghost" 
+        className="mb-6 flex items-center gap-1" 
+        onClick={() => router.back()}
+      >
+        <ArrowLeft className="h-4 w-4" /> 돌아가기
+      </Button>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">매치 취소하기</CardTitle>
+          <CardDescription>
+            매치를 취소하기 위한 사유를 선택해주세요.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {showError && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>취소 사유 필요</AlertTitle>
+              <AlertDescription>
+                매치 취소를 위해 사유를 선택해주세요.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium mb-3">취소 사유 선택</h3>
+                <RadioGroup 
+                  value={selectedReason} 
+                  onValueChange={(value) => {
+                    setSelectedReason(value)
+                    setShowError(false)
+                  }}
+                  className="space-y-3"
+                >
+                  {cancellationReasons.map((reason) => (
+                    <div key={reason} className="flex items-start space-x-2">
+                      <RadioGroupItem value={reason} id={reason} />
+                      <Label htmlFor={reason} className="font-normal">{reason}</Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+              
+              {selectedReason === "기타 (직접 입력)" && (
+                <div className="pl-6 pt-2">
+                  <Label htmlFor="other-reason" className="mb-2 block">기타 사유 입력</Label>
+                  <Textarea
+                    id="other-reason"
+                    placeholder="취소 사유를 입력해주세요"
+                    value={otherReason}
+                    onChange={(e) => setOtherReason(e.target.value)}
+                    className="resize-none"
+                    rows={3}
+                    required
+                  />
+                </div>
+              )}
+            </div>
+            
+            <div className="mt-8 space-y-2">
+              <p className="text-sm text-gray-500">취소 정책 안내</p>
+              <ul className="text-xs text-gray-500 space-y-1 list-disc pl-5">
+                <li>매치 시작 24시간 전까지 취소 시 전액 환불됩니다.</li>
+                <li>매치 시작 12시간 전까지 취소 시 50% 환불됩니다.</li>
+                <li>그 이후에는 환불이 불가능합니다.</li>
+              </ul>
+            </div>
+            
+            <div className="flex justify-end gap-4 mt-8">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={isSubmitting}
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "처리 중..." : "매치 취소하기"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+} 
