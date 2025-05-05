@@ -4,7 +4,7 @@ import "@/app/globals.css"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { SiteHeader } from "@/components/site-header"
-import ClientFooter from "../components/client-footer"  // 상대 경로로 변경
+import ConditionalFooter from "../components/conditional-footer"
 import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -27,7 +27,7 @@ export default function RootLayout({
           <div className="relative flex min-h-screen flex-col">
             <SiteHeader />
             <main className="flex-1 pb-8 sm:pb-10 lg:pb-12">{children}</main>
-            <ClientFooter />
+            <ConditionalFooter />
           </div>
           <Toaster />
         </ThemeProvider>
