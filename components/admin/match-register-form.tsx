@@ -18,16 +18,17 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { matchService } from "@/lib/services/matchService"
 import { FacilityManager } from "@/lib/services/userService"
+import { SportType } from "@/lib/enum/matchEnum"
+import { CourtName, FacilityManagerName, FacilityNames } from "@/lib/types/facilityTypes"
+import { facilityService } from "@/lib/services/facilityService"
 
 const sportTypes = [
-  { value: "soccer", label: "축구" },
-  { value: "futsal", label: "풋살" },
-  { value: "basketball", label: "농구" },
-  { value: "volleyball", label: "배구" },
-  { value: "tennis", label: "테니스" },
-  { value: "badminton", label: "배드민턴" },
-  { value: "baseball", label: "야구" },
-  { value: "other", label: "기타" },
+  { value: "SOCCER", label: "축구" },
+  { value: "FUTSAL", label: "풋살" },
+  { value: "BASKETBALL", label: "농구" },
+  { value: "TENNIS", label: "테니스" },
+  { value: "BADMINTON", label: "배드민턴" },
+  { value: "BASEBALL", label: "야구" },
 ]
 
 const skillLevels = [
@@ -215,7 +216,18 @@ type RegisterMatchFormProps = {
 export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [date, setDate] = useState<Date | undefined>(undefined)
+
   const [facilities, setFacilities] = useState<Facility[]>([])
+  // 시설 이름 조회
+  const [facilityNames, setFacilityNames] = useState<FacilityNames[]>([]);
+  const [selectFacilityName, setSelectFacilityName] = useState<FacilityNames | null>(null);
+
+  // 코트 이름 조회
+  const [courtNames, setCourtNames] = useState<CourtName[]>([]);
+
+  // 시설 매니저 이름 조회
+  const [managerNames, setManagerNames] = useState<FacilityManagerName[]>([]);
+
   const [availableTimeSlots, setAvailableTimeSlots] = useState<{ value: string, label: string }[]>([])
   const [filteredFacilities, setFilteredFacilities] = useState<Facility[]>([])
   const [reservations, setReservations] = useState<Reservation[]>([])
@@ -270,10 +282,11 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
       courtName: "",
       managerId: ""
     }))
-    setSelectedFacility(null)
+    //setSelectedFacility(null)
+    setSelectFacilityName(null);
     setAvailableCourts([])
     setFacilityManagers([])
-  }, [matchData.sportType, facilities])
+  }, [matchData.sportType, facilityNames])
   
   // 시설 선택에 따라 코트 필터링 및 시설 정보 업데이트
   useEffect(() => {
@@ -390,8 +403,8 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
     if (matchData.courtId) {
       const courtReservations = reservations.filter(
         r => r.facilityId === selectedFacility.id && 
-             r.courtId === matchData.courtId && 
-             r.date === selectedDate
+            r.courtId === matchData.courtId && 
+            r.date === selectedDate
       )
       
       // 예약된 시간대 제외
@@ -411,13 +424,72 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
       setAvailableTimeSlots(operatingTimeSlots)
     }
   }
-  
+
   // 입력값 변경 처리
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target
     setMatchData(prev => ({ ...prev, [name]: value }))
+  }
+
+  // 스포츠 종목별 시설 조회
+  const fetchGetFacilities = async (sportType: string) => {
+
+    try{
+      const facilityNames: FacilityNames[] = await facilityService.getMatchFacilityNames(sportType);
+      setFacilityNames(facilityNames);
+    }catch(error: any){
+      console.log(error);
+      if(!error) {
+        window.location.href = "/login";
+        return;
+      }
+    }
+    
+  }
+
+  // 스포츠 종목 변경 처리
+  const handleSportChange = (value: string) => {
+    setMatchData(prev => ({...prev, ["sportType"]: value}));
+    fetchGetFacilities(value);
+  }
+
+  // 코트 조회
+  const fetchGetCourts = async (facilityId: number) => {
+    try{
+      const courts: CourtName[] = await facilityService.getMatchCourtNames(facilityId);
+      setCourtNames(courts)
+    }catch(error: any) {
+      
+    }
+    
+  }
+
+  // 시설 관리자 조회
+  const fetchGetFacilityManger = async (facilityId: number) => {
+    try {
+      const facilityMangers: FacilityManagerName[] = await facilityService.getFacilityMangerNames(facilityId);
+      setManagerNames(facilityMangers);
+    }catch(error: any) {
+
+    }
+  }
+
+  // 시설 변경 처리
+  const handleFacilityChange = (value: string) => {
+    setMatchData(prev => ({...prev, ["facilityId"]: value}));
+
+    if(facilityNames.length > 0) {
+      const facilityName = facilityNames.find(facility => value === String(facility.facilityId));
+
+      if(facilityName) {
+        setSelectFacilityName(facilityName);
+        fetchGetCourts(facilityName.facilityId);
+        fetchGetFacilityManger(facilityName.facilityId);
+      }
+      
+    }
   }
   
   // 셀렉트 변경 처리
@@ -461,7 +533,7 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
       // 매치 정보 생성
       const matchInfo = {
         ...matchData,
-        facilityId: parseInt(matchData.facilityId),
+        facilityId: matchData.facilityId,
         courtId: matchData.courtId,
         maxParticipants: parseInt(matchData.maxParticipants),
         fee: parseInt(matchData.fee),
@@ -489,6 +561,15 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
       setIsLoading(false)
     }
   }
+
+  const timeFormat = (time: string): string => {
+    const [hour, minute] = time.split(":").map(Number);
+    const facilityTIme = new Date();
+    facilityTIme.setHours(hour);
+    facilityTIme.setMinutes(minute);
+
+    return format(facilityTIme, "HH:mm");
+  }
   
   return (
     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 max-w-2xl mx-auto p-2 sm:p-0">
@@ -514,7 +595,7 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
             <Label htmlFor="sportType" className="text-sm sm:text-base">스포츠 종목</Label>
             <Select
               value={matchData.sportType}
-              onValueChange={(value) => handleSelectChange("sportType", value)}
+              onValueChange={(value) => handleSportChange(value)}
             >
               <SelectTrigger id="sportType" className="mt-1 h-9 sm:h-10 text-sm sm:text-base">
                 <SelectValue placeholder="종목을 선택하세요" />
@@ -539,18 +620,18 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
           <Label htmlFor="facilityId" className="text-sm sm:text-base">시설 선택</Label>
           <Select
             value={matchData.facilityId}
-            onValueChange={(value) => handleSelectChange("facilityId", value)}
+            onValueChange={(value) => handleFacilityChange(value)}
             disabled={!matchData.sportType}
           >
             <SelectTrigger id="facilityId" className="mt-1 h-9 sm:h-10 text-sm sm:text-base">
               <SelectValue placeholder="시설을 선택하세요" />
             </SelectTrigger>
             <SelectContent>
-              {filteredFacilities.map((facility) => (
-                <SelectItem key={facility.id} value={facility.id} className="text-sm sm:text-base">
-                  {facility.name}
+              {facilityNames.length > 0 ? facilityNames.map((facility) => (
+                <SelectItem key={facility.facilityId} value={String(facility.facilityId)} className="text-sm sm:text-base">
+                  {facility.facilityName}
                 </SelectItem>
-              ))}
+              )) : "아직 등록된 시설이 없습니다."}
             </SelectContent>
           </Select>
           {!matchData.sportType && (
@@ -558,18 +639,18 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
           )}
         </div>
         
-        {selectedFacility && (
+        {selectFacilityName && (
           <div className="grid gap-1 sm:gap-2 text-xs sm:text-sm bg-gray-50 p-2 sm:p-3 rounded-md">
             <p>
-              <span className="font-medium">주소:</span> {selectedFacility.address}
+              <span className="font-medium">주소:</span> {selectFacilityName.address}
             </p>
             <p>
-              <span className="font-medium">운영 시간:</span> {selectedFacility.openingHours}
+              <span className="font-medium">운영 시간:</span> {`${timeFormat(selectFacilityName.startTime)}-${timeFormat(selectFacilityName.endTime)}`}
             </p>
           </div>
         )}
         
-        {selectedFacility && (
+        {selectFacilityName && (
           <div>
             <Label htmlFor="courtId" className="text-sm sm:text-base">코트 선택</Label>
             <Select
@@ -580,18 +661,18 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
                 <SelectValue placeholder="코트를 선택하세요" />
               </SelectTrigger>
               <SelectContent>
-                {availableCourts.map((court) => (
-                  <SelectItem key={court.id} value={court.id} className="text-sm sm:text-base">
-                    {court.name} ({court.type})
+                {courtNames.length > 0 ? courtNames.map((court) => (
+                  <SelectItem key={court.courtId} value={String(court.courtId)} className="text-sm sm:text-base">
+                    {court.courtName} ({court.courtType})
                   </SelectItem>
-                ))}
+                )) : "아직 등록된 코트가 없습니다."}
               </SelectContent>
             </Select>
           </div>
         )}
         
         {/* 시설 관리자 선택 */}
-        {selectedFacility && (
+        {selectFacilityName && (
           <div>
             <Label htmlFor="managerId" className="text-sm sm:text-base">시설 관리자 선택</Label>
             <Select
@@ -603,14 +684,14 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
               </SelectTrigger>
               <SelectContent>
                 {facilityManagers.length > 0 ? (
-                  facilityManagers.map((manager) => (
-                    <SelectItem key={manager.id} value={manager.id.toString()} className="text-sm sm:text-base">
-                      {manager.username} ({manager.email})
+                  managerNames.map((manager) => (
+                    <SelectItem key={manager.managerId} value={manager.managerId.toString()} className="text-sm sm:text-base">
+                      {manager.managerName} ({manager.managerEmail})
                     </SelectItem>
                   ))
                 ) : (
                   <SelectItem value="no_managers" disabled className="text-sm sm:text-base">
-                    관리자가 없습니다
+                    관리자가 없습니다.
                   </SelectItem>
                 )}
               </SelectContent>

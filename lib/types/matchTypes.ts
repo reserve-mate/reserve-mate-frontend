@@ -1,6 +1,18 @@
 import { MatchStatus, SportType } from "../enum/matchEnum";
 import { PaymentResponse } from "./payment";
 
+// 매치 등록 데이터
+export interface MatchRegist {
+    matchName: string;
+    courtId: number;
+    managerId: number;
+    matchDate: string;
+    matchTime: number;
+    matchEndTime: number;
+    teamCapacity: number;
+    description: string | null;
+}
+
 // 페이 실패 데이터
 export interface MatchPaymentSuccess extends PaymentResponse {
     type: 'matchPaymentSuccess';

@@ -1,4 +1,6 @@
 import { api } from '../api';
+import { SportType } from '../enum/matchEnum';
+import { CourtName, FacilityManagerName, FacilityNames } from '../types/facilityTypes';
 import { FacilityManager } from './userService';
 
 // 시설 타입 정의
@@ -66,6 +68,23 @@ export const facilityService = {
   // 시설 목록 조회
   getFacilities: () => 
     api.get<Facility[]>('/facilities'),
+
+  // 매치 등록 시 시설명 조회
+  getMatchFacilityNames: (sportType: string) => {
+    let endPoint = `/admin/facilities/getFacilityNames?sportType=${sportType}`;
+    return api.get<FacilityNames[]>(endPoint);
+  },
+
+  // 매치 등록 시 코트명 조회
+  getMatchCourtNames: (facilityId: number) => {
+    let endPoint = `/admin/facilities/getCourtNames?facilityId=${facilityId}`;
+    return api.get<CourtName[]>(endPoint);
+  },
+
+  getFacilityMangerNames: (facilityId: number) => {
+    let endPoint = `/admin/facilities/getManagerNames?facilityId=${facilityId}`;
+    return api.get<FacilityManagerName[]>(endPoint);
+  },
   
   // 시설 상세 조회
   getFacility: (id: number) => 
