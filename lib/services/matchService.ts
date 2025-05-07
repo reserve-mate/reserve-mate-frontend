@@ -1,11 +1,18 @@
 import { api } from '../api';
 import { MatchStatus } from '../enum/matchEnum';
 import { ApiError, ApiResonse, Slice } from '../types/commonTypes';
-import { CreateMatchRequest, Match, MatchDetailRespone, MatchList, MatchSearch, MathDateCount } from '../types/matchTypes';
+import { CreateMatchRequest, Match, MatchDetailRespone, MatchList, MatchRegist, MatchSearch, MathDateCount } from '../types/matchTypes';
 import { FacilityManager } from './userService';
 
 // 매치 서비스
 export const matchService = {
+
+  // 매치 등록
+  registMatch: (params: MatchRegist) => {
+    let endPoint = `/match/registMatch`
+    return api.post(endPoint, params);
+  },
+
   // 매치 목록 조회
   getMatches: (params: MatchSearch) => {
     let endpoint = '/match/matches';

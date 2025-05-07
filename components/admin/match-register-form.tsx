@@ -21,6 +21,7 @@ import { FacilityManager } from "@/lib/services/userService"
 import { SportType } from "@/lib/enum/matchEnum"
 import { CourtName, FacilityManagerName, FacilityNames } from "@/lib/types/facilityTypes"
 import { facilityService } from "@/lib/services/facilityService"
+import { MatchRegist } from "@/lib/types/matchTypes"
 
 const sportTypes = [
   { value: "SOCCER", label: "축구" },
@@ -247,8 +248,6 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
     maxParticipants: "",
     fee: "",
     description: "",
-    equipmentProvided: false,
-    images: [] as File[],
     courtId: "",
     courtName: "",
     managerId: ""
@@ -284,38 +283,42 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
     }))
     //setSelectedFacility(null)
     setSelectFacilityName(null);
-    setAvailableCourts([])
-    setFacilityManagers([])
+    //setAvailableCourts([])
+    setCourtNames([]);
+    //setFacilityManagers([])
+    setManagerNames([])
   }, [matchData.sportType, facilityNames])
   
   // 시설 선택에 따라 코트 필터링 및 시설 정보 업데이트
   useEffect(() => {
     if (matchData.facilityId) {
-      const facility = facilities.find(f => f.id === matchData.facilityId)
-      setSelectedFacility(facility || null)
+      const facility = facilityNames.find(f => f.facilityId === parseInt(matchData.facilityId))
+      setSelectFacilityName(facility || null);
       
-      if (facility && facility.courts) {
-        const activeCourts = facility.courts.filter(court => court.isActive)
-        setAvailableCourts(activeCourts)
+      if (facility && courtNames) {
+        fetchGetCourts(facility.facilityId);
+        // const activeCourts = courtNames.filter(court => court.isActive)
+        // setAvailableCourts(activeCourts)
       } else {
-        setAvailableCourts([])
+        setCourtNames([]);
       }
       
       // 시설 주소 자동 설정
       if (facility) {
         setMatchData(prev => ({
           ...prev,
-          facilityName: facility.name,
+          facilityName: facility.facilityName,
           address: facility.address
         }))
         
         // 시설 관리자 목록 조회
-        loadFacilityManagers(parseInt(facility.id))
+        //loadFacilityManagers(parseInt(facility.id))
+        fetchGetFacilityManger(facility.facilityId);
       }
     } else {
-      setSelectedFacility(null)
-      setAvailableCourts([])
-      setFacilityManagers([])
+      setSelectFacilityName(null)
+      setCourtNames([])
+      setManagerNames([])
     }
     
     // 시설이 변경되면 코트 선택 초기화
@@ -325,69 +328,27 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
       courtName: "",
       managerId: ""
     }))
-  }, [matchData.facilityId, facilities])
-  
-  // 시설 관리자 목록 조회
-  const loadFacilityManagers = async (facilityId: number) => {
-    try {
-      setLoadingManagers(true)
-      // 실제로는 API에서 시설 관리자 목록을 가져옴
-      // 여기서는 더미 데이터 및 서비스 함수 준비
-      
-      // const managers = await matchService.getFacilityManagers(facilityId)
-      // setFacilityManagers(managers)
-      
-      // 더미 데이터 사용 (실제 구현 시 위 코드로 대체)
-      setTimeout(() => {
-        // 시설 ID에 따라 다른 관리자 데이터 표시
-        const dummyManagers: { [key: string]: FacilityManager[] } = {
-          "1": [
-            { id: 101, username: "김테니스", email: "tennis1@example.com", role: { valueOf: () => "ROLE_FACILITY_MANAGER" } as any, facilityId },
-            { id: 102, username: "이테니스", email: "tennis2@example.com", role: { valueOf: () => "ROLE_FACILITY_MANAGER" } as any, facilityId }
-          ],
-          "2": [
-            { id: 103, username: "박풋살", email: "futsal1@example.com", role: { valueOf: () => "ROLE_FACILITY_MANAGER" } as any, facilityId },
-          ],
-          "3": [
-            { id: 104, username: "최농구", email: "basketball@example.com", role: { valueOf: () => "ROLE_FACILITY_MANAGER" } as any, facilityId },
-            { id: 105, username: "정농구", email: "basketball2@example.com", role: { valueOf: () => "ROLE_FACILITY_MANAGER" } as any, facilityId }
-          ],
-          "4": [
-            { id: 106, username: "강배드민턴", email: "badminton@example.com", role: { valueOf: () => "ROLE_FACILITY_MANAGER" } as any, facilityId }
-          ]
-        };
-        
-        // facilityId를 문자열로 변환하여 해당 시설의 관리자 목록 가져오기
-        const facilityIdStr = facilityId.toString();
-        setFacilityManagers(dummyManagers[facilityIdStr] || []);
-        setLoadingManagers(false);
-      }, 500);
-    } catch (error) {
-      toast({
-        title: "관리자 목록 조회 실패",
-        description: "시설 관리자 목록을 불러오는 중 오류가 발생했습니다.",
-        variant: "destructive"
-      });
-      setLoadingManagers(false);
-      setFacilityManagers([]);
-    }
-  };
+  }, [matchData.facilityId, facilityNames])
   
   // 매치 날짜 선택 시 가능한 시간대 업데이트
   useEffect(() => {
-    if (date && selectedFacility) {
+    if (date && selectFacilityName) {
       updateAvailableTimeSlots(format(date, 'yyyy-MM-dd'))
     }
-  }, [date, selectedFacility, reservations])
+  }, [date, selectFacilityName, reservations])
   
   // 사용 가능 시간대 계산
   const updateAvailableTimeSlots = (selectedDate: string) => {
-    if (!selectedFacility) return
+    if (!selectFacilityName) return
     
     // 운영 시간 파싱
-    const [openTime, closeTime] = selectedFacility.openingHours.split('-')
-    const openHour = parseInt(openTime.split(':')[0])
-    const closeHour = parseInt(closeTime.split(':')[0])
+    //const [openTime, closeTime] = selectedFacility.openingHours.split('-')
+    const openHour = parseInt(selectFacilityName.startTime.split(':')[0]);
+    console.log(openHour);
+    let closeHour = parseInt(selectFacilityName.endTime.split(':')[0]);
+    if(closeHour === 0) {
+      closeHour = 24;
+    }
     
     // 운영 시간 내 시간대 생성
     const operatingTimeSlots = Array.from(
@@ -398,31 +359,8 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
         return { value: `${formattedHour}:00`, label: `${formattedHour}:00` }
       }
     )
-    
-    // 선택된 코트에 대한 예약 확인
-    if (matchData.courtId) {
-      const courtReservations = reservations.filter(
-        r => r.facilityId === selectedFacility.id && 
-            r.courtId === matchData.courtId && 
-            r.date === selectedDate
-      )
-      
-      // 예약된 시간대 제외
-      const availableTimes = operatingTimeSlots.filter(slot => {
-        const hour = parseInt(slot.value.split(':')[0])
-        return !courtReservations.some(
-          r => {
-            const startHour = parseInt(r.startTime.split(':')[0])
-            const endHour = parseInt(r.endTime.split(':')[0])
-            return hour >= startHour && hour < endHour
-          }
-        )
-      })
-      
-      setAvailableTimeSlots(availableTimes)
-    } else {
-      setAvailableTimeSlots(operatingTimeSlots)
-    }
+
+    setAvailableTimeSlots(operatingTimeSlots)
   }
 
   // 입력값 변경 처리
@@ -445,6 +383,11 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
         window.location.href = "/login";
         return;
       }
+      toast({
+        title: "시설 조회 실패",
+        description: error instanceof Error ? error.message : "시설 조회 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
     }
     
   }
@@ -461,7 +404,15 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
       const courts: CourtName[] = await facilityService.getMatchCourtNames(facilityId);
       setCourtNames(courts)
     }catch(error: any) {
-      
+      if(!error) {
+        window.location.href = "/login";
+        return;
+      }
+      toast({
+        title: "코트 조회 실패",
+        description: error instanceof Error ? error.message : "시설 조회 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
     }
     
   }
@@ -472,7 +423,15 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
       const facilityMangers: FacilityManagerName[] = await facilityService.getFacilityMangerNames(facilityId);
       setManagerNames(facilityMangers);
     }catch(error: any) {
-
+      if(!error) {
+        window.location.href = "/login";
+        return;
+      }
+      toast({
+        title: "매니저저 조회 실패",
+        description: error instanceof Error ? error.message : "매니저 조회 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
     }
   }
 
@@ -509,6 +468,44 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
   const handleCheckboxChange = (name: string, checked: boolean) => {
     setMatchData(prev => ({ ...prev, [name]: checked }))
   }
+
+  // 매치 등록 api
+  const fetchPostMatchRegist = async (params: MatchRegist) => {
+    try {
+      await matchService.registMatch(params);
+
+      toast({
+        title: "매치 등록 완료",
+        description: "매치가 성공적으로 등록되었습니다."
+      });
+
+      // 매치 등록 후 데이터 초기화
+      setMatchData(prev => ({
+        ...prev,
+        title: "",
+        sportType: "",
+        facilityId: "",
+        facilityName: "",
+        address: "",
+        matchDate: "",
+        startTime: "",
+        endTime: "",
+        maxParticipants: "",
+        fee: "",
+        description: "",
+        courtId: "",
+        courtName: "",
+        managerId: ""
+      }))
+      
+    } catch (error: any) {
+      toast({
+        title: "매치 등록 실패",
+        description: error.message,
+        variant: "destructive"
+      })
+    }
+  }
   
   // 매치 등록 제출 처리
   const handleSubmit = (e: React.FormEvent) => {
@@ -530,27 +527,20 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
         throw new Error("종료 시간은 시작 시간보다 이후여야 합니다.")
       }
       
-      // 매치 정보 생성
-      const matchInfo = {
-        ...matchData,
-        facilityId: matchData.facilityId,
-        courtId: matchData.courtId,
-        maxParticipants: parseInt(matchData.maxParticipants),
-        fee: parseInt(matchData.fee),
-        managerId: matchData.managerId ? parseInt(matchData.managerId) : undefined,
-        matchTime: `${matchData.startTime} - ${matchData.endTime}`,
-        status: "모집중",
-        currentParticipants: 0,
-        id: Date.now() // 임시 ID (실제로는 서버에서 생성)
+      const matchRegist: MatchRegist = {
+        matchName: matchData.title,
+        courtId: Number(matchData.courtId),
+        managerId: Number(matchData.managerId),
+        matchDate: matchData.matchDate,
+        matchTime: startTime,
+        matchEndTime: endTime,
+        teamCapacity: Number(matchData.maxParticipants),
+        description: matchData.description,
+        matchPrice: Number(matchData.fee)
       }
+
+      fetchPostMatchRegist(matchRegist);
       
-      // 등록 완료 콜백 호출
-      onComplete(matchInfo)
-      
-      toast({
-        title: "매치 등록 완료",
-        description: "매치가 성공적으로 등록되었습니다."
-      })
     } catch (error) {
       toast({
         title: "매치 등록 실패",
@@ -683,7 +673,7 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
                 <SelectValue placeholder={loadingManagers ? "로딩 중..." : "매치 관리자를 선택하세요"} />
               </SelectTrigger>
               <SelectContent>
-                {facilityManagers.length > 0 ? (
+                {managerNames.length > 0 ? (
                   managerNames.map((manager) => (
                     <SelectItem key={manager.managerId} value={manager.managerId.toString()} className="text-sm sm:text-base">
                       {manager.managerName} ({manager.managerEmail})
@@ -697,7 +687,7 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
               </SelectContent>
             </Select>
             
-            {facilityManagers.length === 0 && !loadingManagers && (
+            {managerNames.length === 0 && !loadingManagers && (
               <Alert className="mt-2" variant="destructive">
                 <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                 <AlertDescription className="text-xs sm:text-sm">
@@ -720,7 +710,7 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
               <Button
                 variant="outline"
                 className="w-full justify-start text-left font-normal mt-1 h-9 sm:h-10 text-xs sm:text-sm"
-                disabled={!selectedFacility}
+                disabled={!selectFacilityName}
               >
                 <CalendarIcon className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 {date ? format(date, 'PPP', { locale: ko }) : "날짜를 선택하세요"}

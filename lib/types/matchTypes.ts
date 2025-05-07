@@ -11,6 +11,7 @@ export interface MatchRegist {
     matchEndTime: number;
     teamCapacity: number;
     description: string | null;
+    matchPrice: number;
 }
 
 // 페이 실패 데이터
