@@ -44,172 +44,6 @@ const timeSlots = Array.from({ length: 24 }, (_, i) => {
   return { value: `${hour}:00`, label: `${hour}:00` }
 })
 
-// 시설 타입 정의
-type Facility = {
-  id: string;
-  name: string;
-  address: string;
-  sportType: string;
-  openingHours: string;
-  courts?: Court[];
-}
-
-// 코트 타입 정의
-type Court = {
-  id: string;
-  name: string;
-  type: string;
-  width: string;
-  height: string;
-  isActive: boolean;
-}
-
-// 예약 현황 타입 정의
-type Reservation = {
-  facilityId: string;
-  courtId: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-}
-
-// 더미 시설 데이터
-const dummyFacilities: Facility[] = [
-  {
-    id: "1",
-    name: "서울 테니스 센터",
-    address: "서울시 강남구 테헤란로 123",
-    sportType: "tennis",
-    openingHours: "09:00-22:00",
-    courts: [
-      {
-        id: "1-1",
-        name: "센터 코트",
-        type: "hardcourt",
-        width: "20",
-        height: "10",
-        isActive: true
-      },
-      {
-        id: "1-2",
-        name: "A코트",
-        type: "clay",
-        width: "18",
-        height: "9",
-        isActive: true
-      },
-      {
-        id: "1-3",
-        name: "B코트",
-        type: "hardcourt",
-        width: "20",
-        height: "10",
-        isActive: false
-      }
-    ]
-  },
-  {
-    id: "2",
-    name: "강남 풋살장",
-    address: "서울시 강남구 역삼동 456",
-    sportType: "futsal",
-    openingHours: "08:00-23:00",
-    courts: [
-      {
-        id: "2-1",
-        name: "메인 풋살장",
-        type: "artificial",
-        width: "25",
-        height: "15",
-        isActive: true
-      },
-      {
-        id: "2-2", 
-        name: "보조 풋살장",
-        type: "artificial",
-        width: "20",
-        height: "12",
-        isActive: true
-      }
-    ]
-  },
-  {
-    id: "3",
-    name: "종로 농구코트",
-    address: "서울시 종로구 종로 789",
-    sportType: "basketball",
-    openingHours: "10:00-20:00",
-    courts: [
-      {
-        id: "3-1",
-        name: "실내 코트",
-        type: "indoor",
-        width: "28",
-        height: "15",
-        isActive: true
-      }
-    ]
-  },
-  {
-    id: "4",
-    name: "한강 배드민턴장",
-    address: "서울시 영등포구 여의도동 101",
-    sportType: "badminton",
-    openingHours: "08:00-22:00",
-    courts: [
-      {
-        id: "4-1",
-        name: "코트 A",
-        type: "indoor",
-        width: "13.4",
-        height: "6.1",
-        isActive: true
-      },
-      {
-        id: "4-2",
-        name: "코트 B",
-        type: "indoor",
-        width: "13.4",
-        height: "6.1",
-        isActive: true
-      },
-      {
-        id: "4-3",
-        name: "코트 C",
-        type: "indoor",
-        width: "13.4",
-        height: "6.1",
-        isActive: true
-      }
-    ]
-  }
-]
-
-// 더미 예약 데이터
-const dummyReservations: Reservation[] = [
-  {
-    facilityId: "1",
-    courtId: "1-1",
-    date: "2025-03-28",
-    startTime: "10:00",
-    endTime: "12:00"
-  },
-  {
-    facilityId: "1",
-    courtId: "1-2",
-    date: "2025-03-28",
-    startTime: "16:00",
-    endTime: "18:00"
-  },
-  {
-    facilityId: "2",
-    courtId: "2-1",
-    date: "2025-03-29",
-    startTime: "18:00",
-    endTime: "20:00"
-  }
-]
-
 type RegisterMatchFormProps = {
   onComplete: (matchData: any) => void;
 }
@@ -218,7 +52,6 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
   const [isLoading, setIsLoading] = useState(false)
   const [date, setDate] = useState<Date | undefined>(undefined)
 
-  const [facilities, setFacilities] = useState<Facility[]>([])
   // 시설 이름 조회
   const [facilityNames, setFacilityNames] = useState<FacilityNames[]>([]);
   const [selectFacilityName, setSelectFacilityName] = useState<FacilityNames | null>(null);
@@ -230,11 +63,6 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
   const [managerNames, setManagerNames] = useState<FacilityManagerName[]>([]);
 
   const [availableTimeSlots, setAvailableTimeSlots] = useState<{ value: string, label: string }[]>([])
-  const [filteredFacilities, setFilteredFacilities] = useState<Facility[]>([])
-  const [reservations, setReservations] = useState<Reservation[]>([])
-  const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null)
-  const [availableCourts, setAvailableCourts] = useState<Court[]>([])
-  const [facilityManagers, setFacilityManagers] = useState<FacilityManager[]>([])
   const [loadingManagers, setLoadingManagers] = useState(false)
   const [matchData, setMatchData] = useState({
     title: "",
@@ -253,25 +81,8 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
     managerId: ""
   })
   
-  // 시설 목록 로드
-  useEffect(() => {
-    // 실제로는 API에서 시설 목록을 가져옴
-    // 여기서는 더미 데이터 사용
-    setFacilities(dummyFacilities)
-    setReservations(dummyReservations)
-  }, [])
-  
   // 스포츠 타입에 따라 시설 필터링
   useEffect(() => {
-    if (matchData.sportType) {
-      const filtered = facilities.filter(facility => 
-        facility.sportType === matchData.sportType || matchData.sportType === 'other'
-      )
-      setFilteredFacilities(filtered)
-    } else {
-      setFilteredFacilities([])
-    }
-    
     // 스포츠 타입이 변경되면 시설 선택 초기화
     setMatchData(prev => ({
       ...prev,
@@ -335,7 +146,7 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
     if (date && selectFacilityName) {
       updateAvailableTimeSlots(format(date, 'yyyy-MM-dd'))
     }
-  }, [date, selectFacilityName, reservations])
+  }, [date, selectFacilityName])
   
   // 사용 가능 시간대 계산
   const updateAvailableTimeSlots = (selectedDate: string) => {
@@ -420,6 +231,7 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
   // 시설 관리자 조회
   const fetchGetFacilityManger = async (facilityId: number) => {
     try {
+      setLoadingManagers(true);
       const facilityMangers: FacilityManagerName[] = await facilityService.getFacilityMangerNames(facilityId);
       setManagerNames(facilityMangers);
     }catch(error: any) {
@@ -432,6 +244,8 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
         description: error instanceof Error ? error.message : "매니저 조회 중 오류가 발생했습니다.",
         variant: "destructive"
       });
+    } finally {
+      setLoadingManagers(false);
     }
   }
 
@@ -457,9 +271,9 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
     
     // 코트 선택 시 코트명 자동 설정
     if (name === 'courtId' && value) {
-      const court = availableCourts.find(c => c.id === value)
+      const court = courtNames.find(c => c.courtId === parseInt(value))
       if (court) {
-        setMatchData(prev => ({ ...prev, courtName: court.name }))
+        setMatchData(prev => ({ ...prev, courtName: court.courtName }))
       }
     }
   }
