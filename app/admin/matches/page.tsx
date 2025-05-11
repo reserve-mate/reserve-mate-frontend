@@ -337,7 +337,7 @@ export default function AdminMatchesPage() {
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">
                     <Clock className="mr-2 h-4 w-4 text-gray-400" />
-                    {`${match.matchTime}:00-${match.endTime}`}
+                    {`${match.matchTime}:00-${match.endTime}:00`}
                   </div>
                 </TableCell>
                 <TableCell>
