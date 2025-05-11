@@ -10,7 +10,7 @@ export const matchService = {
   // 관리자 매치 조회(관리자 전용)
   adminGetMatches: (params: AdminMatchSearch) => {
     let endPoint = `/admin/match/getMatches`;
-    return api.post<AdminMatches[]>(endPoint, params);
+    return api.post<Slice<AdminMatches>>(endPoint, params);
   },
 
   // 매치 등록(관리자 전용)

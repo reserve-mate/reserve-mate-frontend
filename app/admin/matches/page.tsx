@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,6 +28,7 @@ import RegisterMatchForm from "@/components/admin/match-register-form"
 import { AdminMatches, AdminMatchSearch } from "@/lib/types/matchTypes"
 import { matchService } from "@/lib/services/matchService"
 import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
+import { useRouter } from "next/navigation"
 
 // 더미 매치 데이터
 const dummyMatches = [
@@ -132,31 +133,82 @@ export default function AdminMatchesPage() {
   // 관리자 매치 목록 조회
   const [adminMatches, setAdminMatches] = useState<AdminMatches[]>([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isError, setIsError] = useState(false);
 
-  const fetchGetAdinMatches = async (params: AdminMatchSearch) => {
+  const router = useRouter();
+
+  // 로그인 상태를 관리
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  const observerRef = useRef<HTMLTableElement | null>(null);
+
+  const fetchGetAdinMatches = async (pageNumber: number) => {
+
+    const searchParam: AdminMatchSearch = {
+      searchValue: searchTerm,
+      pageNumber: pageNumber
+    }
     
     try {
-      const adminMatches: AdminMatches[] = await matchService.adminGetMatches(params);
-      setAdminMatches(adminMatches);
+      const adminMatches = await matchService.adminGetMatches(searchParam);
+      setAdminMatches((prev) => [...prev, ...adminMatches.content]);
+      setPage(adminMatches.number);
+      setHasMore(!adminMatches.last);
     } catch (error: any) {
       console.log(error);
+      if(!error || error.errorCode === "FORBIDDEN") {
+        router.push("/login");
+        return;
+      }
+      setIsError(true);
+      setAdminMatches([]);
     } finally {
       setLoading(false);
     }
 
   }
 
-  // 관리자 매치 조회
+  // 관리자 매치 초기 조회
   useEffect(() => {
     if(loading) return; // 로딩 중이면 중지
 
     setLoading(true); // 로딩 실행
 
-    const searchParam: AdminMatchSearch = {
-      searchValue: searchTerm
+    fetchGetAdinMatches(0);
+  }, [])
+
+  // 무한 스크롤
+  useEffect(() => {
+    if(loading || !hasMore || isError) return;
+
+    console.log("come?")
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        console.log(entries[0].isIntersecting)
+        if(entries[0].isIntersecting) {
+          fetchGetAdinMatches(page + 1);
+        }
+      }, {threshold: 1}
+    );
+
+    if(observerRef.current) {
+      observer.observe(observerRef.current);
     }
 
-    fetchGetAdinMatches(searchParam);
+    return () => {
+      if(observerRef.current) {
+        observer.unobserve(observerRef.current);
+      }
+    }
+
+  }, [page, hasMore, loading])
+
+  useEffect(() => {
+    const loggedInStatus = localStorage.getItem('isLoggedIn')
+    setIsLoggedIn(loggedInStatus === 'true')
   }, [])
   
   // 검색 기능
@@ -351,6 +403,14 @@ export default function AdminMatchesPage() {
               </TableRow>
             )}
           </TableBody>
+        </Table>
+
+        <Table ref={observerRef}>
+            <TableBody>
+              <TableRow>
+                {loading && <TableCell className="text-center">불러오는 중...</TableCell>}
+              </TableRow>
+            </TableBody>
         </Table>
       </CardContent>
     </Card>
