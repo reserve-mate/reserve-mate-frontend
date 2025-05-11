@@ -45,7 +45,7 @@ const timeSlots = Array.from({ length: 24 }, (_, i) => {
 })
 
 type RegisterMatchFormProps = {
-  onComplete: (matchData: any) => void;
+  onComplete: () => void;
 }
 
 export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps) {
@@ -288,6 +288,8 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
     try {
       await matchService.registMatch(params);
 
+      onComplete(); // 매치 등록 후 매치 재조회
+
       toast({
         title: "매치 등록 완료",
         description: "매치가 성공적으로 등록되었습니다."
@@ -310,7 +312,9 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
         courtId: "",
         courtName: "",
         managerId: ""
-      }))
+      }));
+
+      
       
     } catch (error: any) {
       toast({

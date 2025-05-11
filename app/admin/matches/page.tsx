@@ -183,11 +183,8 @@ export default function AdminMatchesPage() {
   useEffect(() => {
     if(loading || !hasMore || isError) return;
 
-    console.log("come?")
-
     const observer = new IntersectionObserver(
       (entries) => {
-        console.log(entries[0].isIntersecting)
         if(entries[0].isIntersecting) {
           fetchGetAdinMatches(page + 1);
         }
@@ -245,14 +242,17 @@ export default function AdminMatchesPage() {
   }
   
   // 매치 등록 완료 후 처리
-  const handleMatchRegisterComplete = (newMatch: any) => {
+  const handleMatchRegisterComplete = () => {
+    console.log("등록 성공~");
+    setAdminMatches([]);
+    fetchGetAdinMatches(0)
     // 새 매치를 목록에 추가
-    setMatches(prev => [...prev, {
-      id: String(prev.length + 1),
-      ...newMatch,
-      currentParticipants: 0,
-      status: "모집중"
-    }])
+    // setMatches(prev => [...prev, {
+    //   id: String(prev.length + 1),
+    //   ...newMatch,
+    //   currentParticipants: 0,
+    //   status: "모집중"
+    // }])
     // 등록 폼 닫기
     setShowRegisterForm(false)
     
