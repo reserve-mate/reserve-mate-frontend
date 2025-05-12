@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,6 +35,10 @@ import { ko } from "date-fns/locale"
 
 // 매치 등록 폼 컴포넌트 import
 import RegisterMatchForm from "@/components/admin/match-register-form"
+import { AdminMatches, AdminMatchSearch } from "@/lib/types/matchTypes"
+import { matchService } from "@/lib/services/matchService"
+import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
+import { useRouter } from "next/navigation"
 
 // 더미 매치 데이터
 const dummyMatches = [
@@ -113,28 +117,109 @@ const dummyMatches = [
 ]
 
 // 스포츠 종류별 아이콘
-const sportTypeIcons: Record<string, React.ReactNode> = {
-  "테니스": <CircleDot className="h-4 w-4" />,
-  "풋살": <Users className="h-4 w-4" />,
-  "농구": <Users className="h-4 w-4" />,
-  "배드민턴": <CircleDot className="h-4 w-4" />,
+const sportTypeIcons: Record<SportType, React.ReactNode> = {
+  "TENNIS": <CircleDot className="h-4 w-4" />,
+  "FUTSAL": <Users className="h-4 w-4" />,
+  "BASKETBALL": <Users className="h-4 w-4" />,
+  "BADMINTON": <CircleDot className="h-4 w-4" />,
+  "SOCCER": <Users className="h-4 w-4" />,
+  "BASEBALL": <Users className="h-4 w-4" />,
+  "ALL": null
 }
 
 // 스포츠 종류 목록
 const sportTypes = ["테니스", "풋살", "농구", "배드민턴"]
 
 // 상태별 배지 색상
-const statusColors: Record<string, string> = {
-  "모집중": "bg-green-100 text-green-800",
-  "마감": "bg-gray-100 text-gray-800",
-  "진행중": "bg-blue-100 text-blue-800",
-  "종료": "bg-red-100 text-red-800"
+const statusColors: Record<MatchStatus, string> = {
+  "APPLICABLE": "bg-green-100 text-green-800",
+  "FINISH": "bg-gray-100 text-gray-800",
+  "CLOSE_TO_DEADLINE": "bg-blue-100 text-blue-800",
+  "END": "bg-red-100 text-red-800"
 }
 
 export default function AdminMatchesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [matches, setMatches] = useState(dummyMatches)
   const [showRegisterForm, setShowRegisterForm] = useState(false)
+
+  // 관리자 매치 목록 조회
+  const [adminMatches, setAdminMatches] = useState<AdminMatches[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isError, setIsError] = useState(false);
+
+  const router = useRouter();
+
+  // 로그인 상태를 관리
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  const observerRef = useRef<HTMLTableElement | null>(null);
+
+  const fetchGetAdinMatches = async (pageNumber: number) => {
+
+    const searchParam: AdminMatchSearch = {
+      searchValue: searchTerm,
+      pageNumber: pageNumber
+    }
+    
+    try {
+      const adminMatches = await matchService.adminGetMatches(searchParam);
+      setAdminMatches((prev) => [...prev, ...adminMatches.content]);
+      setPage(adminMatches.number);
+      setHasMore(!adminMatches.last);
+    } catch (error: any) {
+      console.log(error);
+      if(!error || error.errorCode === "FORBIDDEN") {
+        router.push("/login");
+        return;
+      }
+      setIsError(true);
+      setAdminMatches([]);
+    } finally {
+      setLoading(false);
+    }
+
+  }
+
+  // 관리자 매치 초기 조회
+  useEffect(() => {
+    if(loading) return; // 로딩 중이면 중지
+
+    setLoading(true); // 로딩 실행
+
+    fetchGetAdinMatches(0);
+  }, [])
+
+  // 무한 스크롤
+  useEffect(() => {
+    if(loading || !hasMore || isError) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if(entries[0].isIntersecting) {
+          fetchGetAdinMatches(page + 1);
+        }
+      }, {threshold: 1}
+    );
+
+    if(observerRef.current) {
+      observer.observe(observerRef.current);
+    }
+
+    return () => {
+      if(observerRef.current) {
+        observer.unobserve(observerRef.current);
+      }
+    }
+
+  }, [page, hasMore, loading])
+
+  useEffect(() => {
+    const loggedInStatus = localStorage.getItem('isLoggedIn')
+    setIsLoggedIn(loggedInStatus === 'true')
+  }, [])
   const [selectedSport, setSelectedSport] = useState<string>("ALL")
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
@@ -167,18 +252,24 @@ export default function AdminMatchesPage() {
   };
   
   // 삭제 처리
-  const handleDelete = (id: string) => {
-    setMatches(prev => prev.filter(match => match.id !== id))
+  const handleDelete = (id: number) => {
+    //setMatches(prev => prev.filter(match => adminMatches.id !== id))
   }
   
   // 마감/재오픈 토글
-  const toggleStatus = (id: string) => {
-    setMatches(prev => prev.map(match => 
-      match.id === id ? {
-        ...match,
-        status: match.status === "모집중" ? "마감" : "모집중"
-      } : match
-    ))
+  const toggleStatus = (id: number) => {
+    // setMatches(prev => prev.map(match => 
+    //   match.id === id ? {
+    //     ...match,
+    //     status: match.status === "모집중" ? "마감" : "모집중"
+    //   } : match
+    // ))
+
+    // setAdminMatches(prev => prev.map(adminMatch => adminMatch.matchId === id ? {
+    //   ...adminMatch,
+    //   matchStatus: adminMatch.matchStatus === "APPLICABLE" ? "" : ""
+    //   } : adminMatch
+    // ));
   }
 
   // 매치 등록 폼 토글
@@ -187,18 +278,38 @@ export default function AdminMatchesPage() {
   }
   
   // 매치 등록 완료 후 처리
-  const handleMatchRegisterComplete = (newMatch: any) => {
+  const handleMatchRegisterComplete = () => {
+    console.log("등록 성공~");
+    setAdminMatches([]);
+    fetchGetAdinMatches(0)
     // 새 매치를 목록에 추가
-    setMatches(prev => [...prev, {
-      id: String(prev.length + 1),
-      ...newMatch,
-      currentParticipants: 0,
-      status: "모집중"
-    }])
+    // setMatches(prev => [...prev, {
+    //   id: String(prev.length + 1),
+    //   ...newMatch,
+    //   currentParticipants: 0,
+    //   status: "모집중"
+    // }])
     // 등록 폼 닫기
     setShowRegisterForm(false)
     
     // 성공 메시지 처리 등...
+  }
+
+  // 매치 상태에 따른 화면 노출 수정
+  const displayMatchStatus = (status: MatchStatus): string => {
+    let statusStr: string = "";
+    
+    if(status === 'APPLICABLE') {
+      statusStr = "모집중";
+    }else if(status === "CLOSE_TO_DEADLINE") {
+      statusStr = "마감임박";
+    }else if(status === "FINISH") {
+      statusStr = "마감";
+    }else if(status === "END") {
+      statusStr = "종료";
+    }
+
+    return statusStr;
   }
 
   // 매치 관리 목록 UI
@@ -308,9 +419,9 @@ export default function AdminMatchesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredMatches.map((match) => (
-              <TableRow key={match.id}>
-                <TableCell className="font-medium">{match.title}</TableCell>
+            {adminMatches.map((match) => (
+              <TableRow key={match.matchId}>
+                <TableCell className="font-medium">{match.matchName}</TableCell>
                 <TableCell>
                   <div className="flex items-center">
                     <Badge variant="outline" className="mr-2">
@@ -334,21 +445,21 @@ export default function AdminMatchesPage() {
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">
                     <Clock className="mr-2 h-4 w-4 text-gray-400" />
-                    {match.matchTime}
+                    {`${match.matchTime}:00-${match.endTime}:00`}
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center">
                     <Users className="mr-2 h-4 w-4 text-gray-400" />
-                    {match.currentParticipants}/{match.maxParticipants}
+                    {match.playerCnt}/{match.teamCapacity}
                   </div>
                 </TableCell>
                 <TableCell>
                   <Badge 
-                    className={statusColors[match.status]}
+                    className={statusColors[match.matchStatus]}
                     variant="outline"
                   >
-                    {match.status}
+                    {displayMatchStatus(match.matchStatus)}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
@@ -361,20 +472,20 @@ export default function AdminMatchesPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/matches/${match.id}`} className="cursor-pointer">
+                        <Link href={`/admin/matches/${match.matchId}`} className="cursor-pointer">
                           <Eye className="mr-2 h-4 w-4" />
                           상세 보기
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/matches/edit/${match.id}`} className="cursor-pointer">
+                        <Link href={`/admin/matches/edit/${match.matchId}`} className="cursor-pointer">
                           <Edit className="mr-2 h-4 w-4" />
                           수정
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer"
-                        onClick={() => handleDelete(match.id)}
+                        onClick={() => handleDelete(match.matchId)}
                       >
                         <Trash className="mr-2 h-4 w-4" />
                         삭제
@@ -393,6 +504,14 @@ export default function AdminMatchesPage() {
               </TableRow>
             )}
           </TableBody>
+        </Table>
+
+        <Table ref={observerRef}>
+            <TableBody>
+              <TableRow>
+                {loading && <TableCell className="text-center">불러오는 중...</TableCell>}
+              </TableRow>
+            </TableBody>
         </Table>
       </CardContent>
     </Card>
