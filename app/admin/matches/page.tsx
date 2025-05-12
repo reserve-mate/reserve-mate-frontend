@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { 
   Search, 
@@ -15,13 +16,22 @@ import {
   Edit, 
   Trash, 
   Eye, 
-  Calendar, 
+  Calendar as CalendarIcon, 
   Clock, 
   MapPin, 
   Users, 
   CircleDot,
-  X
+  X,
+  FilterX
 } from "lucide-react"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { format } from "date-fns"
+import { ko } from "date-fns/locale"
 
 // 매치 등록 폼 컴포넌트 import
 import RegisterMatchForm from "@/components/admin/match-register-form"
@@ -117,6 +127,9 @@ const sportTypeIcons: Record<SportType, React.ReactNode> = {
   "ALL": null
 }
 
+// 스포츠 종류 목록
+const sportTypes = ["테니스", "풋살", "농구", "배드민턴"]
+
 // 상태별 배지 색상
 const statusColors: Record<MatchStatus, string> = {
   "APPLICABLE": "bg-green-100 text-green-800",
@@ -207,13 +220,36 @@ export default function AdminMatchesPage() {
     const loggedInStatus = localStorage.getItem('isLoggedIn')
     setIsLoggedIn(loggedInStatus === 'true')
   }, [])
+  const [selectedSport, setSelectedSport] = useState<string>("ALL")
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   
-  // 검색 기능
-  const filteredMatches = matches.filter(match => 
-    match.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    match.facilityName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    match.sportType.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // 검색 필터링 기능
+  const filteredMatches = matches.filter(match => {
+    // 텍스트 검색 필터링
+    const textMatch = match.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      match.facilityName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      match.sportType.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // 종목 필터링
+    const sportMatch = selectedSport === "ALL" || match.sportType === selectedSport;
+    
+    // 날짜 필터링
+    const matchDateObj = new Date(match.matchDate);
+    const dateMatch = 
+      (!startDate || matchDateObj >= startDate) && 
+      (!endDate || matchDateObj <= endDate);
+    
+    return textMatch && sportMatch && dateMatch;
+  });
+  
+  // 필터 초기화
+  const resetFilters = () => {
+    setSearchTerm("");
+    setSelectedSport("ALL");
+    setStartDate(undefined);
+    setEndDate(undefined);
+  };
   
   // 삭제 처리
   const handleDelete = (id: number) => {
@@ -285,14 +321,86 @@ export default function AdminMatchesPage() {
           모든 매치를 관리하고 새로운 매치를 등록할 수 있습니다.
         </CardDescription>
         
-        <div className="mt-4 flex w-full max-w-sm items-center space-x-2">
-          <Input 
-            placeholder="매치명, 시설명, 종류로 검색" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
-          />
-          <Search className="absolute ml-2 h-4 w-4 text-gray-400" />
+        <div className="space-y-4 mt-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative w-full sm:max-w-sm">
+              <Input 
+                placeholder="매치명, 시설명으로 검색" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            </div>
+            
+            <Select value={selectedSport} onValueChange={setSelectedSport}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="모든 종목" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">모든 종목</SelectItem>
+                {sportTypes.map(sport => (
+                  <SelectItem key={sport} value={sport}>{sport}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-gray-500">시작일:</p>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[160px] justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? (
+                      format(startDate, 'yyyy-MM-dd')
+                    ) : (
+                      <span className="text-muted-foreground">날짜 선택</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <CalendarComponent
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-gray-500">종료일:</p>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[160px] justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? (
+                      format(endDate, 'yyyy-MM-dd')
+                    ) : (
+                      <span className="text-muted-foreground">날짜 선택</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <CalendarComponent
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    initialFocus
+                    disabled={(date: Date) => startDate ? date < startDate : false}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <Button variant="outline" onClick={resetFilters} className="ml-auto">
+              <FilterX className="mr-2 h-4 w-4" />
+              필터 초기화
+            </Button>
+          </div>
         </div>
       </CardHeader>
       
@@ -330,7 +438,7 @@ export default function AdminMatchesPage() {
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">
-                    <Calendar className="mr-2 h-4 w-4 text-gray-400" />
+                    <CalendarIcon className="mr-2 h-4 w-4 text-gray-400" />
                     {match.matchDate}
                   </div>
                 </TableCell>
@@ -357,37 +465,30 @@ export default function AdminMatchesPage() {
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">메뉴 열기</span>
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/matches/${match.matchId}`}>
-                          <Eye className="mr-2 h-4 w-4" /> 상세보기
+                        <Link href={`/admin/matches/${match.matchId}`} className="cursor-pointer">
+                          <Eye className="mr-2 h-4 w-4" />
+                          상세 보기
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/matches/${match.matchId}/edit`}>
-                          <Edit className="mr-2 h-4 w-4" /> 수정하기
+                        <Link href={`/admin/matches/edit/${match.matchId}`} className="cursor-pointer">
+                          <Edit className="mr-2 h-4 w-4" />
+                          수정
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => toggleStatus(match.matchId)}>
-                        {match.matchStatus === MatchStatus.APPLICABLE ? (
-                          <>
-                            <Clock className="mr-2 h-4 w-4 text-red-500" /> 
-                            <span className="text-red-500">모집 마감</span>
-                          </>
-                        ) : (
-                          <>
-                            <Calendar className="mr-2 h-4 w-4 text-green-500" /> 
-                            <span className="text-green-500">모집 재개</span>
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(match.matchId)}>
-                        <Trash className="mr-2 h-4 w-4 text-red-500" /> 
-                        <span className="text-red-500">삭제하기</span>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => handleDelete(match.matchId)}
+                      >
+                        <Trash className="mr-2 h-4 w-4" />
+                        삭제
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
