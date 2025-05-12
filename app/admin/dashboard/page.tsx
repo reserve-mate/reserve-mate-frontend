@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, Clock, DollarSign, Users } from "lucide-react"
+import { Calendar, Clock, DollarSign, Users, Building, Eye } from "lucide-react"
 
 export default function AdminDashboardPage() {
   // 더미 데이터
@@ -129,197 +129,220 @@ export default function AdminDashboardPage() {
   ]
 
   return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-8">관리자 대시보드</h1>
+    <div className="animate-in fade-in duration-500">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6">관리자 대시보드</h1>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardContent className="p-6 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+        <Card className="overflow-hidden border-t-4 border-t-blue-500 shadow-sm hover:shadow transition-shadow">
+          <CardContent className="p-4 md:p-6 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">총 예약 수</p>
-              <p className="text-3xl font-bold">{stats.totalReservations}</p>
+              <p className="text-2xl md:text-3xl font-bold mt-1">{stats.totalReservations}</p>
             </div>
             <div className="p-3 rounded-full bg-blue-100 text-blue-600">
-              <Calendar className="h-6 w-6" />
+              <Calendar className="h-5 w-5 md:h-6 md:w-6" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6 flex items-center justify-between">
+        <Card className="overflow-hidden border-t-4 border-t-green-500 shadow-sm hover:shadow transition-shadow">
+          <CardContent className="p-4 md:p-6 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">활성 사용자</p>
-              <p className="text-3xl font-bold">{stats.activeUsers}</p>
+              <p className="text-2xl md:text-3xl font-bold mt-1">{stats.activeUsers}</p>
             </div>
             <div className="p-3 rounded-full bg-green-100 text-green-600">
-              <Users className="h-6 w-6" />
+              <Users className="h-5 w-5 md:h-6 md:w-6" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6 flex items-center justify-between">
+        <Card className="overflow-hidden border-t-4 border-t-yellow-500 shadow-sm hover:shadow transition-shadow">
+          <CardContent className="p-4 md:p-6 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">총 매출</p>
-              <p className="text-3xl font-bold">{stats.totalRevenue}</p>
+              <p className="text-xl md:text-2xl font-bold mt-1 whitespace-nowrap">{stats.totalRevenue}</p>
             </div>
             <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
-              <DollarSign className="h-6 w-6" />
+              <DollarSign className="h-5 w-5 md:h-6 md:w-6" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6 flex items-center justify-between">
+        <Card className="overflow-hidden border-t-4 border-t-purple-500 shadow-sm hover:shadow transition-shadow">
+          <CardContent className="p-4 md:p-6 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">등록된 시설</p>
-              <p className="text-3xl font-bold">{stats.facilitiesCount}</p>
+              <p className="text-2xl md:text-3xl font-bold mt-1">{stats.facilitiesCount}</p>
             </div>
             <div className="p-3 rounded-full bg-purple-100 text-purple-600">
-              <Clock className="h-6 w-6" />
+              <Building className="h-5 w-5 md:h-6 md:w-6" />
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* 최근 예약 */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>최근 예약</CardTitle>
-          <CardDescription>최근에 등록된 예약 내역입니다.</CardDescription>
+      <Card className="mb-6 shadow-sm">
+        <CardHeader className="p-5 border-b bg-gray-50">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <CardTitle>최근 예약</CardTitle>
+              <CardDescription>최근에 등록된 예약 내역입니다.</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" className="text-sm">
+              전체보기
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>사용자</TableHead>
-                <TableHead>시설</TableHead>
-                <TableHead>날짜</TableHead>
-                <TableHead>시간</TableHead>
-                <TableHead>상태</TableHead>
-                <TableHead>금액</TableHead>
-                <TableHead className="text-right">액션</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentReservations.map((reservation) => (
-                <TableRow key={reservation.id}>
-                  <TableCell className="font-medium">{reservation.id}</TableCell>
-                  <TableCell>{reservation.user}</TableCell>
-                  <TableCell>{reservation.facility}</TableCell>
-                  <TableCell>{reservation.date}</TableCell>
-                  <TableCell>{reservation.time}</TableCell>
-                  <TableCell>
-                    <Badge
-                      className={`
-                        ${reservation.status === "확정" ? "bg-green-100 text-green-800" : ""}
-                        ${reservation.status === "대기중" ? "bg-yellow-100 text-yellow-800" : ""}
-                        ${reservation.status === "취소" ? "bg-gray-100 text-gray-800" : ""}
-                      `}
-                    >
-                      {reservation.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{reservation.amount}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      상세
-                    </Button>
-                  </TableCell>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50px]">ID</TableHead>
+                  <TableHead>사용자</TableHead>
+                  <TableHead className="hidden md:table-cell">시설</TableHead>
+                  <TableHead className="hidden md:table-cell">날짜</TableHead>
+                  <TableHead className="hidden md:table-cell">시간</TableHead>
+                  <TableHead>상태</TableHead>
+                  <TableHead className="hidden md:table-cell">금액</TableHead>
+                  <TableHead className="text-right">액션</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {recentReservations.map((reservation) => (
+                  <TableRow key={reservation.id} className="hover:bg-gray-50">
+                    <TableCell className="font-medium">{reservation.id}</TableCell>
+                    <TableCell>{reservation.user}</TableCell>
+                    <TableCell className="hidden md:table-cell">{reservation.facility}</TableCell>
+                    <TableCell className="hidden md:table-cell">{reservation.date}</TableCell>
+                    <TableCell className="hidden md:table-cell">{reservation.time}</TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`
+                          whitespace-nowrap text-xs px-2 py-1
+                          ${reservation.status === "확정" ? "bg-green-100 text-green-800" : ""}
+                          ${reservation.status === "대기중" ? "bg-yellow-100 text-yellow-800" : ""}
+                          ${reservation.status === "취소" ? "bg-gray-100 text-gray-800" : ""}
+                        `}
+                      >
+                        {reservation.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{reservation.amount}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" className="h-8 px-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50">
+                        <Eye className="h-4 w-4 mr-1" />
+                        <span className="hidden md:inline">상세</span>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
       {/* 탭 콘텐츠 */}
-      <Tabs defaultValue="users">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="users">사용자 관리</TabsTrigger>
-          <TabsTrigger value="facilities">시설 관리</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="users" className="mb-2">
+        <div className="border-b mb-4">
+          <TabsList className="w-full justify-start bg-transparent p-0">
+            <TabsTrigger
+              value="users"
+              className="px-4 py-2 data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 rounded-none bg-transparent"
+            >
+              사용자 목록
+            </TabsTrigger>
+            <TabsTrigger
+              value="facilities"
+              className="px-4 py-2 data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 rounded-none bg-transparent"
+            >
+              시설 목록
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="users">
-          <Card>
-            <CardHeader>
-              <CardTitle>사용자 목록</CardTitle>
-              <CardDescription>등록된 사용자 목록입니다.</CardDescription>
+        <TabsContent value="users" className="mt-0">
+          <Card className="shadow-sm">
+            <CardHeader className="p-5 border-b bg-gray-50">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <CardTitle>사용자 목록</CardTitle>
+                <Button variant="outline" size="sm" className="text-sm">
+                  전체보기
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>이름</TableHead>
-                    <TableHead>이메일</TableHead>
-                    <TableHead>전화번호</TableHead>
-                    <TableHead>가입일</TableHead>
-                    <TableHead>예약 수</TableHead>
-                    <TableHead className="text-right">액션</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.id}</TableCell>
-                      <TableCell>{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.phone}</TableCell>
-                      <TableCell>{user.registeredDate}</TableCell>
-                      <TableCell>{user.reservationsCount}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          상세
-                        </Button>
-                      </TableCell>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>이름</TableHead>
+                      <TableHead className="hidden md:table-cell">이메일</TableHead>
+                      <TableHead className="hidden md:table-cell">전화번호</TableHead>
+                      <TableHead className="hidden md:table-cell">가입일</TableHead>
+                      <TableHead className="text-right">예약 수</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{user.id}</TableCell>
+                        <TableCell>{user.name}</TableCell>
+                        <TableCell className="hidden md:table-cell">{user.email}</TableCell>
+                        <TableCell className="hidden md:table-cell">{user.phone}</TableCell>
+                        <TableCell className="hidden md:table-cell">{user.registeredDate}</TableCell>
+                        <TableCell className="text-right">{user.reservationsCount}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="facilities">
-          <Card>
-            <CardHeader>
-              <CardTitle>시설 목록</CardTitle>
-              <CardDescription>등록된 시설 목록입니다.</CardDescription>
+        <TabsContent value="facilities" className="mt-0">
+          <Card className="shadow-sm">
+            <CardHeader className="p-5 border-b bg-gray-50">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <CardTitle>시설 목록</CardTitle>
+                <Button variant="outline" size="sm" className="text-sm">
+                  전체보기
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>시설명</TableHead>
-                    <TableHead>주소</TableHead>
-                    <TableHead>스포츠 종류</TableHead>
-                    <TableHead>코트 수</TableHead>
-                    <TableHead>예약 수</TableHead>
-                    <TableHead className="text-right">액션</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {facilities.map((facility) => (
-                    <TableRow key={facility.id}>
-                      <TableCell className="font-medium">{facility.id}</TableCell>
-                      <TableCell>{facility.name}</TableCell>
-                      <TableCell>{facility.address}</TableCell>
-                      <TableCell>{facility.sportType}</TableCell>
-                      <TableCell>{facility.courtsCount}</TableCell>
-                      <TableCell>{facility.reservationsCount}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          상세
-                        </Button>
-                      </TableCell>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>시설명</TableHead>
+                      <TableHead className="hidden md:table-cell">주소</TableHead>
+                      <TableHead className="hidden md:table-cell">스포츠</TableHead>
+                      <TableHead>코트 수</TableHead>
+                      <TableHead className="text-right">예약 수</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {facilities.map((facility) => (
+                      <TableRow key={facility.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{facility.id}</TableCell>
+                        <TableCell>{facility.name}</TableCell>
+                        <TableCell className="hidden md:table-cell">{facility.address}</TableCell>
+                        <TableCell className="hidden md:table-cell">{facility.sportType}</TableCell>
+                        <TableCell>{facility.courtsCount}</TableCell>
+                        <TableCell className="text-right">{facility.reservationsCount}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

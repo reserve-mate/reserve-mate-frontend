@@ -112,23 +112,15 @@ const dummyMatches = [
   }
 ]
 
-// 스포츠 종류별 아이콘
-const sportTypeIcons: Record<string, React.ReactNode> = {
-  "테니스": <CircleDot className="h-4 w-4" />,
-  "풋살": <Users className="h-4 w-4" />,
-  "농구": <Users className="h-4 w-4" />,
-  "배드민턴": <CircleDot className="h-4 w-4" />,
-}
-
 // 스포츠 종류 목록
 const sportTypes = ["테니스", "풋살", "농구", "배드민턴"]
 
 // 상태별 배지 색상
 const statusColors: Record<string, string> = {
-  "모집중": "bg-green-100 text-green-800",
-  "마감": "bg-gray-100 text-gray-800",
-  "진행중": "bg-blue-100 text-blue-800",
-  "종료": "bg-red-100 text-red-800"
+  "모집중": "bg-green-100 text-green-800 px-2 py-1",
+  "마감": "bg-gray-100 text-gray-800 px-2 py-1",
+  "진행중": "bg-blue-100 text-blue-800 px-2 py-1",
+  "종료": "bg-red-100 text-red-800 px-2 py-1"
 }
 
 export default function AdminMatchesPage() {
@@ -297,55 +289,52 @@ export default function AdminMatchesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>매치명</TableHead>
-              <TableHead>종류</TableHead>
-              <TableHead className="hidden md:table-cell">시설</TableHead>
-              <TableHead className="hidden md:table-cell">날짜</TableHead>
-              <TableHead className="hidden md:table-cell">시간</TableHead>
-              <TableHead>인원</TableHead>
-              <TableHead>상태</TableHead>
+              <TableHead className="min-w-[140px] max-w-[200px]">매치명</TableHead>
+              <TableHead className="min-w-[70px]">종류</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[150px] max-w-[200px]">시설</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[90px]">날짜</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[100px]">시간</TableHead>
+              <TableHead className="min-w-[70px]">인원</TableHead>
+              <TableHead className="min-w-[90px]">상태</TableHead>
               <TableHead className="text-right">관리</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredMatches.map((match) => (
               <TableRow key={match.id}>
-                <TableCell className="font-medium">{match.title}</TableCell>
+                <TableCell className="font-medium">
+                  <span className="truncate block max-w-[140px]" title={match.title}>{match.title}</span>
+                </TableCell>
                 <TableCell>
-                  <div className="flex items-center">
-                    <Badge variant="outline" className="mr-2">
-                      {sportTypeIcons[match.sportType]}
-                    </Badge>
-                    <span>{match.sportType}</span>
-                  </div>
+                  <span className="whitespace-nowrap">{match.sportType}</span>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">
-                    <MapPin className="mr-2 h-4 w-4 text-gray-400" />
-                    {match.facilityName}
+                    <MapPin className="mr-2 h-4 w-4 text-gray-400 shrink-0" />
+                    <span className="truncate max-w-[150px]" title={match.facilityName}>{match.facilityName}</span>
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">
                     <CalendarIcon className="mr-2 h-4 w-4 text-gray-400" />
-                    {match.matchDate}
+                    <span className="whitespace-nowrap">{match.matchDate}</span>
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">
                     <Clock className="mr-2 h-4 w-4 text-gray-400" />
-                    {match.matchTime}
+                    <span className="whitespace-nowrap">{match.matchTime}</span>
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="min-w-[70px]">
                   <div className="flex items-center">
                     <Users className="mr-2 h-4 w-4 text-gray-400" />
                     {match.currentParticipants}/{match.maxParticipants}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="min-w-[90px]">
                   <Badge 
-                    className={statusColors[match.status]}
+                    className={`whitespace-nowrap inline-flex items-center ${statusColors[match.status]}`}
                     variant="outline"
                   >
                     {match.status}

@@ -83,14 +83,6 @@ const dummyFacilities = [
   },
 ]
 
-// 스포츠 종류별 아이콘
-const sportTypeIcons: Record<string, React.ReactNode> = {
-  "테니스": <CircleDot className="h-4 w-4" />,
-  "풋살": <Users className="h-4 w-4" />,
-  "농구": <Users className="h-4 w-4" />,
-  "배드민턴": <CircleDot className="h-4 w-4" />,
-}
-
 export default function AdminFacilitiesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [facilities, setFacilities] = useState(dummyFacilities)
@@ -197,12 +189,7 @@ export default function AdminFacilitiesPage() {
               <TableRow key={facility.id}>
                 <TableCell className="font-medium">{facility.name}</TableCell>
                 <TableCell>
-                  <div className="flex items-center">
-                    <Badge variant="outline" className="mr-2">
-                      {sportTypeIcons[facility.sportType]}
-                    </Badge>
-                    <span>{facility.sportType}</span>
-                  </div>
+                  <span className="whitespace-nowrap">{facility.sportType}</span>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">

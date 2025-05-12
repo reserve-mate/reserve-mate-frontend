@@ -18,6 +18,7 @@ export const metadata = {
 
 const KAKAO_SDK_URL = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&libraries=services,clusterer&autoload=false`;
 
+// Admin 페이지를 제외하는 레이아웃 설정
 export default function RootLayout({
   children,
 }: Readonly<{
