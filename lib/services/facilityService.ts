@@ -64,8 +64,10 @@ export interface CreateFacilityRequest {
 // 시설 서비스
 export const facilityService = {
   // 시설 목록 조회
-  getFacilities: () => 
-    api.get<Facility[]>('/facilities'),
+  getFacilities: async(data:{ keyword : string, lastId : number}) => {
+    await api.get("/admin/facilities",{data})
+  },
+    // api.get<Facility[]>('/facilities'),
   
   // 시설 상세 조회
   getFacility: (id: number) => 
@@ -106,7 +108,7 @@ export const facilityService = {
     }
     // 이미지 상세 정보 추가
     formData.append(`imageMeta`, new Blob([JSON.stringify(imageMeta)], {type: 'application/json'}));
-
+    console.log(formData);
     return api.post<Facility>('/admin/facilities', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
