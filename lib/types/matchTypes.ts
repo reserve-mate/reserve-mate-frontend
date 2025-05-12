@@ -1,6 +1,46 @@
 import { MatchStatus, SportType } from "../enum/matchEnum";
 import { PaymentResponse } from "./payment";
 
+// 관리자 매치 목록 검색
+interface AdminMatchSearchRequest {
+    searchValue: string;
+    sportType: SportType;
+    startDate: string;
+    endDate: string;
+    pageNumber: number;
+}
+
+export type AdminMatchSearch = {
+    [key in keyof AdminMatchSearchRequest]? : AdminMatchSearchRequest[key];
+}
+
+// 관리자 매치 목록 조회
+export interface AdminMatches {
+    matchId: number;
+    matchName: string;
+    sportType: SportType;
+    facilityName: string;
+    matchDate: string;
+    teamCapacity: number;
+    playerCnt: number;
+    matchTime: number;
+    endTime: number;
+    matchStatus: MatchStatus
+}
+
+// 매치 등록 데이터
+export interface MatchRegist {
+    matchName: string;
+    courtId: number;
+    managerId: number;
+    matchDate: string;
+    matchTime: number;
+    matchEndTime: number;
+    teamCapacity: number;
+    description: string | null;
+    matchPrice: number;
+}
+
 // 페이 실패 데이터
 export interface MatchPaymentSuccess extends PaymentResponse {
     type: 'matchPaymentSuccess';
@@ -111,6 +151,7 @@ interface UserDataDto {
     userName: string;
     phone: string;
     userEmail: string;
+    orderId: string;
     isMatchApply: boolean;
 }
 

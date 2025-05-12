@@ -1,11 +1,24 @@
 import { api } from '../api';
 import { MatchStatus } from '../enum/matchEnum';
 import { ApiError, ApiResonse, Slice } from '../types/commonTypes';
-import { CreateMatchRequest, Match, MatchDetailRespone, MatchList, MatchSearch, MathDateCount } from '../types/matchTypes';
+import { AdminMatches, AdminMatchSearch, CreateMatchRequest, Match, MatchDetailRespone, MatchList, MatchRegist, MatchSearch, MathDateCount } from '../types/matchTypes';
 import { FacilityManager } from './userService';
 
 // 매치 서비스
 export const matchService = {
+
+  // 관리자 매치 조회(관리자 전용)
+  adminGetMatches: (params: AdminMatchSearch) => {
+    let endPoint = `/admin/match/getMatches`;
+    return api.post<Slice<AdminMatches>>(endPoint, params);
+  },
+
+  // 매치 등록(관리자 전용)
+  registMatch: (params: MatchRegist) => {
+    let endPoint = `/match/registMatch`
+    return api.post(endPoint, params);
+  },
+
   // 매치 목록 조회
   getMatches: (params: MatchSearch) => {
     let endpoint = '/match/matches';
