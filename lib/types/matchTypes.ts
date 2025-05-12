@@ -137,3 +137,15 @@ export interface Match {
     createdAt: string;
     images?: string[];
 }
+
+// 매치 취소 사유
+export type MatchCancellationReason = {
+    id: string;
+    reason: string;
+}
+
+// 매치 취소 요청
+export type MatchCancellationRequest = {
+    matchId: number;
+    reason: string;
+}

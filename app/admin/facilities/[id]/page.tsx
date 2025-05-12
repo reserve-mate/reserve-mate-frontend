@@ -8,8 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/hooks/use-toast"
-import { ArrowLeft, Building, MapPin, Calendar, Users } from "lucide-react"
+import { ArrowLeft, Building, MapPin, Calendar, Users, ClipboardList } from "lucide-react"
 import FacilityManagers from "@/components/admin/facility-managers"
+import CourtManagement from "@/components/admin/court-management"
+import ReservationStatus from "@/components/admin/reservation-status"
 
 // 더미 시설 데이터
 const dummyFacilities = [
@@ -198,144 +200,184 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
         <div className="flex items-center mt-2 sm:mt-0">
           <h1 className="text-xl sm:text-2xl font-bold">{facility.name}</h1>
           <Badge 
-            variant={facility.active ? "default" : "destructive"} 
-            className="ml-2 sm:ml-4"
+            className={`ml-2 ${
+              facility.active 
+                ? "bg-green-100 text-green-800" 
+                : "bg-red-100 text-red-800"
+            }`}
           >
-            {facility.active ? '활성' : '비활성'}
+            {facility.active ? "활성" : "비활성"}
           </Badge>
         </div>
       </div>
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-12">
-        {/* 시설 개요 카드 */}
-        <Card className="lg:col-span-4">
-          <CardHeader className="p-4">
-            <CardTitle className="text-lg sm:text-xl">시설 정보</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:gap-4 p-4 pt-0">
-            <div className="flex items-start">
-              <Building className="mr-2 h-4 w-4 mt-1 text-gray-500 flex-shrink-0" />
-              <div>
-                <div className="font-medium">종목</div>
-                <div className="break-words">{facility.sportType}</div>
-              </div>
-            </div>
-            <div className="flex items-start">
-              <MapPin className="mr-2 h-4 w-4 mt-1 text-gray-500 flex-shrink-0" />
-              <div>
-                <div className="font-medium">주소</div>
-                <div className="break-words">{facility.address}</div>
-                {facility.detailAddress && <div className="text-sm text-gray-500 break-words">{facility.detailAddress}</div>}
-              </div>
-            </div>
-            <div className="flex items-start">
-              <Calendar className="mr-2 h-4 w-4 mt-1 text-gray-500 flex-shrink-0" />
-              <div>
-                <div className="font-medium">운영 시간</div>
-                <div>{facility.operatingHours}</div>
-              </div>
-            </div>
-            <div className="flex items-start">
-              <Users className="mr-2 h-4 w-4 mt-1 text-gray-500 flex-shrink-0" />
-              <div>
-                <div className="font-medium">코트 수</div>
-                <div>{facility.courtsCount}개</div>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between p-4">
-            <Button variant="outline" asChild className="w-full sm:w-auto">
-              <Link href={`/admin/facilities/${facility.id}/edit`}>수정</Link>
-            </Button>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <Button 
-                variant={facility.active ? "destructive" : "default"} 
-                onClick={handleToggleStatus}
-                className="w-full sm:w-auto"
-              >
-                {facility.active ? '비활성화' : '활성화'}
-              </Button>
-              <Button variant="destructive" onClick={handleDelete} className="w-full sm:w-auto">삭제</Button>
-            </div>
-          </CardFooter>
-        </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4 md:w-fit">
+          <TabsTrigger value="overview">기본 정보</TabsTrigger>
+          <TabsTrigger value="courts">코트 관리</TabsTrigger>
+          <TabsTrigger value="reservations">예약 현황</TabsTrigger>
+          <TabsTrigger value="managers">매니저 관리</TabsTrigger>
+        </TabsList>
 
-        {/* 상세 정보 탭 */}
-        <div className="lg:col-span-8">
-          <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full mb-4 grid grid-cols-2 md:grid-cols-4 h-auto">
-              <TabsTrigger value="overview" className="py-2 px-1 sm:px-3 text-xs sm:text-sm">시설 상세</TabsTrigger>
-              <TabsTrigger value="courts" className="py-2 px-1 sm:px-3 text-xs sm:text-sm">코트 정보</TabsTrigger>
-              <TabsTrigger value="managers" className="py-2 px-1 sm:px-3 text-xs sm:text-sm">시설 관리자</TabsTrigger>
-              <TabsTrigger value="reservations" className="py-2 px-1 sm:px-3 text-xs sm:text-sm">예약 현황</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="overview">
-              <Card>
-                <CardHeader className="p-4">
-                  <CardTitle className="text-lg">시설 설명</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p className="whitespace-pre-line text-sm sm:text-base">{facility.description || "시설 설명이 없습니다."}</p>
-                  
-                  <div className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full mr-2 ${facility.hasParking ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                      <span className="text-sm sm:text-base">주차 시설</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full mr-2 ${facility.hasShower ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                      <span className="text-sm sm:text-base">샤워 시설</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full mr-2 ${facility.hasEquipmentRental ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                      <span className="text-sm sm:text-base">장비 대여</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full mr-2 ${facility.hasCafe ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                      <span className="text-sm sm:text-base">카페/식당</span>
-                    </div>
+        <TabsContent value="overview" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">시설 정보</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500">종목</p>
+                  <p>{facility.sportType}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500">운영 시간</p>
+                  <p>{facility.operatingHours}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500">코트 수</p>
+                  <p>{facility.courtsCount}개</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500">주소</p>
+                  <p>
+                    {facility.address}
+                    {facility.detailAddress ? `, ${facility.detailAddress}` : ""}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm text-gray-500">시설 설명</p>
+                <p className="text-sm">{facility.description}</p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Badge variant="outline" className={facility.hasParking ? "border-green-500" : "border-gray-200"}>
+                  주차 {facility.hasParking ? "가능" : "불가능"}
+                </Badge>
+                <Badge variant="outline" className={facility.hasShower ? "border-green-500" : "border-gray-200"}>
+                  샤워실 {facility.hasShower ? "있음" : "없음"}
+                </Badge>
+                <Badge variant="outline" className={facility.hasEquipmentRental ? "border-green-500" : "border-gray-200"}>
+                  장비 대여 {facility.hasEquipmentRental ? "가능" : "불가능"}
+                </Badge>
+                <Badge variant="outline" className={facility.hasCafe ? "border-green-500" : "border-gray-200"}>
+                  카페 {facility.hasCafe ? "있음" : "없음"}
+                </Badge>
+              </div>
+
+              {facility.images && facility.images.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-500">시설 이미지</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    {facility.images.map((image: string, index: number) => (
+                      <div key={index} className="relative aspect-video rounded-md overflow-hidden">
+                        <img
+                          src={image}
+                          alt={`${facility.name} 이미지 ${index + 1}`}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="courts">
-              <Card>
-                <CardHeader className="p-4">
-                  <CardTitle className="text-lg">코트 정보</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p className="mb-4 text-sm sm:text-base">코트 정보 관리는 현재 개발 중입니다.</p>
-                  <Button asChild className="w-full sm:w-auto">
-                    <Link href={`/admin/facilities/${facility.id}/courts`}>
-                      코트 관리하기
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="managers">
-              <FacilityManagers
-                facilityId={facility.id}
-                facilityName={facility.name}
-              />
-            </TabsContent>
-            
-            <TabsContent value="reservations">
-              <Card>
-                <CardHeader className="p-4">
-                  <CardTitle className="text-lg">예약 현황</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p className="text-sm sm:text-base">예약 현황 관리는 현재 개발 중입니다.</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                className={`${
+                  facility.active 
+                    ? "text-red-600 border-red-200 hover:bg-red-50" 
+                    : "text-green-600 border-green-200 hover:bg-green-50"
+                }`}
+                onClick={handleToggleStatus}
+              >
+                {facility.active ? "비활성화" : "활성화"}
+              </Button>
+              <Button asChild variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50">
+                <Link href={`/admin/facilities/edit/${facility.id}`}>
+                  수정
+                </Link>
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+              >
+                삭제
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="courts" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">코트 관리</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FacilityCourtManagement facilityId={String(facility.id)} facilityName={facility.name} sportType={facility.sportType} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reservations" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">예약 현황</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FacilityReservations facilityId={String(facility.id)} facilityName={facility.name} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="managers" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">매니저 관리</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FacilityManagers facilityId={facility.id} facilityName={facility.name} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+// 시설별 코트 관리 컴포넌트
+function FacilityCourtManagement({ facilityId, facilityName, sportType }: { facilityId: string, facilityName: string, sportType: string }) {
+  const [isLoading, setIsLoading] = useState(false)
+  
+  return (
+    <div>
+      <div className="mb-4">
+        <h3 className="text-lg font-medium mb-2">{facilityName}의 코트</h3>
+        <p className="text-gray-500 text-sm">이 시설의 코트를 관리하고 새로운 코트를 추가할 수 있습니다.</p>
       </div>
+      
+      {/* 특정 시설에 대한 코트 관리를 위해 facilityId를 전달 */}
+      <CourtManagement selectedFacilityId={facilityId} />
+    </div>
+  )
+}
+
+// 시설별 예약 현황 컴포넌트
+function FacilityReservations({ facilityId, facilityName }: { facilityId: string, facilityName: string }) {
+  const [isLoading, setIsLoading] = useState(false)
+  
+  return (
+    <div>
+      <div className="mb-4">
+        <h3 className="text-lg font-medium mb-2">{facilityName}의 예약</h3>
+        <p className="text-gray-500 text-sm">이 시설에 대한 모든 예약을 조회하고 관리할 수 있습니다.</p>
+      </div>
+      
+      {/* 특정 시설에 대한 예약 현황을 위해 facilityId 전달 */}
+      <ReservationStatus facilityId={facilityId} />
     </div>
   )
 } 

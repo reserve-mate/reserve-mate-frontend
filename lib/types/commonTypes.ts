@@ -28,3 +28,9 @@ export interface Payment {
     amount: number;
     matchId: number;
 }
+
+// 위도 경도
+export interface Location {
+    latitude: number;   // 위도 y축
+    longitude: number;  // 경도 x축
+}
