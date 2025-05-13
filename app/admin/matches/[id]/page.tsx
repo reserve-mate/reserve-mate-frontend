@@ -50,6 +50,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { matchService } from "@/lib/services/matchService"
+import { AdminMatchDetail, displayMatchStatus, displaySportName } from "@/lib/types/matchTypes"
+import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
 
 // 더미 매치 데이터
 const dummyMatches = [
@@ -114,30 +117,27 @@ const dummyMatches = [
 ]
 
 // 상태별 배지 색상
-const statusColors: Record<string, string> = {
-  "모집중": "bg-green-100 text-green-800 border-green-200",
-  "마감": "bg-gray-100 text-gray-800 border-gray-200",
-  "진행중": "bg-blue-100 text-blue-800 border-blue-200",
-  "종료": "bg-red-100 text-red-800 border-red-200"
+const statusColors: Record<MatchStatus, string> = {
+  "APPLICABLE": "bg-green-100 text-green-800 border-green-200",
+  "FINISH": "bg-gray-100 text-gray-800 border-gray-200",
+  "CLOSE_TO_DEADLINE": "bg-blue-100 text-blue-800 border-blue-200",
+  "END": "bg-red-100 text-red-800 border-red-200"
 }
 
-export default function MatchDetailPage({ params }: { params: { id: string } }) {
+export default function MatchDetailPage({ params }: { params: { id: number } }) {
   const router = useRouter()
   const matchId = params.id
-  const [match, setMatch] = useState<any>(null)
+  const [match, setMatch] = useState<AdminMatchDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isKickDialogOpen, setIsKickDialogOpen] = useState(false)
   const [selectedParticipant, setSelectedParticipant] = useState<string | null>(null)
   
-  // 매치 정보 조회 (더미 데이터 사용)
-  useEffect(() => {
-    setIsLoading(true)
+  const getAdminMatch = async () => {
     try {
       // 실제로는 API에서 데이터를 가져옴
-      // 여기서는 더미 데이터 사용
-      const foundMatch = dummyMatches.find(m => m.id === matchId)
+      const foundMatch = await matchService.getAdminMatch(params.id);
       
       if (foundMatch) {
         setMatch(foundMatch)
@@ -158,17 +158,23 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     } finally {
       setIsLoading(false)
     }
+  } 
+
+  // 매치 정보 조회 (더미 데이터 사용)
+  useEffect(() => {
+    setIsLoading(true)
+    getAdminMatch();
   }, [matchId, router])
 
   // 매치 상태 변경
-  const handleStatusChange = (newStatus: string) => {
+  const handleStatusChange = (newStatus: MatchStatus) => {
     if (!match) return
 
     try {
       // 실제로는 API 호출
       setMatch({
         ...match,
-        status: newStatus
+        matchStatus: newStatus
       })
       
       toast({
@@ -208,14 +214,14 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
     try {
       // 실제로는 API 호출
-      const updatedParticipants = match.participants.filter(
+      const updatedParticipants = match.adminPlayers.filter(
         (p: any) => p.id !== selectedParticipant
       )
       
       setMatch({
         ...match,
-        participants: updatedParticipants,
-        currentParticipants: updatedParticipants.length
+        adminPlayers: updatedParticipants,
+        //currentParticipants: updatedParticipants.length
       })
       
       toast({
@@ -274,9 +280,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           </Link>
         </Button>
         <div className="flex items-center mt-2 sm:mt-0">
-          <h1 className="text-xl sm:text-2xl font-bold">{match.title}</h1>
-          <Badge className={`ml-2 ${statusColors[match.status]}`}>
-            {match.status}
+          <h1 className="text-xl sm:text-2xl font-bold">{match.matchTitle}</h1>
+          <Badge className={`ml-2 ${statusColors[match.matchStatus]}`}>
+            {displayMatchStatus(match.matchStatus)}
           </Badge>
         </div>
       </div>
@@ -284,7 +290,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 md:w-fit">
           <TabsTrigger value="overview">기본 정보</TabsTrigger>
-          <TabsTrigger value="participants">참가자 ({match.currentParticipants}/{match.maxParticipants})</TabsTrigger>
+          <TabsTrigger value="participants">참가자 ({match.adminPlayers.length}/{match.teamCapacity})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -297,9 +303,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                 <div className="space-y-1">
                   <div className="flex items-center text-sm text-gray-500">
                     <Target className="h-4 w-4 mr-2 text-indigo-500" />
-                    종목 / 레벨
+                    종목
                   </div>
-                  <p>{match.sportType} / {match.level}</p>
+                  <p>{displaySportName(match.sportType)}</p>
                 </div>
 
                 <div className="space-y-1">
@@ -307,7 +313,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     <MapPin className="h-4 w-4 mr-2 text-indigo-500" />
                     시설 / 코트
                   </div>
-                  <p>{match.facilityName} / {match.courtName}</p>
+                  <p>{match.facilityName} / {match.facilityCourt}</p>
                   <p className="text-sm text-gray-500">{match.address}</p>
                 </div>
 
@@ -324,7 +330,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     <Clock className="h-4 w-4 mr-2 text-indigo-500" />
                     시간
                   </div>
-                  <p>{match.matchTime}</p>
+                  <p>{`${match.matchTime}:00-${match.endTime}:00`}</p>
                 </div>
 
                 <div className="space-y-1">
@@ -332,7 +338,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     <Users className="h-4 w-4 mr-2 text-indigo-500" />
                     참가 인원
                   </div>
-                  <p>{match.currentParticipants} / {match.maxParticipants}명</p>
+                  <p>{match.adminPlayers.length} / {match.teamCapacity}명</p>
                 </div>
 
                 <div className="space-y-1">
@@ -340,7 +346,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     <DollarSign className="h-4 w-4 mr-2 text-indigo-500" />
                     참가비
                   </div>
-                  <p>{match.participationFee.toLocaleString()}원</p>
+                  <p>{match.matchPrice.toLocaleString()}원</p>
                 </div>
               </div>
 
@@ -354,47 +360,47 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             </CardContent>
             
             <CardFooter className="flex flex-wrap justify-end gap-2">
-              {match.status === "모집중" && (
+              {match.matchStatus === MatchStatus.APPLICABLE && (
                 <Button 
                   variant="outline"
                   className="border-amber-200 text-amber-600 hover:bg-amber-50"
-                  onClick={() => handleStatusChange("마감")}
+                  onClick={() => handleStatusChange(MatchStatus.FINISH)}
                 >
                   모집 마감
                 </Button>
               )}
               
-              {match.status === "마감" && (
+              {match.matchStatus === MatchStatus.FINISH && (
                 <>
                   <Button 
                     variant="outline"
                     className="border-green-200 text-green-600 hover:bg-green-50"
-                    onClick={() => handleStatusChange("모집중")}
+                    onClick={() => handleStatusChange(MatchStatus.APPLICABLE)}
                   >
                     재모집
                   </Button>
                   <Button 
                     variant="outline"
                     className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                    onClick={() => handleStatusChange("진행중")}
+                    onClick={() => handleStatusChange(MatchStatus.APPLICABLE)}
                   >
                     진행 상태로 변경
                   </Button>
                 </>
               )}
               
-              {match.status === "진행중" && (
+              {match.matchStatus === MatchStatus.APPLICABLE && (
                 <Button 
                   variant="outline"
                   className="border-red-200 text-red-600 hover:bg-red-50"
-                  onClick={() => handleStatusChange("종료")}
+                  onClick={() => handleStatusChange(MatchStatus.END)}
                 >
                   매치 종료
                 </Button>
               )}
               
               <Button asChild variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50">
-                <Link href={`/admin/matches/edit/${match.id}`}>
+                <Link href={`/admin/matches/edit/${match.matchId}`}>
                   수정
                 </Link>
               </Button>
@@ -415,38 +421,36 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               <CardTitle className="text-lg">참가자 목록</CardTitle>
             </CardHeader>
             <CardContent>
-              {match.participants && match.participants.length > 0 ? (
+              {match.adminPlayers && match.adminPlayers.length > 0 ? (
                 <div className="border rounded-md">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>참가자</TableHead>
-                        <TableHead>레벨</TableHead>
-                        <TableHead>성별</TableHead>
+                        <TableHead>전화번호</TableHead>
                         <TableHead>참가일</TableHead>
                         <TableHead className="text-right">관리</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {match.participants.map((participant: any) => (
-                        <TableRow key={participant.id}>
+                      {match.adminPlayers.map((participant) => (
+                        <TableRow key={participant.payerId}>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Avatar className="h-8 w-8">
                                 <AvatarFallback>
-                                  {participant.name.slice(0, 2)}
+                                  {participant.userName.slice(0, 2)}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <div className="font-medium">{participant.name}</div>
-                                <div className="text-xs text-gray-500">{participant.id}</div>
+                                <div className="font-medium">{participant.userName}</div>
+                                <div className="text-xs text-gray-500">{participant.email}</div>
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>{participant.level}</TableCell>
-                          <TableCell>{participant.gender}</TableCell>
+                          <TableCell>{participant.phone}</TableCell>
                           <TableCell>
-                            {new Date(participant.joinedAt).toLocaleDateString()}
+                            {participant.joinDate}
                           </TableCell>
                           <TableCell className="text-right">
                             <Button 
@@ -454,7 +458,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                               size="sm"
                               className="text-red-600 border-red-200 hover:bg-red-50"
                               onClick={() => {
-                                setSelectedParticipant(participant.id)
+                                setSelectedParticipant(String(participant.payerId))
                                 setIsKickDialogOpen(true)
                               }}
                             >
