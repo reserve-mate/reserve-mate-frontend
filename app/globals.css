@@ -73,6 +73,29 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* 관리자 페이지에서 body 스타일 재정의 */
+  body[data-admin-page="true"] {
+    height: 100vh;
+    overflow: hidden;
+    padding: 0 !important;
+    margin: 0 !important;
+    background-color: #1e293b !important; /* slate-800 배경색 */
+  }
+  
+  /* 관리자 페이지에서 html 스타일 재정의 */
+  html:has(body[data-admin-page="true"]) {
+    height: 100%;
+    overflow: hidden;
+    background-color: #1e293b;
+  }
+  
+  /* 관리자 페이지 내에서 추가 여백이 생길 수 있는 요소들 재정의 */
+  body[data-admin-page="true"] > div {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 /* 전체 페이지 공통 스타일 */
@@ -124,5 +147,25 @@
 /* 종료된 매치 스타일 */
 .match-ended {
   @apply opacity-70 grayscale;
+}
+
+/* 관리자 레이아웃 스타일 */
+.admin-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 관리자 메인 콘텐츠 영역 */
+.admin-main-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 관리자 내부 컨테이너 */
+.admin-container {
+  width: 100%;
+  max-width: 5xl;
+  padding: 1.5rem 1rem;
 }
 

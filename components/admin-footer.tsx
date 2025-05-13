@@ -10,7 +10,7 @@ export default function AdminFooter() {
   }, []);
 
   return (
-    <footer className="w-full border-t bg-slate-800 text-slate-300 h-12 mt-auto">
+    <footer className="w-full border-t bg-slate-800 text-slate-300 h-12 mt-auto shrink-0">
       <div className="h-full px-4 flex items-center justify-center">
         <p className="text-sm">
           ReserveMate © {year} All rights reserved
