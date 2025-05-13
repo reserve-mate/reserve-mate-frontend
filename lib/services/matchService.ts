@@ -32,11 +32,7 @@ export const matchService = {
 
     return api.post<MathDateCount[]>(endpoint, params);
   },
-  
-  // 관리자용 매치 목록 조회
-  getAdminMatches: () => 
-    api.get<Match[]>('/admin/matches'),
-  
+
   // 매치 상세 조회
   getMatch: (matchId: number) => {
     return api.get<MatchDetailRespone>(`/match/matches/${matchId}`)

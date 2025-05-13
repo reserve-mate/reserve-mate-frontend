@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { 
   Card, 
   CardHeader, 
@@ -18,15 +18,18 @@ import { Input } from "@/components/ui/input"
 import { AlertCircle, ArrowLeft } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { matchPlayerService } from "@/lib/services/matchplayerService"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 
-export default function MatchCancellationPage({ params }: { params: { id: string } }) {
+export default function MatchCancellationPage({ params }: { params: { id: number } }) {
   const router = useRouter()
-  const { toast } = useToast()
+  //const { toast } = useToast()
   const [selectedReason, setSelectedReason] = useState("")
   const [otherReason, setOtherReason] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showError, setShowError] = useState(false)
+
+  const queryString = useSearchParams(); 
+  const orderId = queryString.get("orderId");
 
   const cancellationReasons = [
     "개인 일정 변경",
@@ -50,33 +53,39 @@ export default function MatchCancellationPage({ params }: { params: { id: string
       return
     }
 
+    if(!orderId) {
+      router.back();
+      return;
+    }
+
     setIsSubmitting(true)
     
     try {
       const reason = selectedReason === "기타 (직접 입력)" ? otherReason : selectedReason
       
-      const response = await matchPlayerService.cancelMatch({ 
-        matchId: parseInt(params.id),
-        reason
+      const response: string = await matchPlayerService.cancelMatch({ 
+        matchId: params.id,
+        cancelReason: reason,
+        orderId: orderId
       })
       
-      if (response.success) {
-        toast({
-          title: "취소 요청이 접수되었습니다",
-          description: "잠시만 기다려주세요. 결제 취소를 진행합니다.",
-        })
+      toast({
+        title: "취소 요청이 접수되었습니다",
+        description: "잠시만 기다려주세요. 결제 취소를 진행합니다.",
+      })
         
         // 취소 처리 페이지로 리다이렉트
-        router.push(`/matches/cancel/processing/${params.id}?refundId=${response.refundId}`)
-      } else {
-        throw new Error("취소 요청이 실패했습니다.")
+        router.push(`/matches/cancel/processing/${params.id}?orderId=${response}`);
+
+    } catch (error: any) {
+      let errorMsg = "매치 취소 처리 중 문제가 발생했습니다. 다시 시도해주세요.";
+      if(error) {
+        errorMsg = error.message;
       }
-    } catch (error) {
-      console.error("매치 취소 중 오류가 발생했습니다:", error)
       toast({
-        variant: "destructive",
         title: "매치 취소 실패",
-        description: "매치 취소 처리 중 문제가 발생했습니다. 다시 시도해주세요.",
+        description: errorMsg,
+        variant: "destructive",
       })
       setIsSubmitting(false)
     }

@@ -6,12 +6,14 @@ export const matchPlayerService = {
         return api.get<boolean>(endPoint);
     },
 
-    cancelMatch: (params: { matchId: number, reason: string }) => {
-        return api.put<{success: boolean, refundId: string}>('/player/cancelMatch', params);
+    // 매치 신청 취소
+    cancelMatch: (params : {matchId: number, cancelReason: string, orderId: string}) => {
+    let endpoint = `/player/cancelMatch`;
+    return api.put<string>(endpoint, params);
     },
     
     // 결제 취소 상태 확인
     checkCancelStatus: (refundId: string) => {
-        return api.get<{status: 'pending' | 'completed' | 'failed', message?: string}>(`/player/cancelStatus?refundId=${refundId}`);
+        return api.get<{status: 'pending' | 'completed' | 'failed', message?: string}>(`/player/cancelStatus?orderId=${refundId}`);
     }
 }

@@ -118,10 +118,8 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     const fetchMatchDetail = async () => {
       try {
         const matchInfo = await matchService.getMatch(params.id);
-        console.log(matchInfo.matchDataDto.matchId)
         setMatchDetail(matchInfo);
       } catch (error: any) {
-        alert(error.errorCode + ":" + error.message);
         if(error.errorCode === "UNAUTHORIZED"){
           window.location.reload();
           return;
@@ -300,7 +298,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
           variant="destructive"
           className="w-full py-6 text-lg font-bold"
           disabled={!canJoin || isJoining}
-          onClick={() => router.push(`/matches/cancel/${params.id}`)}
+          onClick={() => router.push(`/matches/cancel/${params.id}?orderId=${matchDetail.userDataDto?.orderId}`)}
         >
           매치 취소하기
         </Button>)
