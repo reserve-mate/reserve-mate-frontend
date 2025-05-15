@@ -36,7 +36,7 @@ import { ko } from "date-fns/locale"
 
 // 매치 등록 폼 컴포넌트 import
 import RegisterMatchForm from "@/components/admin/match-register-form"
-import { AdminMatches, AdminMatchSearch } from "@/lib/types/matchTypes"
+import { AdminMatches, AdminMatchSearch, displayMatchStatus, displaySportName } from "@/lib/types/matchTypes"
 import { matchService } from "@/lib/services/matchService"
 import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
 import { useRouter } from "next/navigation"
@@ -53,10 +53,12 @@ const sportTypes: SportType[] = [
 
 // 상태별 배지 색상
 const statusColors: Record<MatchStatus, string> = {
-  "APPLICABLE": "bg-green-100 text-green-800",
-  "FINISH": "bg-gray-100 text-gray-800",
-  "CLOSE_TO_DEADLINE": "bg-blue-100 text-blue-800",
-  "END": "bg-red-100 text-red-800"
+  "APPLICABLE": "bg-green-100 text-green-800 border-green-200",
+  "FINISH": "bg-red-100 text-red-800 border-red-200",
+  "CLOSE_TO_DEADLINE": "bg-blue-100 text-blue-800 border-blue-200",
+  "END": "bg-gray-100 text-gray-800 border-gray-200",
+  "ONGOING" : "bg-orange-100 text-orange-800 border-orange-200",
+  "CANCELLED" : "bg-purple-100 text-purple-800 border-purple-200"
 }
 
 // 날짜 포맷
@@ -178,22 +180,6 @@ export default function AdminMatchesPage() {
   const handleDelete = (id: number) => {
     //setMatches(prev => prev.filter(match => adminMatches.id !== id))
   }
-  
-  // 마감/재오픈 토글
-  const toggleStatus = (id: number) => {
-    // setMatches(prev => prev.map(match => 
-    //   match.id === id ? {
-    //     ...match,
-    //     status: match.status === "모집중" ? "마감" : "모집중"
-    //   } : match
-    // ))
-
-    // setAdminMatches(prev => prev.map(adminMatch => adminMatch.matchId === id ? {
-    //   ...adminMatch,
-    //   matchStatus: adminMatch.matchStatus === "APPLICABLE" ? "" : ""
-    //   } : adminMatch
-    // ));
-  }
 
   // 매치 등록 폼 토글
   const toggleRegisterForm = () => {
@@ -204,62 +190,10 @@ export default function AdminMatchesPage() {
   const handleMatchRegisterComplete = () => {
     setAdminMatches([]);
     fetchGetAdinMatches(0)
-    // 새 매치를 목록에 추가
-    // setMatches(prev => [...prev, {
-    //   id: String(prev.length + 1),
-    //   ...newMatch,
-    //   currentParticipants: 0,
-    //   status: "모집중"
-    // }])
     // 등록 폼 닫기
     setShowRegisterForm(false)
     
     // 성공 메시지 처리 등...
-  }
-
-  // 종목에 따른 화면 노출
-  const displaySportType = (sportType: SportType): string => {
-    let sportStr = "";
-
-    switch (sportType) {
-      case SportType.TENNIS:
-        sportStr = "테니스";
-        break;
-      case SportType.SOCCER:
-        sportStr = "축구";
-        break;
-      case SportType.FUTSAL:
-        sportStr = "풋살";
-        break;
-      case SportType.BASEBALL:
-        sportStr = "야구";
-        break;
-      case SportType.BADMINTON:
-        sportStr = "배드민턴";
-        break;
-      case SportType.BASKETBALL:
-        sportStr = "농구";
-        break;
-    }
-
-    return sportStr;
-  }
-
-  // 매치 상태에 따른 화면 노출 수정
-  const displayMatchStatus = (status: MatchStatus): string => {
-    let statusStr: string = "";
-    
-    if(status === 'APPLICABLE') {
-      statusStr = "모집중";
-    }else if(status === "CLOSE_TO_DEADLINE") {
-      statusStr = "마감임박";
-    }else if(status === "FINISH") {
-      statusStr = "마감";
-    }else if(status === "END") {
-      statusStr = "종료";
-    }
-
-    return statusStr;
   }
 
   // 관리자 매치 검색
@@ -390,7 +324,7 @@ export default function AdminMatchesPage() {
               <TableRow key={match.matchId}>
                 <TableCell className="font-medium">{match.matchName}</TableCell>
                 <TableCell>
-                  <span className="whitespace-nowrap">{displaySportType(match.sportType)}</span>
+                  <span className="whitespace-nowrap">{displaySportName(match.sportType)}</span>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">
@@ -432,7 +366,7 @@ export default function AdminMatchesPage() {
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" sideOffset={4} className="z-[100]">
                       <DropdownMenuItem asChild>
                         <Link href={`/admin/matches/${match.matchId}`} className="cursor-pointer">
                           <Eye className="mr-2 h-4 w-4" />

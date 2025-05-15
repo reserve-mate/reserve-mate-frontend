@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/hooks/use-toast"
 import { MapPin, Calendar, Clock, Users, DollarSign, Share2, ChevronLeft, ChevronUp, ChevronDown } from "lucide-react"
 import { matchService } from "@/lib/services/matchService"
-import { MatchDetailRespone, MatchPayment } from "@/lib/types/matchTypes"
+import { displayMatchStatus, displaySportName, MatchDetailRespone, MatchPayment } from "@/lib/types/matchTypes"
 import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
 import { loadTossPayments, ANONYMOUS, TossPaymentsWidgets, TossPaymentsPayment } from "@tosspayments/tosspayments-sdk";
 import { matchPlayerService } from "@/lib/services/matchplayerService"
@@ -450,26 +450,14 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                     ${matchDetail.matchDataDto.matchStatus === MatchStatus.END ? "bg-gray-500 text-white" : ""}
                   `}
                 >
-                  {`
-                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.APPLICABLE ? "모집 중" : ""}
-                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.FINISH ? "모집 마감" : ""}
-                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.CLOSE_TO_DEADLINE ? "마감 임박" : ""}
-                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.END ? "종료" : ""}
-                  `}
+                  {displayMatchStatus(matchDetail.matchDataDto.matchStatus)}
                 </Badge>
               </div>
               <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
                 <h1 className="text-2xl sm:text-3xl font-bold mb-2">
                   {matchDetail.facilityDataDto.facilityName} 
                   - 
-                  {`
-                    ${matchDetail.facilityDataDto.sportType === SportType.FUTSAL ? "풋살" : ""}
-                    ${matchDetail.facilityDataDto.sportType === SportType.TENNIS ? "테니스" : ""}
-                    ${matchDetail.facilityDataDto.sportType === SportType.SOCCER ? "축구" : ""}
-                    ${matchDetail.facilityDataDto.sportType === SportType.BADMINTON ? "배드민턴" : ""}
-                    ${matchDetail.facilityDataDto.sportType === SportType.BASKETBALL ? "야구" : ""}
-                    ${matchDetail.facilityDataDto.sportType === SportType.BASEBALL ? "농구" : ""}
-                  `} 매치
+                  {displaySportName(matchDetail.facilityDataDto.sportType)} 매치
                 </h1>
                 <p className="text-gray-200 mb-1">{matchDetail.facilityDataDto.courtName}</p>
                 <div className="flex items-center text-sm">

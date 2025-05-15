@@ -123,7 +123,7 @@ export interface MatchPayment {
 export type MatchList = {
     matchId: number;
     matchName: string;
-    matchStatus: string;
+    matchStatus: MatchStatus;
     facilityName: string;
     fullAddress: string;
     matchDate: string;
@@ -268,6 +268,14 @@ export const displayMatchStatus = (matchStatus: MatchStatus) => {
 
         case MatchStatus.END:
             statusName = "종료";
+            break;
+        
+        case MatchStatus.ONGOING:
+            statusName = "진행중";
+            break;
+        
+        case MatchStatus.CANCELLED:
+            statusName = "취소";
             break;
     }
 

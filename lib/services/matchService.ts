@@ -19,6 +19,12 @@ export const matchService = {
     return api.post(endPoint, params);
   },
 
+  // 매치 삭제(관리자 전용)
+  deleteMatch: (matchId: number) => {
+    let endPoint = `/admin/match/delete/${matchId}`;
+    return api.post(endPoint);
+  },
+
   // 매치 상세 조회(관리자 전용)
   getAdminMatch: (matchId: number) => {
     let endPoint = `/admin/match/${matchId}`;
@@ -86,8 +92,8 @@ export const matchService = {
     api.patch<Match>(`/admin/matches/${id}/status`, { status }),
   
   // 매치 삭제 (관리자 전용)
-  deleteMatch: (id: number) => 
-    api.delete(`/admin/matches/${id}`),
+  // deleteMatch: (id: number) => 
+  //   api.delete(`/admin/matches/${id}`),
     
   // 시설의 매니저 목록 조회
   getFacilityManagers: (facilityId: number) => 

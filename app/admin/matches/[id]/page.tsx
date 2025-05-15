@@ -119,9 +119,11 @@ const dummyMatches = [
 // 상태별 배지 색상
 const statusColors: Record<MatchStatus, string> = {
   "APPLICABLE": "bg-green-100 text-green-800 border-green-200",
-  "FINISH": "bg-gray-100 text-gray-800 border-gray-200",
+  "FINISH": "bg-red-100 text-red-800 border-red-200",
   "CLOSE_TO_DEADLINE": "bg-blue-100 text-blue-800 border-blue-200",
-  "END": "bg-red-100 text-red-800 border-red-200"
+  "END": "bg-gray-100 text-gray-800 border-gray-200",
+  "ONGOING" : "bg-orange-100 text-orange-800 border-orange-200",
+  "CANCELLED" : "bg-purple-100 text-purple-800 border-purple-200"
 }
 
 export default function MatchDetailPage({ params }: { params: { id: number } }) {
@@ -179,7 +181,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
       
       toast({
         title: "매치 상태 변경 완료",
-        description: `매치 상태가 "${newStatus}"(으)로 변경되었습니다.`
+        description: `매치 상태가 "${displayMatchStatus(newStatus)}"(으)로 변경되었습니다.`
       })
     } catch (error) {
       toast({
@@ -191,9 +193,11 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   }
 
   // 매치 삭제
-  const handleDelete = () => {
+  const handleDelete = async() => {
     try {
       // 실제로는 API 호출
+      await matchService.deleteMatch(params.id);
+
       toast({
         title: "매치 삭제 완료",
         description: "매치가 성공적으로 삭제되었습니다."
@@ -382,7 +386,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                   <Button 
                     variant="outline"
                     className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                    onClick={() => handleStatusChange(MatchStatus.APPLICABLE)}
+                    onClick={() => handleStatusChange(MatchStatus.ONGOING)}
                   >
                     진행 상태로 변경
                   </Button>

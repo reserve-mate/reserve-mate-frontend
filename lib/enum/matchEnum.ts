@@ -14,5 +14,7 @@ export enum MatchStatus {
     FINISH = 'FINISH',
     CLOSE_TO_DEADLINE = 'CLOSE_TO_DEADLINE',
     APPLICABLE = 'APPLICABLE',
-    END = 'END'
+    END = 'END',
+    ONGOING = 'ONGOING',
+    CANCELLED = 'CANCELLED'
 }
