@@ -1,7 +1,7 @@
 import { api } from '../api';
 import { MatchStatus } from '../enum/matchEnum';
 import { ApiError, ApiResonse, Slice } from '../types/commonTypes';
-import { AdminMatchDetail, AdminMatches, AdminMatchSearch, CreateMatchRequest, Match, MatchDetailRespone, MatchList, MatchRegist, MatchSearch, MathDateCount } from '../types/matchTypes';
+import { AdminMatchDetail, AdminMatches, AdminMatchSearch, CreateMatchRequest, Match, MatchDetailRespone, MatchList, MatchRegist, MatchSearch, MatchStatusPost, MathDateCount } from '../types/matchTypes';
 import { FacilityManager } from './userService';
 
 // 매치 서비스
@@ -17,6 +17,13 @@ export const matchService = {
   registMatch: (params: MatchRegist) => {
     let endPoint = `/match/registMatch`
     return api.post(endPoint, params);
+  },
+
+  // 매치 상태 변경(관리자 전용)
+  updateMatchStat: (params: {matchId: number, matchStatus: MatchStatusPost}) => {
+    console.log(params.matchStatus);
+    let endPoint = `/admin/match/status/${params.matchId}`;
+    return api.post(endPoint, params.matchStatus);
   },
 
   // 매치 삭제(관리자 전용)

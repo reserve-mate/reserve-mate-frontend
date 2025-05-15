@@ -1,6 +1,10 @@
 import { MatchStatus, SportType } from "../enum/matchEnum";
 import { PaymentResponse } from "./payment";
 
+export type MatchStatusPost = {
+    matchStatus: MatchStatus;
+}
+
 export interface AdminMatchDetail {
     matchId: number;
     matchTitle: string;

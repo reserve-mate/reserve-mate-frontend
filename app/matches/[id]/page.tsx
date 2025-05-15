@@ -294,10 +294,15 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   const isMatchApplyBtn = () => {
     if(!matchDetail) return;
     if(matchDetail.userDataDto && matchDetail.userDataDto.isMatchApply) {
+
+      const disabled = (matchDetail.matchDataDto.matchStatus === MatchStatus.ONGOING 
+        || matchDetail.matchDataDto.matchStatus === MatchStatus.END 
+        || matchDetail.matchDataDto.matchStatus === MatchStatus.CANCELLED) && matchDetail.userDataDto.isMatchApply;
+
       return (<Button
           variant="destructive"
           className="w-full py-6 text-lg font-bold"
-          disabled={!canJoin || isJoining}
+          disabled={disabled}
           onClick={() => router.push(`/matches/cancel/${params.id}?orderId=${matchDetail.userDataDto?.orderId}`)}
         >
           매치 취소하기

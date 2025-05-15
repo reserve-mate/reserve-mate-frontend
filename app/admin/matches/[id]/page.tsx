@@ -51,7 +51,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { matchService } from "@/lib/services/matchService"
-import { AdminMatchDetail, displayMatchStatus, displaySportName } from "@/lib/types/matchTypes"
+import { AdminMatchDetail, displayMatchStatus, displaySportName, MatchStatusPost } from "@/lib/types/matchTypes"
 import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
 
 // 더미 매치 데이터
@@ -169,11 +169,19 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   }, [matchId, router])
 
   // 매치 상태 변경
-  const handleStatusChange = (newStatus: MatchStatus) => {
+  const handleStatusChange = async (newStatus: MatchStatus) => {
     if (!match) return
+
+    const matchStatus: MatchStatusPost = {
+      matchStatus: newStatus
+    }
 
     try {
       // 실제로는 API 호출
+      await matchService.updateMatchStat({
+        matchId: params.id,
+        matchStatus: matchStatus
+      });
       setMatch({
         ...match,
         matchStatus: newStatus
@@ -183,10 +191,10 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
         title: "매치 상태 변경 완료",
         description: `매치 상태가 "${displayMatchStatus(newStatus)}"(으)로 변경되었습니다.`
       })
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "상태 변경 실패",
-        description: "매치 상태 변경 중 오류가 발생했습니다.",
+        description: error.message,
         variant: "destructive"
       })
     }
@@ -364,7 +372,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
             </CardContent>
             
             <CardFooter className="flex flex-wrap justify-end gap-2">
-              {match.matchStatus === MatchStatus.APPLICABLE && (
+              {(match.matchStatus === MatchStatus.CLOSE_TO_DEADLINE && ((match.adminPlayers.length + 1) >= (match.teamCapacity / 2))) && (
                 <Button 
                   variant="outline"
                   className="border-amber-200 text-amber-600 hover:bg-amber-50"
@@ -374,15 +382,17 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                 </Button>
               )}
               
-              {match.matchStatus === MatchStatus.FINISH && (
+              {match.matchStatus === MatchStatus.FINISH && ( // 모집 마감한 경우
                 <>
+                {((match.adminPlayers.length !== match.teamCapacity) && (match.adminPlayers.length + 1) >= (match.teamCapacity / 2)) && (
                   <Button 
                     variant="outline"
                     className="border-green-200 text-green-600 hover:bg-green-50"
-                    onClick={() => handleStatusChange(MatchStatus.APPLICABLE)}
+                    onClick={() => handleStatusChange(MatchStatus.CLOSE_TO_DEADLINE)}
                   >
                     재모집
                   </Button>
+                )}
                   <Button 
                     variant="outline"
                     className="border-blue-200 text-blue-600 hover:bg-blue-50"
@@ -393,7 +403,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                 </>
               )}
               
-              {match.matchStatus === MatchStatus.APPLICABLE && (
+              {match.matchStatus === MatchStatus.ONGOING && ( // 진행 중인 경우 매치 종료 버튼 활성화
                 <Button 
                   variant="outline"
                   className="border-red-200 text-red-600 hover:bg-red-50"
@@ -413,7 +423,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                 variant="destructive"
                 onClick={() => setIsDeleteDialogOpen(true)}
               >
-                삭제
+                매취 취소
               </Button>
             </CardFooter>
           </Card>
@@ -488,16 +498,15 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>매치 삭제</AlertDialogTitle>
+            <AlertDialogTitle>매치 취소</AlertDialogTitle>
             <AlertDialogDescription>
-              정말 이 매치를 삭제하시겠습니까? 모든 참가자 정보와 예약 정보가 함께 삭제됩니다.
-              이 작업은 되돌릴 수 없습니다.
+              매치를 정말 취소하시겠습니까? 취소 시, 모든 참가자에게 참가비가 환불됩니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogCancel>돌아가기</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-              삭제
+              매치 취소
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
