@@ -18,10 +18,26 @@ export enum MatchStatus {
     ONGOING = 'ONGOING',
     CANCELLED = 'CANCELLED'
 }
+export enum EjectReason {
+    LATE = "LATE",
+    ABUSIVE_BEHAVIOR = "ABUSIVE_BEHAVIOR",
+    SERIOUS_RULE_VIOLATION = "SERIOUS_RULE_VIOLATION"
+}
+
+// 플레이어 상태
+export enum PlayerStatus {
+    READY = "READY",
+    CANCEL = "CANCEL",
+    COMPLETED = "COMPLETED",
+    MATCH_CANCELLED = "MATCH_CANCELLED",
+    KICKED = "KICKED",
+    ONGOING = "ONGOING"
+}
 
 // 참가자 퇴장 사유 열거형
 export enum RemovalReason {
     LATE = 'LATE',                        // 지각
     ABUSIVE_BEHAVIOR = 'ABUSIVE_BEHAVIOR',          // 폭언/비매너
     SERIOUS_RULE_VIOLATION = 'SERIOUS_RULE_VIOLATION'    // 심각한 룰위반
+
 }

@@ -1,4 +1,4 @@
-import { MatchStatus, SportType } from "../enum/matchEnum";
+import { MatchStatus, PlayerStatus, SportType } from "../enum/matchEnum";
 import { PaymentResponse } from "./payment";
 
 export type MatchStatusPost = {
@@ -27,6 +27,8 @@ interface AdminPlayer {
     userName: string;
     email: string;
     phone: string;
+    playerStatus: PlayerStatus;
+    ejectReason: string;
     joinDate: string;
 }
 

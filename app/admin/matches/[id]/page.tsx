@@ -43,9 +43,12 @@ import {
 import { MiniModal } from "@/components/ui/mini-modal"
 import { matchService } from "@/lib/services/matchService"
 import { AdminMatchDetail, displayMatchStatus, displaySportName, MatchStatusPost } from "@/lib/types/matchTypes"
-import { MatchStatus, SportType, RemovalReason } from "@/lib/enum/matchEnum"
+
+import { MatchStatus, PlayerStatus, SportType, RemovalReason } from "@/lib/enum/matchEnum"
+
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
+
 
 // 더미 매치 데이터
 const dummyMatches = [
@@ -451,7 +454,16 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                         <TableHead>참가자</TableHead>
                         <TableHead>전화번호</TableHead>
                         <TableHead>참가일</TableHead>
-                        <TableHead className="text-right">관리</TableHead>
+                        {(match.matchStatus === MatchStatus.ONGOING || match.matchStatus === MatchStatus.END) && 
+                        (
+                          <>
+                            <TableHead>상태</TableHead>
+                            <TableHead>퇴장사유</TableHead>
+                            {(match.matchStatus === MatchStatus.ONGOING) && (
+                              <TableHead className="text-right">관리</TableHead>
+                            )}
+                          </>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -474,19 +486,28 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                           <TableCell>
                             {participant.joinDate}
                           </TableCell>
-                          <TableCell className="text-right">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="text-red-600 border-red-200 hover:bg-red-50"
-                              onClick={() => {
-                                setSelectedParticipant(String(participant.payerId))
-                                setIsKickDialogOpen(true)
-                              }}
-                            >
-                              퇴장
-                            </Button>
-                          </TableCell>
+                          {(match.matchStatus === MatchStatus.ONGOING || match.matchStatus === MatchStatus.END) 
+                          && (
+                            <>
+                              <TableCell>{participant.playerStatus}</TableCell>
+                              <TableCell>{participant.ejectReason}</TableCell>
+                              {(match.matchStatus === MatchStatus.ONGOING && participant.playerStatus === PlayerStatus.ONGOING) && (
+                                <TableCell className="text-right">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                    onClick={() => {
+                                      setSelectedParticipant(String(participant.payerId))
+                                      setIsKickDialogOpen(true)
+                                    }}
+                                  >
+                                    퇴장
+                                  </Button>
+                                </TableCell>
+                              )}
+                            </>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
