@@ -18,3 +18,10 @@ export enum MatchStatus {
     ONGOING = 'ONGOING',
     CANCELLED = 'CANCELLED'
 }
+
+// 참가자 퇴장 사유 열거형
+export enum RemovalReason {
+    LATE = 'LATE',                        // 지각
+    ABUSIVE_BEHAVIOR = 'ABUSIVE_BEHAVIOR',          // 폭언/비매너
+    SERIOUS_RULE_VIOLATION = 'SERIOUS_RULE_VIOLATION'    // 심각한 룰위반
+}

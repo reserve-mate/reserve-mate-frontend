@@ -1,17 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { 
   Search, 
   Plus, 
-  MoreVertical, 
   Edit, 
   Trash, 
   Eye, 
@@ -87,6 +85,8 @@ export default function AdminFacilitiesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [facilities, setFacilities] = useState(dummyFacilities)
   const [showRegisterForm, setShowRegisterForm] = useState(false)
+  
+  const router = useRouter();
   
   // 검색 기능
   const filteredFacilities = facilities.filter(facility => 
@@ -186,7 +186,11 @@ export default function AdminFacilitiesPage() {
           </TableHeader>
           <TableBody>
             {filteredFacilities.map((facility) => (
-              <TableRow key={facility.id}>
+              <TableRow 
+                key={facility.id}
+                className="isolate relative"
+                style={{ position: 'relative' }}
+              >
                 <TableCell className="font-medium">{facility.name}</TableCell>
                 <TableCell>
                   <span className="whitespace-nowrap">{facility.sportType}</span>
@@ -212,43 +216,72 @@ export default function AdminFacilitiesPage() {
                     {facility.active ? "활성" : "비활성"}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/facilities/${facility.id}`}>
-                          <Eye className="mr-2 h-4 w-4" /> 상세보기
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/facilities/${facility.id}/edit`}>
-                          <Edit className="mr-2 h-4 w-4" /> 수정하기
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => toggleActive(facility.id)}>
-                        {facility.active ? (
-                          <>
-                            <Trash className="mr-2 h-4 w-4 text-red-500" /> 
-                            <span className="text-red-500">비활성화</span>
-                          </>
-                        ) : (
-                          <>
-                            <Calendar className="mr-2 h-4 w-4 text-green-500" /> 
-                            <span className="text-green-500">활성화</span>
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(facility.id)}>
-                        <Trash className="mr-2 h-4 w-4 text-red-500" /> 
-                        <span className="text-red-500">삭제하기</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <TableCell className="text-right whitespace-nowrap relative">
+                  <div className="flex justify-end space-x-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        router.push(`/admin/facilities/${facility.id}`);
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span className="sr-only">View</span>
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        router.push(`/admin/facilities/${facility.id}/edit`);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className={`h-8 w-8 p-0 ${facility.active ? "text-red-500 hover:text-red-600 hover:bg-red-100" : "text-green-500 hover:text-green-600 hover:bg-green-100"}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        toggleActive(facility.id);
+                      }}
+                    >
+                      {facility.active ? (
+                        <CircleDot className="h-4 w-4" />
+                      ) : (
+                        <Calendar className="h-4 w-4" />
+                      )}
+                      <span className="sr-only">{facility.active ? "Deactivate" : "Activate"}</span>
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleDelete(facility.id);
+                      }}
+                    >
+                      <Trash className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

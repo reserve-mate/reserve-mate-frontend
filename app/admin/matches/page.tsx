@@ -321,7 +321,11 @@ export default function AdminMatchesPage() {
           </TableHeader>
           <TableBody>
             {adminMatches.map((match) => (
-              <TableRow key={match.matchId}>
+              <TableRow 
+                key={match.matchId} 
+                className="isolate relative"
+                style={{ position: 'relative' }}
+              >
                 <TableCell className="font-medium">{match.matchName}</TableCell>
                 <TableCell>
                   <span className="whitespace-nowrap">{displaySportName(match.sportType)}</span>
@@ -358,36 +362,53 @@ export default function AdminMatchesPage() {
                     {displayMatchStatus(match.matchStatus)}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">메뉴 열기</span>
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" sideOffset={4} className="z-[100]">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/matches/${match.matchId}`} className="cursor-pointer">
-                          <Eye className="mr-2 h-4 w-4" />
-                          상세 보기
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/matches/edit/${match.matchId}`} className="cursor-pointer">
-                          <Edit className="mr-2 h-4 w-4" />
-                          수정
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        onClick={() => handleDelete(match.matchId)}
-                      >
-                        <Trash className="mr-2 h-4 w-4" />
-                        삭제
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <TableCell className="text-right whitespace-nowrap relative">
+                  <div className="flex justify-end space-x-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        router.push(`/admin/matches/${match.matchId}`);
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span className="sr-only">View</span>
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        router.push(`/admin/matches/${match.matchId}/edit`);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleDelete(match.matchId);
+                      }}
+                    >
+                      <Trash className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
