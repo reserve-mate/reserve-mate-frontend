@@ -40,19 +40,15 @@ import {
   DialogClose,
   DialogFooter,
 } from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { MiniModal } from "@/components/ui/mini-modal"
 import { matchService } from "@/lib/services/matchService"
 import { AdminMatchDetail, displayMatchStatus, displaySportName, MatchStatusPost } from "@/lib/types/matchTypes"
-import { MatchStatus, PlayerStatus, SportType } from "@/lib/enum/matchEnum"
+
+import { MatchStatus, PlayerStatus, SportType, RemovalReason } from "@/lib/enum/matchEnum"
+
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+
 
 // 더미 매치 데이터
 const dummyMatches = [
@@ -126,6 +122,16 @@ const statusColors: Record<MatchStatus, string> = {
   "CANCELLED" : "bg-purple-100 text-purple-800 border-purple-200"
 }
 
+// 퇴장 사유 표시 함수
+const displayRemovalReason = (reason: RemovalReason): string => {
+  const reasons = {
+    [RemovalReason.LATE]: "지각",
+    [RemovalReason.ABUSIVE_BEHAVIOR]: "폭언/비매너",
+    [RemovalReason.SERIOUS_RULE_VIOLATION]: "심각한 룰위반"
+  }
+  return reasons[reason] || "기타"
+}
+
 export default function MatchDetailPage({ params }: { params: { id: number } }) {
   const router = useRouter()
   const matchId = params.id
@@ -135,6 +141,8 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isKickDialogOpen, setIsKickDialogOpen] = useState(false)
   const [selectedParticipant, setSelectedParticipant] = useState<string | null>(null)
+  const [selectedRemovalReason, setSelectedRemovalReason] = useState<RemovalReason>(RemovalReason.LATE)
+  const [isEditing, setIsEditing] = useState(false)
   
   const getAdminMatch = async () => {
     try {
@@ -225,10 +233,13 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     if (!match || !selectedParticipant) return
 
     try {
-      // 실제로는 API 호출
+      // 실제로는 API 호출 (퇴장 사유 포함)
       const updatedParticipants = match.adminPlayers.filter(
         (p: any) => p.id !== selectedParticipant
       )
+      
+      // 여기서 API를 호출하는 코드가 실제로 구현될 때, 퇴장 사유도 함께 전달
+      // example: await matchService.kickParticipant(matchId, selectedParticipant, selectedRemovalReason);
       
       setMatch({
         ...match,
@@ -238,7 +249,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
       
       toast({
         title: "참가자 제외 완료",
-        description: "해당 참가자가 매치에서 제외되었습니다."
+        description: `퇴장 사유: ${displayRemovalReason(selectedRemovalReason)} - 해당 참가자가 매치에서 제외되었습니다.`
       })
       
       setIsKickDialogOpen(false)
@@ -414,7 +425,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
               )}
               
               <Button asChild variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50">
-                <Link href={`/admin/matches/edit/${match.matchId}`}>
+                <Link href={`/admin/matches/${match.matchId}/edit`}>
                   수정
                 </Link>
               </Button>
@@ -423,7 +434,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                 variant="destructive"
                 onClick={() => setIsDeleteDialogOpen(true)}
               >
-                매취 취소
+                매치 취소
               </Button>
             </CardFooter>
           </Card>
@@ -513,41 +524,74 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
       </Tabs>
       
       {/* 매치 삭제 확인 다이얼로그 */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>매치 취소</AlertDialogTitle>
-            <AlertDialogDescription>
-              매치를 정말 취소하시겠습니까? 취소 시, 모든 참가자에게 참가비가 환불됩니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>돌아가기</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+      <MiniModal
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        title="매치 취소"
+        description="매치를 정말 취소하시겠습니까? 취소 시, 모든 참가자에게 참가비가 환불됩니다."
+        footerContent={
+          <>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDeleteDialogOpen(false)}
+              className="h-8 text-sm"
+            >
+              돌아가기
+            </Button>
+            <Button 
+              onClick={handleDelete} 
+              className="bg-red-600 hover:bg-red-700 h-8 text-sm"
+            >
               매치 취소
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </>
+        }
+      />
       
       {/* 참가자 강제 퇴장 확인 다이얼로그 */}
-      <AlertDialog open={isKickDialogOpen} onOpenChange={setIsKickDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>참가자 퇴장</AlertDialogTitle>
-            <AlertDialogDescription>
-              정말 이 참가자를 매치에서 퇴장시키겠습니까?
-              참가자에게 자동으로 알림이 발송됩니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={handleKickParticipant} className="bg-red-600 hover:bg-red-700">
+      <MiniModal 
+        isOpen={isKickDialogOpen}
+        onClose={() => setIsKickDialogOpen(false)}
+        title="참가자 퇴장"
+        description="참가자를 매치에서 퇴장시키려면 사유를 선택하세요."
+        footerContent={
+          <>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-7 text-xs px-3 py-0" 
+              onClick={() => setIsKickDialogOpen(false)}
+            >
+              취소
+            </Button>
+            <Button 
+              onClick={handleKickParticipant} 
+              className="bg-red-600 hover:bg-red-700 h-7 text-xs px-3 py-0"
+            >
               퇴장
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </>
+        }
+      >
+        <RadioGroup 
+          value={selectedRemovalReason} 
+          onValueChange={(value) => setSelectedRemovalReason(value as RemovalReason)}
+          className="space-y-0.5"
+        >
+          <div className="flex items-center space-x-2 h-5">
+            <RadioGroupItem value={RemovalReason.LATE} id="late" className="h-3.5 w-3.5" />
+            <Label htmlFor="late" className="text-xs">지각</Label>
+          </div>
+          <div className="flex items-center space-x-2 h-5">
+            <RadioGroupItem value={RemovalReason.ABUSIVE_BEHAVIOR} id="abusive" className="h-3.5 w-3.5" />
+            <Label htmlFor="abusive" className="text-xs">폭언/비매너</Label>
+          </div>
+          <div className="flex items-center space-x-2 h-5">
+            <RadioGroupItem value={RemovalReason.SERIOUS_RULE_VIOLATION} id="rule-violation" className="h-3.5 w-3.5" />
+            <Label htmlFor="rule-violation" className="text-xs">심각한 룰위반</Label>
+          </div>
+        </RadioGroup>
+      </MiniModal>
     </div>
   )
 } 
