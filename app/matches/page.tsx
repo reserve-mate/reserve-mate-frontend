@@ -13,7 +13,7 @@ import { MapPin, CalendarIcon, Clock, Users, Search, Filter, ChevronLeft, Chevro
 import { format, addDays, subDays, isSameDay, parseISO, isToday, isTomorrow, startOfDay } from "date-fns"
 import { ko } from "date-fns/locale"
 import { matchService } from "@/lib/services/matchService" 
-import { MatchList, MatchSearch, MathDateCount } from "@/lib/types/matchTypes"
+import { displayMatchStatus, displaySportName, MatchList, MatchSearch, MathDateCount } from "@/lib/types/matchTypes"
 import { SportType } from "@/lib/enum/matchEnum"
 
 // 시간별로 그룹화된 매치 타입
@@ -75,6 +75,7 @@ export default function MatchesPage() {
       }catch(err){
         console.log(err);
         setIsError(true);
+        window.location.reload();
       }
       finally{
         setLoading(false); // 
@@ -484,14 +485,11 @@ function MatchCard({ match, compact = false }: { match: MatchList; compact?: boo
               ${match.matchStatus === "FINISH" ? "status-badge status-badge-completed" : ""}
               ${match.matchStatus === "CLOSE_TO_DEADLINE" ? "status-badge status-badge-in-progress" : ""}
               ${match.matchStatus === "END" ? "status-badge status-badge-ended" : ""}
+              ${match.matchStatus === "ONGOING" ? "status-badge status-badge-ended" : ""}
+              ${match.matchStatus === "CANCELLED" ? "status-badge status-badge-ended" : ""}
             `} // CLOSE_TO_DEADLINE -> 모집 마감
           >
-            {`
-              ${match.matchStatus === "APPLICABLE" ? "모집중" : ""}
-              ${match.matchStatus === "CLOSE_TO_DEADLINE" ? "마감 임박" : ""}
-              ${match.matchStatus === "FINISH" ? "모집 마감" : ""}
-              ${match.matchStatus === "END" ? "종료" : ""}
-            `}
+            {displayMatchStatus(match.matchStatus)}
           </Badge>
         </div>
 
@@ -517,13 +515,7 @@ function MatchCard({ match, compact = false }: { match: MatchList; compact?: boo
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">{`
-            ${match.sportType === SportType.TENNIS ? "테니스" : ""}
-            ${match.sportType === SportType.SOCCER ? "축구" : ""}
-            ${match.sportType === SportType.FUTSAL ? "풋살" : ""}
-            ${match.sportType === SportType.BASEBALL ? "농구" : ""}
-            ${match.sportType === SportType.BADMINTON ? "배드민턴" : ""}
-          `}</span>
+          <span className="text-sm font-medium">{displaySportName(match.sportType)}</span>
           <span className="text-sm font-medium">{match.matchPrice}/인</span>
         </div>
       </CardContent>

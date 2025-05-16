@@ -1,6 +1,35 @@
 import { MatchStatus, SportType } from "../enum/matchEnum";
 import { PaymentResponse } from "./payment";
 
+export type MatchStatusPost = {
+    matchStatus: MatchStatus;
+}
+
+export interface AdminMatchDetail {
+    matchId: number;
+    matchTitle: string;
+    sportType: SportType;
+    matchStatus: MatchStatus;
+    facilityName: string;
+    facilityCourt: string;
+    address: string;
+    matchDate: string;
+    matchTime: number;
+    endTime: number;
+    teamCapacity: number;
+    matchPrice: number;
+    description: string;
+    adminPlayers: AdminPlayer[];
+}
+
+interface AdminPlayer {
+    payerId: number;
+    userName: string;
+    email: string;
+    phone: string;
+    joinDate: string;
+}
+
 // 관리자 매치 목록 검색
 interface AdminMatchSearchRequest {
     searchValue: string;
@@ -98,7 +127,7 @@ export interface MatchPayment {
 export type MatchList = {
     matchId: number;
     matchName: string;
-    matchStatus: string;
+    matchStatus: MatchStatus;
     facilityName: string;
     fullAddress: string;
     matchDate: string;
@@ -189,4 +218,70 @@ export type MatchCancellationReason = {
 export type MatchCancellationRequest = {
     matchId: number;
     reason: string;
+}
+
+// 종목별 이름 화면 노출
+export const displaySportName = (sportType: SportType) => {
+    let sportName = "";
+
+    switch (sportType) {
+        case SportType.BADMINTON:
+            sportName = "배드민턴";
+            break;
+
+        case SportType.SOCCER:
+            sportName = "축구";
+            break;
+
+        case SportType.BASKETBALL:
+            sportName = "농구";
+            break;
+
+        case SportType.TENNIS:
+            sportName = "테니스";
+            break;
+
+        case SportType.BASEBALL:
+            sportName = "야구";
+            break;
+
+        case SportType.FUTSAL:
+            sportName = "풋살";
+            break;
+    }
+
+    return sportName;
+}
+
+// 매치 상태 한글화
+export const displayMatchStatus = (matchStatus: MatchStatus) => {
+    let statusName = "";
+
+    switch (matchStatus) {
+        case MatchStatus.FINISH:
+            statusName = "마감";
+            break;
+
+        case MatchStatus.CLOSE_TO_DEADLINE:
+            statusName = "마감임박";
+            break;
+
+        case MatchStatus.APPLICABLE:
+            statusName = "모집중";
+            break;
+
+        case MatchStatus.END:
+            statusName = "종료";
+            break;
+        
+        case MatchStatus.ONGOING:
+            statusName = "진행중";
+            break;
+        
+        case MatchStatus.CANCELLED:
+            statusName = "취소";
+            break;
+    }
+
+    return statusName;
 }

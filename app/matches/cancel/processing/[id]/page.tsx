@@ -14,11 +14,12 @@ import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react"
 import { matchPlayerService } from "@/lib/services/matchplayerService"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { paymentService } from "@/lib/services/paymentService"
 
 export default function MatchCancelProcessingPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const refundId = searchParams.get("refundId")
+  const refundId = searchParams.get("orderId")
   
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [errorMessage, setErrorMessage] = useState<string>("")
@@ -33,25 +34,22 @@ export default function MatchCancelProcessingPage({ params }: { params: { id: st
     // 취소 상태 확인
     const checkStatus = async () => {
       try {
-        const result = await matchPlayerService.checkCancelStatus(refundId)
+        const result = await paymentService.checkCancelStatus(refundId);
         
-        if (result.status === 'completed') {
+        if (result.status === 'cancel') {
           setStatus('success')
-        } else if (result.status === 'failed') {
-          setStatus('error')
-          setErrorMessage(result.message || "환불 처리 중 오류가 발생했습니다.")
         } else {
           // 아직 진행 중이면 3초 후 다시 확인
           setTimeout(checkStatus, 3000)
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("환불 상태 확인 중 오류:", error)
         setStatus('error')
         setErrorMessage("환불 상태 확인 중 오류가 발생했습니다.")
       }
     }
 
-    checkStatus()
+    setTimeout(checkStatus, 3000);
   }, [refundId])
 
   return (
@@ -61,8 +59,8 @@ export default function MatchCancelProcessingPage({ params }: { params: { id: st
           <CardTitle className="text-2xl">매치 취소 처리</CardTitle>
           <CardDescription>
             {status === 'loading' ? "취소 및 환불 처리 중입니다..." : 
-             status === 'success' ? "취소가 완료되었습니다" : 
-             "취소 처리 중 문제가 발생했습니다"}
+            status === 'success' ? "취소가 완료되었습니다" : 
+            "취소 처리 중 문제가 발생했습니다"}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center pt-6 pb-8">

@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/hooks/use-toast"
 import { MapPin, Calendar, Clock, Users, DollarSign, Share2, ChevronLeft, ChevronUp, ChevronDown } from "lucide-react"
 import { matchService } from "@/lib/services/matchService"
-import { MatchDetailRespone, MatchPayment } from "@/lib/types/matchTypes"
+import { displayMatchStatus, displaySportName, MatchDetailRespone, MatchPayment } from "@/lib/types/matchTypes"
 import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
 import { loadTossPayments, ANONYMOUS, TossPaymentsWidgets, TossPaymentsPayment } from "@tosspayments/tosspayments-sdk";
 import { matchPlayerService } from "@/lib/services/matchplayerService"
@@ -118,10 +118,8 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     const fetchMatchDetail = async () => {
       try {
         const matchInfo = await matchService.getMatch(params.id);
-        console.log(matchInfo.matchDataDto.matchId)
         setMatchDetail(matchInfo);
       } catch (error: any) {
-        alert(error.errorCode + ":" + error.message);
         if(error.errorCode === "UNAUTHORIZED"){
           window.location.reload();
           return;
@@ -296,11 +294,16 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   const isMatchApplyBtn = () => {
     if(!matchDetail) return;
     if(matchDetail.userDataDto && matchDetail.userDataDto.isMatchApply) {
+
+      const disabled = (matchDetail.matchDataDto.matchStatus === MatchStatus.ONGOING 
+        || matchDetail.matchDataDto.matchStatus === MatchStatus.END 
+        || matchDetail.matchDataDto.matchStatus === MatchStatus.CANCELLED) && matchDetail.userDataDto.isMatchApply;
+
       return (<Button
           variant="destructive"
           className="w-full py-6 text-lg font-bold"
-          disabled={!canJoin || isJoining}
-          onClick={() => router.push(`/matches/cancel/${params.id}`)}
+          disabled={disabled}
+          onClick={() => router.push(`/matches/cancel/${params.id}?orderId=${matchDetail.userDataDto?.orderId}`)}
         >
           매치 취소하기
         </Button>)
@@ -452,26 +455,14 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                     ${matchDetail.matchDataDto.matchStatus === MatchStatus.END ? "bg-gray-500 text-white" : ""}
                   `}
                 >
-                  {`
-                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.APPLICABLE ? "모집 중" : ""}
-                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.FINISH ? "모집 마감" : ""}
-                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.CLOSE_TO_DEADLINE ? "마감 임박" : ""}
-                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.END ? "종료" : ""}
-                  `}
+                  {displayMatchStatus(matchDetail.matchDataDto.matchStatus)}
                 </Badge>
               </div>
               <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
                 <h1 className="text-2xl sm:text-3xl font-bold mb-2">
                   {matchDetail.facilityDataDto.facilityName} 
                   - 
-                  {`
-                    ${matchDetail.facilityDataDto.sportType === SportType.FUTSAL ? "풋살" : ""}
-                    ${matchDetail.facilityDataDto.sportType === SportType.TENNIS ? "테니스" : ""}
-                    ${matchDetail.facilityDataDto.sportType === SportType.SOCCER ? "축구" : ""}
-                    ${matchDetail.facilityDataDto.sportType === SportType.BADMINTON ? "배드민턴" : ""}
-                    ${matchDetail.facilityDataDto.sportType === SportType.BASKETBALL ? "야구" : ""}
-                    ${matchDetail.facilityDataDto.sportType === SportType.BASEBALL ? "농구" : ""}
-                  `} 매치
+                  {displaySportName(matchDetail.facilityDataDto.sportType)} 매치
                 </h1>
                 <p className="text-gray-200 mb-1">{matchDetail.facilityDataDto.courtName}</p>
                 <div className="flex items-center text-sm">
