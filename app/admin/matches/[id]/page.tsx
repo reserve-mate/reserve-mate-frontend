@@ -369,18 +369,30 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                 </Button>
               )}
               
-              <Button asChild variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50">
-                <Link href={`/admin/matches/${match.matchId}/edit`}>
-                  수정
-                </Link>
-              </Button>
+              {
+                (match.matchStatus === MatchStatus.APPLICABLE || match.matchStatus === MatchStatus.CLOSE_TO_DEADLINE || match.matchStatus === MatchStatus.FINISH)
+                && 
+                (
+                  <Button asChild variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50">
+                    <Link href={`/admin/matches/${match.matchId}/edit`}>
+                      수정
+                    </Link>
+                  </Button>
+                )
+              }
               
-              <Button
-                variant="destructive"
-                onClick={() => setIsDeleteDialogOpen(true)}
-              >
-                매치 취소
-              </Button>
+              {
+                (match.matchStatus === MatchStatus.APPLICABLE || (match.matchStatus === MatchStatus.CLOSE_TO_DEADLINE && match.adminPlayers.length < (match.teamCapacity / 2)))
+                &&
+                (
+                  <Button
+                    variant="destructive"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                  >
+                    매치 취소
+                  </Button>
+                )
+              }
             </CardFooter>
           </Card>
         </TabsContent>

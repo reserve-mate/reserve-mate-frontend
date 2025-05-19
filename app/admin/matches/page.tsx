@@ -363,7 +363,7 @@ export default function AdminMatchesPage() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap relative">
-                  <div className="flex justify-end space-x-1">
+                  <div className="flex justify-center space-x-1">
                     <Button
                       type="button"
                       variant="ghost"
@@ -379,35 +379,47 @@ export default function AdminMatchesPage() {
                       <span className="sr-only">View</span>
                     </Button>
                     
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        router.push(`/admin/matches/${match.matchId}/edit`);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
+                    {
+                      (match.matchStatus === MatchStatus.APPLICABLE || match.matchStatus === MatchStatus.CLOSE_TO_DEADLINE || match.matchStatus === MatchStatus.FINISH)
+                      && 
+                      (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            router.push(`/admin/matches/${match.matchId}/edit`);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                      )
+                    }
                     
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        handleDelete(match.matchId);
-                      }}
-                    >
-                      <Trash className="h-4 w-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
+                    {
+                      (match.matchStatus === MatchStatus.APPLICABLE || (match.matchStatus === MatchStatus.CLOSE_TO_DEADLINE && match.playerCnt < (match.teamCapacity / 2)))
+                      && 
+                      (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleDelete(match.matchId);
+                          }}
+                        >
+                          <Trash className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      )
+                    }
                   </div>
                 </TableCell>
               </TableRow>
