@@ -91,8 +91,9 @@ export const matchService = {
   },
   
   // 매치 수정 (관리자 전용)
-  updateMatch: (id: number, data: Partial<Match>) => 
-    api.put<Match>(`/admin/matches/${id}`, data),
+  updateMatch: (matchid: number, data: Record<string, any>) => {
+    return api.put(`/admin/match/edit/${matchid}`, data)
+  },
   
   // 매치 상태 변경 (관리자 전용)
   updateMatchStatus: (id: number, status: MatchStatus) => 

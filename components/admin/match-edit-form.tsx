@@ -18,6 +18,7 @@ import { SportType } from "@/lib/enum/matchEnum"
 import { CourtName, FacilityManagerName, FacilityNames } from "@/lib/types/facilityTypes"
 import { facilityService } from "@/lib/services/facilityService"
 import { AdminMatchDetail, displaySportName, MatchRegist } from "@/lib/types/matchTypes"
+import { useRouter } from "next/navigation"
 
 type sportTypes = {
   value: SportType;
@@ -45,6 +46,8 @@ type EditMatchFormProps = {
 }
 
 export default function EditMatchForm({ matchId, initialData, onComplete }: EditMatchFormProps) {
+  const router = useRouter();
+  
   const [isLoading, setIsLoading] = useState(false)
   const [date, setDate] = useState<Date | undefined>(undefined)
 
@@ -414,14 +417,14 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
     return hour + (minute || "00");
   }
 
-  const fetchPutMatchUpdate = async (params: MatchRegist) => {
+  const fetchPutMatchUpdate = async (params: Record<string, any>) => {
     setIsLoading(true);
 
     try {
       console.log("매치 수정 데이터:", params);
       
       // 시작 시간과 종료 시간 유효성 검사
-      if (!params.matchTime || !params.matchEndTime) {
+      if (!matchData.startTime || !matchData.endTime) {
         toast({
           title: "시간 정보 오류",
           description: "시작 시간과 종료 시간을 확인해 주세요.",
@@ -430,22 +433,8 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
         setIsLoading(false);
         return;
       }
-      
-      // 먼저 타입을 문자열로 변환해서 API 호출
-      const updateData: Record<string, any> = {
-        title: params.matchName,
-        sportType: matchData.sportType,
-        facilityId: matchData.facilityId,
-        matchDate: params.matchDate,
-        matchTime: `${matchData.startTime} - ${matchData.endTime}`,
-        maxParticipants: parseInt(params.teamCapacity.toString()),
-        fee: parseInt(params.matchPrice.toString()),
-        description: params.description || undefined,
-        courtId: matchData.courtId,
-        managerId: params.managerId ? parseInt(params.managerId.toString()) : undefined
-      };
-      
-      await matchService.updateMatch(matchId, updateData as any);
+
+      await matchService.updateMatch(matchId, params as any);
 
       toast({
         title: "매치 수정 완료",
@@ -463,6 +452,10 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
     } finally {
       setIsLoading(false);
     }
+  }
+
+  const backPage = () => {
+    router.back();
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -554,20 +547,20 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
       return;
     }
 
-    const matchRegist: MatchRegist = {
-      matchName: matchData.title,
-      courtId: matchData.courtId,
-      managerId: matchData.managerId || 0,
+    // 매치 업데이트 데이터
+    const updateMatch: Record<string, any> = {
+      matchTitle: matchData.title,
       matchDate: matchData.matchDate,
-      matchTime: parseInt(timeFormat(matchData.startTime)),
-      matchEndTime: parseInt(timeFormat(matchData.endTime)),
-      teamCapacity: parseInt(matchData.maxParticipants),
-      description: matchData.description || null,
-      matchPrice: parseInt(matchData.fee)
+      matchTime: startHour,
+      endTime: endHour,
+      facilityCourtId: matchData.courtId,
+      managerId: matchData.managerId,
+      teamCapacity: matchData.maxParticipants,
+      description: matchData.description || undefined
     }
 
-    console.log("제출 데이터:", matchRegist);
-    fetchPutMatchUpdate(matchRegist)
+    console.log("제출 데이터:", updateMatch);
+    fetchPutMatchUpdate(updateMatch);
   }
 
   return (
@@ -758,7 +751,7 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
         <Button 
           type="button" 
           variant="outline" 
-          onClick={onComplete}
+          onClick={backPage}
         >
           취소
         </Button>
