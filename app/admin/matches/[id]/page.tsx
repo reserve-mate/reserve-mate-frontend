@@ -49,69 +49,6 @@ import { MatchStatus, PlayerStatus, SportType, RemovalReason } from "@/lib/enum/
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 
-
-// 더미 매치 데이터
-const dummyMatches = [
-  {
-    id: "1",
-    title: "주말 테니스 초보 매치",
-    facilityName: "서울 테니스 센터",
-    facilityId: "1",
-    address: "서울시 강남구 테헤란로 123",
-    courtName: "코트 A",
-    sportType: "테니스",
-    level: "초보",
-    matchDate: "2025-03-28",
-    matchTime: "18:00 - 20:00",
-    startTime: "18:00",
-    endTime: "20:00",
-    currentParticipants: 6,
-    maxParticipants: 8,
-    participationFee: 10000,
-    description: "테니스를 처음 시작하는 분들을 위한 매치입니다. 서로 기본 스트로크를 연습하며 즐겁게 진행하세요!",
-    status: "모집중",
-    participants: [
-      { id: "user1", name: "홍길동", level: "초보", gender: "남성", joinedAt: "2025-03-15T14:30:00" },
-      { id: "user2", name: "김철수", level: "초보", gender: "남성", joinedAt: "2025-03-16T10:15:00" },
-      { id: "user3", name: "이영희", level: "초보", gender: "여성", joinedAt: "2025-03-17T09:45:00" },
-      { id: "user4", name: "박지민", level: "초보", gender: "남성", joinedAt: "2025-03-17T11:20:00" },
-      { id: "user5", name: "최수진", level: "초보", gender: "여성", joinedAt: "2025-03-18T16:30:00" },
-      { id: "user6", name: "정민준", level: "초보", gender: "남성", joinedAt: "2025-03-19T13:10:00" }
-    ]
-  },
-  {
-    id: "2",
-    title: "평일 저녁 풋살 매치",
-    facilityName: "강남 풋살장",
-    facilityId: "2",
-    address: "서울시 강남구 역삼동 456",
-    courtName: "실내 코트 1",
-    sportType: "풋살",
-    level: "중급",
-    matchDate: "2025-03-29",
-    matchTime: "19:00 - 21:00",
-    startTime: "19:00",
-    endTime: "21:00",
-    currentParticipants: 10,
-    maxParticipants: 10,
-    participationFee: 15000,
-    description: "5대5 풋살 매치입니다. 팀 조끼를 준비해드립니다. 운동화는 실내용을 준비해주세요.",
-    status: "마감",
-    participants: [
-      { id: "user7", name: "김태훈", level: "중급", gender: "남성", joinedAt: "2025-03-15T14:30:00" },
-      { id: "user8", name: "이준호", level: "중급", gender: "남성", joinedAt: "2025-03-16T10:15:00" },
-      { id: "user9", name: "박서현", level: "중급", gender: "여성", joinedAt: "2025-03-17T09:45:00" },
-      { id: "user10", name: "정미나", level: "중급", gender: "여성", joinedAt: "2025-03-17T11:20:00" },
-      { id: "user11", name: "강동원", level: "중급", gender: "남성", joinedAt: "2025-03-18T16:30:00" },
-      { id: "user12", name: "손흥민", level: "중급", gender: "남성", joinedAt: "2025-03-19T13:10:00" },
-      { id: "user13", name: "황희찬", level: "중급", gender: "남성", joinedAt: "2025-03-20T15:45:00" },
-      { id: "user14", name: "이강인", level: "중급", gender: "남성", joinedAt: "2025-03-21T14:10:00" },
-      { id: "user15", name: "김민재", level: "중급", gender: "남성", joinedAt: "2025-03-21T16:30:00" },
-      { id: "user16", name: "조규성", level: "중급", gender: "남성", joinedAt: "2025-03-22T10:15:00" }
-    ]
-  }
-]
-
 // 상태별 배지 색상
 const statusColors: Record<MatchStatus, string> = {
   "APPLICABLE": "bg-green-100 text-green-800 border-green-200",
@@ -370,6 +307,14 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                     참가비
                   </div>
                   <p>{match.matchPrice.toLocaleString()}원</p>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center text-sm text-gray-500">
+                    <User className="h-4 w-4 mr-2 text-indigo-500" />
+                    매니저
+                  </div>
+                  <p>{match.managerName}</p>
                 </div>
               </div>
 

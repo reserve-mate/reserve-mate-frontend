@@ -10,7 +10,9 @@ export interface AdminMatchDetail {
     matchTitle: string;
     sportType: SportType;
     matchStatus: MatchStatus;
+    facilityId: number;
     facilityName: string;
+    facilityCourtId: number;
     facilityCourt: string;
     address: string;
     matchDate: string;
@@ -18,6 +20,8 @@ export interface AdminMatchDetail {
     endTime: number;
     teamCapacity: number;
     matchPrice: number;
+    managerId: number;
+    managerName: string;
     description: string;
     adminPlayers: AdminPlayer[];
 }

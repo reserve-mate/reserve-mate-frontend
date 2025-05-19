@@ -309,14 +309,14 @@ export default function AdminMatchesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[140px] max-w-[200px]">매치명</TableHead>
-              <TableHead className="min-w-[70px]">종류</TableHead>
-              <TableHead className="hidden md:table-cell min-w-[150px] max-w-[200px]">시설</TableHead>
-              <TableHead className="hidden md:table-cell min-w-[90px]">날짜</TableHead>
-              <TableHead className="hidden md:table-cell min-w-[100px]">시간</TableHead>
-              <TableHead className="min-w-[70px]">인원</TableHead>
-              <TableHead className="min-w-[90px]">상태</TableHead>
-              <TableHead className="text-right">관리</TableHead>
+              <TableHead className="min-w-[140px] max-w-[200px] text-center">매치명</TableHead>
+              <TableHead className="min-w-[70px] text-center">종류</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[150px] max-w-[200px] text-center">시설</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[90px] text-center">날짜</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[100px] text-center">시간</TableHead>
+              <TableHead className="min-w-[70px] text-center">인원</TableHead>
+              <TableHead className="min-w-[90px] text-center">상태</TableHead>
+              <TableHead className="text-center">관리</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -326,7 +326,7 @@ export default function AdminMatchesPage() {
                 className="isolate relative"
                 style={{ position: 'relative' }}
               >
-                <TableCell className="font-medium">{match.matchName}</TableCell>
+                <TableCell className="font-medium truncate max-w-[150px]">{match.matchName}</TableCell>
                 <TableCell>
                   <span className="whitespace-nowrap">{displaySportName(match.sportType)}</span>
                 </TableCell>
