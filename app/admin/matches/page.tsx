@@ -309,14 +309,14 @@ export default function AdminMatchesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[140px] max-w-[200px]">매치명</TableHead>
-              <TableHead className="min-w-[70px]">종류</TableHead>
-              <TableHead className="hidden md:table-cell min-w-[150px] max-w-[200px]">시설</TableHead>
-              <TableHead className="hidden md:table-cell min-w-[90px]">날짜</TableHead>
-              <TableHead className="hidden md:table-cell min-w-[100px]">시간</TableHead>
-              <TableHead className="min-w-[70px]">인원</TableHead>
-              <TableHead className="min-w-[90px]">상태</TableHead>
-              <TableHead className="text-right">관리</TableHead>
+              <TableHead className="min-w-[140px] max-w-[200px] text-center">매치명</TableHead>
+              <TableHead className="min-w-[70px] text-center">종류</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[150px] max-w-[200px] text-center">시설</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[90px] text-center">날짜</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[100px] text-center">시간</TableHead>
+              <TableHead className="min-w-[70px] text-center">인원</TableHead>
+              <TableHead className="min-w-[90px] text-center">상태</TableHead>
+              <TableHead className="text-center">관리</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -326,7 +326,7 @@ export default function AdminMatchesPage() {
                 className="isolate relative"
                 style={{ position: 'relative' }}
               >
-                <TableCell className="font-medium">{match.matchName}</TableCell>
+                <TableCell className="font-medium truncate max-w-[150px]">{match.matchName}</TableCell>
                 <TableCell>
                   <span className="whitespace-nowrap">{displaySportName(match.sportType)}</span>
                 </TableCell>
@@ -363,7 +363,7 @@ export default function AdminMatchesPage() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap relative">
-                  <div className="flex justify-end space-x-1">
+                  <div className="flex justify-center space-x-1">
                     <Button
                       type="button"
                       variant="ghost"
@@ -379,35 +379,47 @@ export default function AdminMatchesPage() {
                       <span className="sr-only">View</span>
                     </Button>
                     
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        router.push(`/admin/matches/${match.matchId}/edit`);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
+                    {
+                      (match.matchStatus === MatchStatus.APPLICABLE || match.matchStatus === MatchStatus.CLOSE_TO_DEADLINE || match.matchStatus === MatchStatus.FINISH)
+                      && 
+                      (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            router.push(`/admin/matches/${match.matchId}/edit`);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                      )
+                    }
                     
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        handleDelete(match.matchId);
-                      }}
-                    >
-                      <Trash className="h-4 w-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
+                    {
+                      (match.matchStatus === MatchStatus.APPLICABLE || (match.matchStatus === MatchStatus.CLOSE_TO_DEADLINE && match.playerCnt < (match.teamCapacity / 2)))
+                      && 
+                      (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleDelete(match.matchId);
+                          }}
+                        >
+                          <Trash className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      )
+                    }
                   </div>
                 </TableCell>
               </TableRow>

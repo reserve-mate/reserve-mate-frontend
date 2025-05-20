@@ -17,15 +17,21 @@ import { matchService } from "@/lib/services/matchService"
 import { SportType } from "@/lib/enum/matchEnum"
 import { CourtName, FacilityManagerName, FacilityNames } from "@/lib/types/facilityTypes"
 import { facilityService } from "@/lib/services/facilityService"
-import { AdminMatchDetail, MatchRegist } from "@/lib/types/matchTypes"
+import { AdminMatchDetail, displaySportName, MatchRegist } from "@/lib/types/matchTypes"
+import { useRouter } from "next/navigation"
 
-const sportTypes = [
-  { value: "SOCCER", label: "축구" },
-  { value: "FUTSAL", label: "풋살" },
-  { value: "BASKETBALL", label: "농구" },
-  { value: "TENNIS", label: "테니스" },
-  { value: "BADMINTON", label: "배드민턴" },
-  { value: "BASEBALL", label: "야구" },
+type sportTypes = {
+  value: SportType;
+  label: string;
+}
+
+const sportTypes: sportTypes[] = [
+  { value: SportType.SOCCER, label: "축구" },
+  { value: SportType.FUTSAL, label: "풋살" },
+  { value: SportType.BASKETBALL, label: "농구" },
+  { value: SportType.TENNIS, label: "테니스" },
+  { value: SportType.BADMINTON, label: "배드민턴" },
+  { value: SportType.BASEBALL, label: "야구" },
 ]
 
 const timeSlots = Array.from({ length: 24 }, (_, i) => {
@@ -40,8 +46,12 @@ type EditMatchFormProps = {
 }
 
 export default function EditMatchForm({ matchId, initialData, onComplete }: EditMatchFormProps) {
+  const router = useRouter();
+  
   const [isLoading, setIsLoading] = useState(false)
   const [date, setDate] = useState<Date | undefined>(undefined)
+
+  const [selectSport, setSelectSport] = useState<SportType>(SportType.ALL);
 
   // 시설 이름 조회
   const [facilityNames, setFacilityNames] = useState<FacilityNames[]>([]);
@@ -57,8 +67,8 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
   const [loadingManagers, setLoadingManagers] = useState(false)
   const [matchData, setMatchData] = useState({
     title: "",
-    sportType: "",
-    facilityId: "",
+    sportType: SportType.ALL,
+    facilityId: 0,
     facilityName: "",
     address: "",
     matchDate: "",
@@ -67,9 +77,10 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
     maxParticipants: "",
     fee: "",
     description: "",
-    courtId: "",
+    courtId: 0,
     courtName: "",
-    managerId: ""
+    managerId: 0,
+    managerName: ""
   })
   
   // 초기 데이터 로드
@@ -80,29 +91,9 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
         const parsedDate = parse(matchDate, 'yyyy-MM-dd', new Date());
         setDate(parsedDate);
         
-        // API에서 숫자로 오는 시간을 처리 (로깅 추가)
-        console.log("원본 시간 데이터:", initialData.matchTime, initialData.endTime);
-        
         // 시작 시간과 종료 시간 파싱 (숫자 형식)
-        let startTimeHour = 0;
-        let endTimeHour = 0;
-        
-        // 숫자 값이 6시는 600, 12시는 1200과 같이 표현됨
-        if (typeof initialData.matchTime === 'number') {
-          startTimeHour = Math.floor(initialData.matchTime / 100);
-        }
-        
-        if (typeof initialData.endTime === 'number') {
-          endTimeHour = Math.floor(initialData.endTime / 100);
-        }
-        
-        console.log("파싱된 시간 (시간만):", startTimeHour, endTimeHour);
-        
-        // 시작 시간 및 종료 시간 포맷팅
-        const formattedStartTime = startTimeHour < 10 ? `0${startTimeHour}:00` : `${startTimeHour}:00`;
-        const formattedEndTime = endTimeHour < 10 ? `0${endTimeHour}:00` : `${endTimeHour}:00`;
-        
-        console.log("포맷팅된 시간:", formattedStartTime, formattedEndTime);
+        let startTimeHour = `${initialData.matchTime.toString().padStart(2, '0')}:00`;
+        let endTimeHour = `${initialData.endTime.toString().padStart(2, '0')}:00`;
 
         // 기본 시간대 설정 (시간 선택이 가능하도록)
         const defaultTimeSlots = Array.from(
@@ -119,21 +110,21 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
         setMatchData({
           title: initialData.matchTitle,
           sportType: initialData.sportType,
-          facilityId: "", // 이 부분은 API에서 받아오거나 찾아야 함
+          facilityId: initialData.facilityId, 
           facilityName: initialData.facilityName,
           address: initialData.address,
           matchDate: matchDate,
-          startTime: formattedStartTime,
-          endTime: formattedEndTime,
+          startTime: startTimeHour,
+          endTime: endTimeHour,
           maxParticipants: initialData.teamCapacity.toString(),
           fee: initialData.matchPrice.toString(),
           description: initialData.description || "",
-          courtId: "", // 이 부분은 API에서 받아오거나 찾아야 함
+          courtId: initialData.facilityCourtId, 
           courtName: initialData.facilityCourt,
-          managerId: "" // 이 부분은 API에서 받아오거나 찾아야 함
+          managerId: initialData.managerId,
+          managerName: initialData.managerName
         });
         
-        // 스포츠 타입으로 시설 목록 로드 (마지막에 실행)
         fetchGetFacilities(initialData.sportType);
       } catch (error) {
         console.error("초기 데이터 로드 중 오류 발생:", error);
@@ -145,29 +136,29 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
       }
     }
   }, [initialData]);
-  
+
   // 스포츠 타입에 따라 시설 필터링
   useEffect(() => {
     // 스포츠 타입이 변경되면 시설 선택 초기화
     if (!initialData) {
       setMatchData(prev => ({
         ...prev,
-        facilityId: "",
+        facilityId: 0,
         facilityName: "",
-        courtId: "",
+        courtId: 0,
         courtName: "",
-        managerId: ""
+        managerId: 0
       }))
       setSelectFacilityName(null);
       setCourtNames([]);
       setManagerNames([])
     }
-  }, [matchData.sportType, facilityNames])
+  }, [matchData.sportType, selectSport])
   
   // 시설 선택에 따라 코트 필터링 및 시설 정보 업데이트
   useEffect(() => {
     if (matchData.facilityId) {
-      const facility = facilityNames.find(f => f.facilityId === parseInt(matchData.facilityId))
+      const facility = facilityNames.find(f => f.facilityId === matchData.facilityId)
       setSelectFacilityName(facility || null);
       
       if (facility) {
@@ -288,26 +279,28 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
   }
 
   // 스포츠 종목별 시설 조회
-  const fetchGetFacilities = async (sportType: string) => {
+  const fetchGetFacilities = async (sportType: SportType) => {
     try{
       const facilityNames: FacilityNames[] = await facilityService.getMatchFacilityNames(sportType);
       setFacilityNames(facilityNames);
       
       // 초기 데이터가 있는 경우 시설 ID 찾기
       if (initialData && facilityNames.length > 0) {
-        const facility = facilityNames.find(f => f.facilityName === initialData.facilityName);
+        const facility = facilityNames.find(f => f.facilityId === initialData.facilityId);
         if (facility) {
           console.log("시설 정보 찾음:", facility);
           setMatchData(prev => ({
             ...prev,
-            facilityId: facility.facilityId.toString()
+            facilityId: facility.facilityId
           }));
+          setSelectFacilityName(facility);
+          
         } else {
           console.log("시설 정보를 찾을 수 없음. 첫 번째 시설 선택:", facilityNames[0]);
           // 일치하는 시설이 없으면 첫 번째 시설 선택
           setMatchData(prev => ({
             ...prev,
-            facilityId: facilityNames[0].facilityId.toString(),
+            facilityId: facilityNames[0].facilityId,
             facilityName: facilityNames[0].facilityName
           }));
         }
@@ -327,7 +320,10 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
   }
 
   // 스포츠 종목 변경 처리
-  const handleSportChange = (value: string) => {
+  const handleSportChange = (value: SportType) => {
+    if (!value) return;
+
+    setSelectSport(value);
     setMatchData(prev => ({...prev, ["sportType"]: value}));
     fetchGetFacilities(value);
   }
@@ -342,11 +338,7 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
       if (initialData && courts.length > 0) {
         const court = courts.find(c => c.courtName === initialData.facilityCourt);
         if (court) {
-          setMatchData(prev => ({
-            ...prev,
-            courtId: court.courtId.toString(),
-            courtName: court.courtName
-          }));
+          handleCourtChange(court.courtId.toString());
         }
       }
     } catch(error: any) {
@@ -368,10 +360,7 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
       
       // 매니저 데이터가 있으면 첫 번째 매니저를 기본값으로 설정
       if (facilityMangers.length > 0 && !matchData.managerId) {
-        setMatchData(prev => ({
-          ...prev,
-          managerId: facilityMangers[0].managerId.toString()
-        }));
+        handleManagerChange(matchData.managerId.toString());
       }
     } catch(error: any) {
       console.error("매니저 조회 오류:", error);
@@ -390,42 +379,35 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
   }
 
   const handleFacilityChange = (value: string) => {
+    if(!value) return;
     setMatchData(prev => ({
       ...prev,
-      facilityId: value
+      facilityId: parseInt(value)
     }))
+    fetchGetCourts(parseInt(value));
+    fetchGetFacilityManger(parseInt(value));
   }
 
   const handleCourtChange = (value: string) => {
+    if(!value) return;
     const selectedCourt = courtNames.find(c => c.courtId === parseInt(value))
     
     setMatchData(prev => ({
       ...prev,
-      courtId: value,
+      courtId: parseInt(value),
       courtName: selectedCourt ? selectedCourt.courtName : ""
     }))
   }
 
   const handleManagerChange = (value: string) => {
+    if(!value) return;
+    const selectManager = managerNames.find(manager => manager.managerId === parseInt(value));
+
     setMatchData(prev => ({
       ...prev,
-      managerId: value
+      managerId: parseInt(value),
+      managerName: selectManager ? selectManager.managerName : ""
     }))
-  }
-
-  const handleSelectChange = (name: string, value: string) => {
-    setMatchData(prev => ({ ...prev, [name]: value }))
-  }
-
-  const handleDateChange = (value: Date | undefined) => {
-    setDate(value)
-    
-    if (value) {
-      setMatchData(prev => ({
-        ...prev,
-        matchDate: format(value, 'yyyy-MM-dd')
-      }))
-    }
   }
 
   const timeFormat = (time: string): string => {
@@ -435,14 +417,14 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
     return hour + (minute || "00");
   }
 
-  const fetchPutMatchUpdate = async (params: MatchRegist) => {
+  const fetchPutMatchUpdate = async (params: Record<string, any>) => {
     setIsLoading(true);
 
     try {
       console.log("매치 수정 데이터:", params);
       
       // 시작 시간과 종료 시간 유효성 검사
-      if (!params.matchTime || !params.matchEndTime) {
+      if (!matchData.startTime || !matchData.endTime) {
         toast({
           title: "시간 정보 오류",
           description: "시작 시간과 종료 시간을 확인해 주세요.",
@@ -451,22 +433,8 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
         setIsLoading(false);
         return;
       }
-      
-      // 먼저 타입을 문자열로 변환해서 API 호출
-      const updateData: Record<string, any> = {
-        title: params.matchName,
-        sportType: matchData.sportType,
-        facilityId: parseInt(matchData.facilityId),
-        matchDate: params.matchDate,
-        matchTime: `${matchData.startTime} - ${matchData.endTime}`,
-        maxParticipants: parseInt(params.teamCapacity.toString()),
-        fee: parseInt(params.matchPrice.toString()),
-        description: params.description || undefined,
-        courtId: parseInt(matchData.courtId),
-        managerId: params.managerId ? parseInt(params.managerId.toString()) : undefined
-      };
-      
-      await matchService.updateMatch(matchId, updateData as any);
+
+      await matchService.updateMatch(matchId, params as any);
 
       toast({
         title: "매치 수정 완료",
@@ -484,6 +452,10 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
     } finally {
       setIsLoading(false);
     }
+  }
+
+  const backPage = () => {
+    router.back();
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -575,20 +547,20 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
       return;
     }
 
-    const matchRegist: MatchRegist = {
-      matchName: matchData.title,
-      courtId: parseInt(matchData.courtId),
-      managerId: parseInt(matchData.managerId || "0"),
+    // 매치 업데이트 데이터
+    const updateMatch: Record<string, any> = {
+      matchTitle: matchData.title,
       matchDate: matchData.matchDate,
-      matchTime: parseInt(timeFormat(matchData.startTime)),
-      matchEndTime: parseInt(timeFormat(matchData.endTime)),
-      teamCapacity: parseInt(matchData.maxParticipants),
-      description: matchData.description || null,
-      matchPrice: parseInt(matchData.fee)
+      matchTime: startHour,
+      endTime: endHour,
+      facilityCourtId: matchData.courtId,
+      managerId: matchData.managerId,
+      teamCapacity: matchData.maxParticipants,
+      description: matchData.description || undefined
     }
 
-    console.log("제출 데이터:", matchRegist);
-    fetchPutMatchUpdate(matchRegist)
+    console.log("제출 데이터:", updateMatch);
+    fetchPutMatchUpdate(updateMatch);
   }
 
   return (
@@ -613,44 +585,24 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <Label htmlFor="sportType" className="text-base font-semibold">스포츠 종목</Label>
-            <Select 
-              value={matchData.sportType} 
-              onValueChange={handleSportChange}
-            >
-              <SelectTrigger id="sportType" className="mt-1">
-                <SelectValue placeholder="종목 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {sportTypes.map(sport => (
-                  <SelectItem key={sport.value} value={sport.value}>
-                    {sport.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              id="sportType"
+              name="sportType"
+              value={displaySportName(matchData.sportType)}
+              className="mt-1"
+              readOnly={true}
+            />
           </div>
           
           <div>
             <Label htmlFor="facilityId" className="text-base font-semibold">시설</Label>
-            <Select 
-              value={matchData.facilityId} 
-              onValueChange={handleFacilityChange}
-              disabled={facilityNames.length === 0}
-            >
-              <SelectTrigger id="facilityId" className="mt-1">
-                <SelectValue placeholder="시설 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {facilityNames.map(facility => (
-                  <SelectItem 
-                    key={facility.facilityId} 
-                    value={facility.facilityId.toString()}
-                  >
-                    {facility.facilityName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              id="facilityName"
+              name="facilityName"
+              value={matchData.facilityName}
+              className="mt-1"
+              readOnly={true}
+            />
           </div>
         </div>
         
@@ -658,7 +610,7 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
           <div>
             <Label htmlFor="courtId" className="text-base font-semibold">코트</Label>
             <Select 
-              value={matchData.courtId} 
+              value={matchData.courtId.toString()} 
               onValueChange={handleCourtChange}
               disabled={courtNames.length === 0}
             >
@@ -681,7 +633,7 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
           <div>
             <Label htmlFor="managerId" className="text-base font-semibold">매니저</Label>
             <Select 
-              value={matchData.managerId} 
+              value={matchData.managerId.toString()} 
               onValueChange={handleManagerChange}
               disabled={loadingManagers}
             >
@@ -710,84 +662,35 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
             <Label className="text-base font-semibold">매치 날짜</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full mt-1 justify-start text-left font-normal"
-                >
-                  {date ? (
-                    format(date, 'PPP', { locale: ko })
-                  ) : (
-                    <span>날짜 선택</span>
-                  )}
-                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={handleDateChange}
-                  locale={ko}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <Input
+              id="matchDate"
+              name="matchDate"
+              value={matchData.matchDate}
+              className="mt-1"
+              readOnly={true}
+            />
           </div>
           
           <div>
             <Label htmlFor="startTime" className="text-base font-semibold">시작 시간</Label>
-            <Select 
-              value={matchData.startTime} 
-              onValueChange={(value) => handleSelectChange("startTime", value)}
-              disabled={availableTimeSlots.length === 0}
-            >
-              <SelectTrigger id="startTime" className="mt-1">
-                <SelectValue placeholder="시작 시간" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableTimeSlots.length > 0 ? (
-                  availableTimeSlots.map(timeSlot => (
-                    <SelectItem key={timeSlot.value} value={timeSlot.value}>
-                      {timeSlot.label}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="none">시간 정보 없음</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            <Input
+              id="startTime"
+              name="startTime"
+              value={matchData.startTime}
+              className="mt-1"
+              readOnly={true}
+            />
           </div>
           
           <div>
             <Label htmlFor="endTime" className="text-base font-semibold">종료 시간</Label>
-            <Select 
-              value={matchData.endTime} 
-              onValueChange={(value) => handleSelectChange("endTime", value)}
-              disabled={!matchData.startTime || availableTimeSlots.length === 0}
-            >
-              <SelectTrigger id="endTime" className="mt-1">
-                <SelectValue placeholder="종료 시간" />
-              </SelectTrigger>
-              <SelectContent>
-                {matchData.startTime && availableTimeSlots.length > 0 ? (
-                  availableTimeSlots
-                    .filter(slot => {
-                      if (!matchData.startTime) return true
-                      return parseInt(slot.value.split(':')[0]) > parseInt(matchData.startTime.split(':')[0])
-                    })
-                    .map(timeSlot => (
-                      <SelectItem key={timeSlot.value} value={timeSlot.value}>
-                        {timeSlot.label}
-                      </SelectItem>
-                    ))
-                ) : (
-                  <SelectItem value="none">시간 정보 없음</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            <Input
+              id="endTime"
+              name="endTime"
+              value={matchData.endTime}
+              className="mt-1"
+              readOnly={true}
+            />
           </div>
         </div>
         
@@ -818,6 +721,7 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
               onChange={handleInputChange}
               placeholder="예: 10000"
               className="mt-1"
+              readOnly={true}
             />
           </div>
         </div>
@@ -847,7 +751,7 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
         <Button 
           type="button" 
           variant="outline" 
-          onClick={onComplete}
+          onClick={backPage}
         >
           취소
         </Button>
