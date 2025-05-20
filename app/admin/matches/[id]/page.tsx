@@ -42,12 +42,13 @@ import {
 } from "@/components/ui/dialog"
 import { MiniModal } from "@/components/ui/mini-modal"
 import { matchService } from "@/lib/services/matchService"
-import { AdminMatchDetail, displayMatchStatus, displaySportName, MatchStatusPost } from "@/lib/types/matchTypes"
+import { AdminMatchDetail, AdminPlayer, displayEjectReason, displayMatchStatus, displayPlayerStatus, displaySportName, MatchStatusPost } from "@/lib/types/matchTypes"
 
 import { MatchStatus, PlayerStatus, SportType, RemovalReason } from "@/lib/enum/matchEnum"
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
+import { matchPlayerService } from "@/lib/services/matchplayerService"
 
 // 상태별 배지 색상
 const statusColors: Record<MatchStatus, string> = {
@@ -166,22 +167,35 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   }
 
   // 참가자 강제 퇴장
-  const handleKickParticipant = () => {
+  const handleKickParticipant = async () => {
     if (!match || !selectedParticipant) return
 
     try {
-      // 실제로는 API 호출 (퇴장 사유 포함)
-      const updatedParticipants = match.adminPlayers.filter(
-        (p: any) => p.id !== selectedParticipant
-      )
-      
+      const updatePlayers = match.adminPlayers
+      .map(
+        (player: AdminPlayer) => {
+          if(player.payerId === parseInt(selectedParticipant)) {
+            return {
+              ...player
+              , playerStatus: PlayerStatus.KICKED
+              , ejectReason: selectedRemovalReason
+            }
+          }
+          return player;
+        }
+      );
+
+      const ejectParam = {
+        playerId: parseInt(selectedParticipant),
+        ejectRequest: selectedRemovalReason,
+        facilityId: match.facilityId
+      };
       // 여기서 API를 호출하는 코드가 실제로 구현될 때, 퇴장 사유도 함께 전달
-      // example: await matchService.kickParticipant(matchId, selectedParticipant, selectedRemovalReason);
+      await matchPlayerService.ejectPlayer(ejectParam);
       
       setMatch({
         ...match,
-        adminPlayers: updatedParticipants,
-        //currentParticipants: updatedParticipants.length
+        adminPlayers: updatePlayers,
       })
       
       toast({
@@ -191,10 +205,14 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
       
       setIsKickDialogOpen(false)
       setSelectedParticipant(null)
-    } catch (error) {
+    } catch (error: any) {
+      let errorMsg = "참가자 제외 중 오류가 발생했습니다.";
+      if(error.message) {
+        errorMsg = error.message;
+      }
       toast({
         title: "참가자 제외 실패",
-        description: "참가자 제외 중 오류가 발생했습니다.",
+        description: errorMsg,
         variant: "destructive"
       })
     }
@@ -446,8 +464,8 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                           {(match.matchStatus === MatchStatus.ONGOING || match.matchStatus === MatchStatus.END) 
                           && (
                             <>
-                              <TableCell>{participant.playerStatus}</TableCell>
-                              <TableCell>{participant.ejectReason}</TableCell>
+                              <TableCell>{displayPlayerStatus(participant.playerStatus)}</TableCell>
+                              <TableCell>{displayEjectReason(participant.ejectReason)}</TableCell>
                               {(match.matchStatus === MatchStatus.ONGOING && participant.playerStatus === PlayerStatus.ONGOING) && (
                                 <TableCell className="text-right">
                                   <Button 

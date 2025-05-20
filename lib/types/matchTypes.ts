@@ -1,5 +1,10 @@
-import { MatchStatus, PlayerStatus, SportType } from "../enum/matchEnum";
+import { MatchStatus, PlayerStatus, RemovalReason, SportType } from "../enum/matchEnum";
 import { PaymentResponse } from "./payment";
+
+export type PlayerEject = {
+    ejectionReason: RemovalReason;
+    facilityId: number
+}
 
 export type MatchStatusPost = {
     matchStatus: MatchStatus;
@@ -26,13 +31,13 @@ export interface AdminMatchDetail {
     adminPlayers: AdminPlayer[];
 }
 
-interface AdminPlayer {
+export interface AdminPlayer {
     payerId: number;
     userName: string;
     email: string;
     phone: string;
     playerStatus: PlayerStatus;
-    ejectReason: string;
+    ejectReason: RemovalReason;
     joinDate: string;
 }
 
@@ -286,6 +291,61 @@ export const displayMatchStatus = (matchStatus: MatchStatus) => {
         
         case MatchStatus.CANCELLED:
             statusName = "취소";
+            break;
+    }
+
+    return statusName;
+}
+
+// 참가장 상태 한글화
+export const displayPlayerStatus = (status: PlayerStatus) => {
+
+    let statusName = "";
+
+    switch (status) {
+        case PlayerStatus.CANCEL:
+            statusName = "취소";
+            break;
+        
+        case PlayerStatus.COMPLETED:
+            statusName = "완료";
+            break;
+        
+        case PlayerStatus.KICKED:
+            statusName = "퇴장";
+            break;
+        
+        case PlayerStatus.MATCH_CANCELLED:
+            statusName = "매치 취소";
+            break;
+        
+        case PlayerStatus.ONGOING:
+            statusName = "진행중";
+            break;
+        
+        case PlayerStatus.READY:
+            statusName = "준비";
+            break;
+    }
+
+    return statusName;
+}
+
+// 퇴장 사유 한글화
+export const displayEjectReason = (reason: RemovalReason) => {
+    let statusName = "";
+
+    switch (reason) {
+        case RemovalReason.LATE: 
+            statusName = "지각";
+            break;
+        
+        case RemovalReason.ABUSIVE_BEHAVIOR:
+            statusName = "폭언/비매너";
+            break;
+        
+        case RemovalReason.SERIOUS_RULE_VIOLATION:
+            statusName = "심각한 룰위반";
             break;
     }
 
