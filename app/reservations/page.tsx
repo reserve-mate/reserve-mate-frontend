@@ -36,7 +36,7 @@ type Reservation = {
 const dummyReservations: Reservation[] = [
   {
     id: "1",
-    facilityName: "서울 테니스 센터",
+    facilityName: "서울 테니스 센터1",
     courtName: "코트 A",
     address: "서울시 강남구 테헤란로 123",
     sportType: "테니스",
