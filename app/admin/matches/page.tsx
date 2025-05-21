@@ -309,7 +309,7 @@ export default function AdminMatchesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[140px] max-w-[200px] text-center">매치명</TableHead>
+              <TableHead className="min-w-[140px] max-w-[140px] text-center">매치명</TableHead>
               <TableHead className="min-w-[70px] text-center">종류</TableHead>
               <TableHead className="hidden md:table-cell min-w-[150px] max-w-[200px] text-center">시설</TableHead>
               <TableHead className="hidden md:table-cell min-w-[90px] text-center">날짜</TableHead>
@@ -326,7 +326,7 @@ export default function AdminMatchesPage() {
                 className="isolate relative"
                 style={{ position: 'relative' }}
               >
-                <TableCell className="font-medium truncate max-w-[150px]">{match.matchName}</TableCell>
+                <TableCell className="font-medium truncate max-w-[140px]" title={match.matchName}>{match.matchName}</TableCell>
                 <TableCell>
                   <span className="whitespace-nowrap">{displaySportName(match.sportType)}</span>
                 </TableCell>
