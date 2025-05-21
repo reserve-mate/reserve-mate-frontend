@@ -516,7 +516,7 @@ function MatchCard({ match, compact = false }: { match: MatchList; compact?: boo
 
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">{displaySportName(match.sportType)}</span>
-          <span className="text-sm font-medium">{match.matchPrice}/인</span>
+          <span className="text-sm font-medium">{match.matchPrice.toLocaleString()}/인</span>
         </div>
       </CardContent>
       {!compact && (
