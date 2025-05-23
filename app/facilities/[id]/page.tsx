@@ -84,17 +84,48 @@ const generateTimeSlots = (date: Date | undefined, operatingHours: string) => {
   
   const slots = []
   for (let hour = start; hour < end; hour++) {
-    slots.push(`${hour.toString().padStart(2, "0")}:00 - ${(hour + 1).toString().padStart(2, "0")}:00`)
+    slots.push({
+      id: hour,
+      display: `${hour.toString().padStart(2, "0")}:00 - ${(hour + 1).toString().padStart(2, "0")}:00`,
+      hour: hour
+    })
   }
   return slots
+}
+
+// 연속된 시간인지 확인하는 함수
+const isConsecutive = (hours: number[]) => {
+  if (hours.length <= 1) return true
+  const sorted = [...hours].sort((a, b) => a - b)
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] - sorted[i - 1] !== 1) {
+      return false
+    }
+  }
+  return true
+}
+
+// 시간 범위를 문자열로 변환하는 함수
+const formatTimeRange = (hours: number[]) => {
+  if (hours.length === 0) return ""
+  if (hours.length === 1) {
+    const hour = hours[0]
+    return `${hour.toString().padStart(2, "0")}:00 - ${(hour + 1).toString().padStart(2, "0")}:00`
+  }
+  
+  const sorted = [...hours].sort((a, b) => a - b)
+  const start = sorted[0]
+  const end = sorted[sorted.length - 1] + 1
+  
+  return `${start.toString().padStart(2, "0")}:00 - ${end.toString().padStart(2, "0")}:00`
 }
 
 export default function FacilityDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null)
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null)
-  const [timeSlots, setTimeSlots] = useState<string[]>([])
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState<number[]>([])
+  const [timeSlots, setTimeSlots] = useState<Array<{id: number, display: string, hour: number}>>([])
 
   // 실제 구현에서는 API를 통해 시설 정보를 가져옵니다
   const facility = dummyFacility
@@ -102,11 +133,39 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
   // 날짜가 변경될 때 가능한 시간 슬롯 업데이트
   useEffect(() => {
     setTimeSlots(generateTimeSlots(date, facility.operatingHours))
-    setSelectedTimeSlot(null) // 날짜가 변경되면 선택된 시간 초기화
+    setSelectedTimeSlots([]) // 날짜가 변경되면 선택된 시간 초기화
   }, [date, facility.operatingHours])
 
+  const handleTimeSlotClick = (hour: number) => {
+    const newSelectedSlots = selectedTimeSlots.includes(hour)
+      ? selectedTimeSlots.filter(h => h !== hour)
+      : [...selectedTimeSlots, hour]
+
+    // 최대 3시간 제한
+    if (newSelectedSlots.length > 3) {
+      toast({
+        title: "선택 제한",
+        description: "최대 3시간까지만 선택할 수 있습니다.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // 연속된 시간인지 확인
+    if (!isConsecutive(newSelectedSlots)) {
+      toast({
+        title: "시간 선택 오류",
+        description: "연속된 시간대만 선택할 수 있습니다.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setSelectedTimeSlots(newSelectedSlots)
+  }
+
   const handleReservation = () => {
-    if (!selectedCourt || !selectedTimeSlot || !date) {
+    if (!selectedCourt || selectedTimeSlots.length === 0 || !date) {
       toast({
         title: "예약 정보 부족",
         description: "코트, 날짜, 시간을 모두 선택해주세요.",
@@ -122,7 +181,9 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
       courtId: selectedCourt,
       courtName: facility.courts.find((c) => c.id === selectedCourt)?.name,
       date: date.toISOString().split("T")[0],
-      timeSlot: selectedTimeSlot,
+      timeSlots: selectedTimeSlots,
+      timeRange: formatTimeRange(selectedTimeSlots),
+      duration: selectedTimeSlots.length,
     }
 
     // 결제 페이지로 이동
@@ -310,20 +371,35 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
 
                   <div>
                     <h3 className="text-sm font-medium mb-3">시간 선택</h3>
+                    {selectedTimeSlots.length > 0 && (
+                      <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-indigo-700">
+                            선택된 시간: {formatTimeRange(selectedTimeSlots)}
+                          </span>
+                          <span className="text-xs text-indigo-600">
+                            {selectedTimeSlots.length}시간
+                          </span>
+                        </div>
+                        <p className="text-xs text-indigo-600 mt-1">
+                          연속된 시간대를 최대 3시간까지 선택할 수 있습니다.
+                        </p>
+                      </div>
+                    )}
                     {timeSlots.length > 0 ? (
                       <div className="grid grid-cols-2 gap-3 max-h-[240px] overflow-y-auto pr-1">
                         {timeSlots.map((slot) => (
                           <Button
-                            key={slot}
+                            key={slot.id}
                             type="button"
-                            onClick={() => setSelectedTimeSlot(slot)}
+                            onClick={() => handleTimeSlotClick(slot.hour)}
                             className={`justify-center h-12 text-sm border ${
-                              selectedTimeSlot === slot 
+                              selectedTimeSlots.includes(slot.hour) 
                                 ? "bg-indigo-600 hover:bg-indigo-700 text-white border-transparent" 
                                 : "bg-white hover:bg-gray-50 text-gray-800 border-gray-200"
-                            } rounded-xl px-3 py-2 w-full`}
+                            } rounded-xl px-3 py-2 w-full transition-colors`}
                           >
-                            {slot}
+                            {slot.display}
                           </Button>
                         ))}
                       </div>
@@ -335,9 +411,12 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
                   <Button
                     onClick={handleReservation}
                     className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl mt-6"
-                    disabled={!selectedCourt || !selectedTimeSlot || !date}
+                    disabled={!selectedCourt || selectedTimeSlots.length === 0 || !date}
                   >
-                    예약하기
+                    {selectedTimeSlots.length > 0 
+                      ? `${selectedTimeSlots.length}시간 예약하기` 
+                      : '예약하기'
+                    }
                   </Button>
                 </div>
               </CardContent>
