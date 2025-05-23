@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,7 +22,8 @@ import {
   Users, 
   CircleDot,
   X,
-  FilterX
+  FilterX,
+  Filter
 } from "lucide-react"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import {
@@ -35,150 +36,149 @@ import { ko } from "date-fns/locale"
 
 // 매치 등록 폼 컴포넌트 import
 import RegisterMatchForm from "@/components/admin/match-register-form"
-
-// 더미 매치 데이터
-const dummyMatches = [
-  {
-    id: "1",
-    title: "주말 테니스 초보 매치",
-    facilityName: "서울 테니스 센터",
-    address: "서울시 강남구 테헤란로 123",
-    sportType: "테니스",
-    matchDate: "2025-03-28",
-    matchTime: "18:00 - 20:00",
-    currentParticipants: 6,
-    maxParticipants: 8,
-    status: "모집중"
-  },
-  {
-    id: "2",
-    title: "평일 저녁 풋살 매치",
-    facilityName: "강남 풋살장",
-    address: "서울시 강남구 역삼동 456",
-    sportType: "풋살",
-    matchDate: "2025-03-29",
-    matchTime: "19:00 - 21:00",
-    currentParticipants: 10,
-    maxParticipants: 10,
-    status: "마감"
-  },
-  {
-    id: "3",
-    title: "농구 3대3 매치",
-    facilityName: "종로 농구코트",
-    address: "서울시 종로구 종로 789",
-    sportType: "농구",
-    matchDate: "2025-03-30",
-    matchTime: "14:00 - 16:00",
-    currentParticipants: 4,
-    maxParticipants: 6,
-    status: "모집중"
-  },
-  {
-    id: "4",
-    title: "배드민턴 복식 매치",
-    facilityName: "한강 배드민턴장",
-    address: "서울시 영등포구 여의도동 101",
-    sportType: "배드민턴",
-    matchDate: "2025-03-31",
-    matchTime: "20:00 - 22:00",
-    currentParticipants: 4,
-    maxParticipants: 4,
-    status: "마감"
-  },
-  {
-    id: "5",
-    title: "테니스 중급자 매치",
-    facilityName: "송파 스포츠 센터",
-    address: "서울시 송파구 잠실동 202",
-    sportType: "테니스",
-    matchDate: "2025-04-01",
-    matchTime: "10:00 - 12:00",
-    currentParticipants: 2,
-    maxParticipants: 4,
-    status: "모집중"
-  },
-  {
-    id: "6",
-    title: "5대5 풋살 매치",
-    facilityName: "마포 실내 풋살장",
-    address: "서울시 마포구 합정동 303",
-    sportType: "풋살",
-    matchDate: "2025-04-02",
-    matchTime: "18:00 - 20:00",
-    currentParticipants: 8,
-    maxParticipants: 10,
-    status: "모집중"
-  }
-]
-
-// 스포츠 종류별 아이콘
-const sportTypeIcons: Record<string, React.ReactNode> = {
-  "테니스": <CircleDot className="h-4 w-4" />,
-  "풋살": <Users className="h-4 w-4" />,
-  "농구": <Users className="h-4 w-4" />,
-  "배드민턴": <CircleDot className="h-4 w-4" />,
-}
+import { AdminMatches, AdminMatchSearch, displayMatchStatus, displaySportName } from "@/lib/types/matchTypes"
+import { matchService } from "@/lib/services/matchService"
+import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
+import { useRouter } from "next/navigation"
 
 // 스포츠 종류 목록
-const sportTypes = ["테니스", "풋살", "농구", "배드민턴"]
+const sportTypes: SportType[] = [
+  SportType.TENNIS
+  , SportType.FUTSAL
+  , SportType.SOCCER
+  , SportType.BADMINTON
+  , SportType.BASEBALL
+  , SportType.BASKETBALL
+]
 
 // 상태별 배지 색상
-const statusColors: Record<string, string> = {
-  "모집중": "bg-green-100 text-green-800",
-  "마감": "bg-gray-100 text-gray-800",
-  "진행중": "bg-blue-100 text-blue-800",
-  "종료": "bg-red-100 text-red-800"
+const statusColors: Record<MatchStatus, string> = {
+  "APPLICABLE": "bg-green-100 text-green-800 border-green-200",
+  "FINISH": "bg-red-100 text-red-800 border-red-200",
+  "CLOSE_TO_DEADLINE": "bg-blue-100 text-blue-800 border-blue-200",
+  "END": "bg-gray-100 text-gray-800 border-gray-200",
+  "ONGOING" : "bg-orange-100 text-orange-800 border-orange-200",
+  "CANCELLED" : "bg-purple-100 text-purple-800 border-purple-200"
+}
+
+// 날짜 포맷
+const setDateFormat = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`;
 }
 
 export default function AdminMatchesPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [matches, setMatches] = useState(dummyMatches)
   const [showRegisterForm, setShowRegisterForm] = useState(false)
-  const [selectedSport, setSelectedSport] = useState<string>("ALL")
+
+  // 관리자 매치 목록 조회
+  const [adminMatches, setAdminMatches] = useState<AdminMatches[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isError, setIsError] = useState(false);
+
+  // 검색 세팅
+  const [selectedSport, setSelectedSport] = useState<SportType>(SportType.ALL)
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
-  
-  // 검색 필터링 기능
-  const filteredMatches = matches.filter(match => {
-    // 텍스트 검색 필터링
-    const textMatch = match.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      match.facilityName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      match.sportType.toLowerCase().includes(searchTerm.toLowerCase());
+
+  const router = useRouter();
+
+  // 로그인 상태를 관리
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  const observerRef = useRef<HTMLTableElement | null>(null);
+
+  const ref = useRef(false);
+
+  const fetchGetAdinMatches = async (pageNumber: number) => {
+
+    let startDateStr: string = (startDate) ? setDateFormat(startDate) : "";
+    let endDateStr: string = (endDate) ? setDateFormat(endDate) : "";
+
+    const searchParam: AdminMatchSearch = {
+      searchValue: searchTerm,
+      pageNumber: pageNumber,
+      startDate: startDateStr,
+      endDate: endDateStr,
+      sportType: selectedSport
+    }
     
-    // 종목 필터링
-    const sportMatch = selectedSport === "ALL" || match.sportType === selectedSport;
-    
-    // 날짜 필터링
-    const matchDateObj = new Date(match.matchDate);
-    const dateMatch = 
-      (!startDate || matchDateObj >= startDate) && 
-      (!endDate || matchDateObj <= endDate);
-    
-    return textMatch && sportMatch && dateMatch;
-  });
+    try {
+      const adminMatches = await matchService.adminGetMatches(searchParam);
+      setAdminMatches((prev) => [...prev, ...adminMatches.content]);
+      setPage(adminMatches.number);
+      setHasMore(!adminMatches.last);
+    } catch (error: any) {
+      console.log(error);
+      if(!error || error.errorCode === "FORBIDDEN") {
+        router.push("/login");
+        return;
+      }
+      setIsError(true);
+      setAdminMatches([]);
+    } finally {
+      setLoading(false);
+    }
+
+  }
+
+  // 관리자 매치 초기 조회
+  useEffect(() => {
+    if(ref.current) return;
+    ref.current = true; 
+
+    if(loading) return; // 로딩 중이면 중지
+
+    setLoading(true); // 로딩 실행
+
+    fetchGetAdinMatches(0);
+  }, [])
+
+  // 무한 스크롤
+  useEffect(() => {
+    if(loading || !hasMore || isError) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if(entries[0].isIntersecting) {
+          fetchGetAdinMatches(page + 1);
+        }
+      }, {threshold: 1}
+    );
+
+    if(observerRef.current) {
+      observer.observe(observerRef.current);
+    }
+
+    return () => {
+      if(observerRef.current) {
+        observer.unobserve(observerRef.current);
+      }
+    }
+
+  }, [page, hasMore, loading])
+
+  useEffect(() => {
+    const loggedInStatus = localStorage.getItem('isLoggedIn')
+    setIsLoggedIn(loggedInStatus === 'true')
+  }, [])
   
   // 필터 초기화
   const resetFilters = () => {
     setSearchTerm("");
-    setSelectedSport("ALL");
+    setSelectedSport(SportType.ALL);
     setStartDate(undefined);
     setEndDate(undefined);
   };
   
   // 삭제 처리
-  const handleDelete = (id: string) => {
-    setMatches(prev => prev.filter(match => match.id !== id))
-  }
-  
-  // 마감/재오픈 토글
-  const toggleStatus = (id: string) => {
-    setMatches(prev => prev.map(match => 
-      match.id === id ? {
-        ...match,
-        status: match.status === "모집중" ? "마감" : "모집중"
-      } : match
-    ))
+  const handleDelete = (id: number) => {
+    //setMatches(prev => prev.filter(match => adminMatches.id !== id))
   }
 
   // 매치 등록 폼 토글
@@ -187,22 +187,27 @@ export default function AdminMatchesPage() {
   }
   
   // 매치 등록 완료 후 처리
-  const handleMatchRegisterComplete = (newMatch: any) => {
-    // 새 매치를 목록에 추가
-    setMatches(prev => [...prev, {
-      id: String(prev.length + 1),
-      ...newMatch,
-      currentParticipants: 0,
-      status: "모집중"
-    }])
+  const handleMatchRegisterComplete = () => {
+    setAdminMatches([]);
+    fetchGetAdinMatches(0)
     // 등록 폼 닫기
     setShowRegisterForm(false)
     
     // 성공 메시지 처리 등...
   }
 
+  // 관리자 매치 검색
+  const handleMatchSearch = () => {
+    // 검색 전 초기화
+    setAdminMatches([]);
+    setPage(0);
+    setHasMore(false);
+
+    fetchGetAdinMatches(0);
+  }
+
   // 매치 관리 목록 UI
-  const renderMatchesList = () => (
+  const renderMatchesList = () => ( 
     <Card>
       <CardHeader>
         <CardTitle>등록된 매치</CardTitle>
@@ -222,15 +227,17 @@ export default function AdminMatchesPage() {
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             </div>
             
-            <Select value={selectedSport} onValueChange={setSelectedSport}>
+            <Select value={selectedSport} onValueChange={(value) => setSelectedSport(value as SportType)}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="모든 종목" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">모든 종목</SelectItem>
-                {sportTypes.map(sport => (
-                  <SelectItem key={sport} value={sport}>{sport}</SelectItem>
-                ))}
+                <SelectItem value={SportType.ALL}>전체 종목</SelectItem>
+                <SelectItem value={SportType.TENNIS}>테니스</SelectItem>
+                <SelectItem value={SportType.SOCCER}>축구</SelectItem>
+                <SelectItem value={SportType.FUTSAL}>풋살</SelectItem>
+                <SelectItem value={SportType.BASEBALL}>농구</SelectItem>
+                <SelectItem value={SportType.BADMINTON}>배드민턴</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -283,6 +290,11 @@ export default function AdminMatchesPage() {
                   />
                 </PopoverContent>
               </Popover>
+
+              <Button onClick={handleMatchSearch} className="primary-button">
+                <Filter className="mr-2 h-4 w-4" />
+                필터 적용
+              </Button>
             </div>
             
             <Button variant="outline" onClick={resetFilters} className="ml-auto">
@@ -297,95 +309,123 @@ export default function AdminMatchesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>매치명</TableHead>
-              <TableHead>종류</TableHead>
-              <TableHead className="hidden md:table-cell">시설</TableHead>
-              <TableHead className="hidden md:table-cell">날짜</TableHead>
-              <TableHead className="hidden md:table-cell">시간</TableHead>
-              <TableHead>인원</TableHead>
-              <TableHead>상태</TableHead>
-              <TableHead className="text-right">관리</TableHead>
+              <TableHead className="min-w-[140px] max-w-[140px] text-center">매치명</TableHead>
+              <TableHead className="min-w-[70px] text-center">종류</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[150px] max-w-[200px] text-center">시설</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[90px] text-center">날짜</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[100px] text-center">시간</TableHead>
+              <TableHead className="min-w-[70px] text-center">인원</TableHead>
+              <TableHead className="min-w-[90px] text-center">상태</TableHead>
+              <TableHead className="text-center">관리</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredMatches.map((match) => (
-              <TableRow key={match.id}>
-                <TableCell className="font-medium">{match.title}</TableCell>
+            {adminMatches.map((match) => (
+              <TableRow 
+                key={match.matchId} 
+                className="isolate relative"
+                style={{ position: 'relative' }}
+              >
+                <TableCell className="font-medium truncate max-w-[140px]" title={match.matchName}>{match.matchName}</TableCell>
                 <TableCell>
-                  <div className="flex items-center">
-                    <Badge variant="outline" className="mr-2">
-                      {sportTypeIcons[match.sportType]}
-                    </Badge>
-                    <span>{match.sportType}</span>
-                  </div>
+                  <span className="whitespace-nowrap">{displaySportName(match.sportType)}</span>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">
-                    <MapPin className="mr-2 h-4 w-4 text-gray-400" />
-                    {match.facilityName}
+                    <MapPin className="mr-2 h-4 w-4 text-gray-400 shrink-0" />
+                    <span className="truncate max-w-[150px]" title={match.facilityName}>{match.facilityName}</span>
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">
                     <CalendarIcon className="mr-2 h-4 w-4 text-gray-400" />
-                    {match.matchDate}
+                    <span className="whitespace-nowrap">{match.matchDate}</span>
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">
                     <Clock className="mr-2 h-4 w-4 text-gray-400" />
-                    {match.matchTime}
+                    {`${match.matchTime}:00-${match.endTime}:00`}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="min-w-[70px]">
                   <div className="flex items-center">
                     <Users className="mr-2 h-4 w-4 text-gray-400" />
-                    {match.currentParticipants}/{match.maxParticipants}
+                    {match.playerCnt}/{match.teamCapacity}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="min-w-[90px]">
                   <Badge 
-                    className={statusColors[match.status]}
+                    className={`whitespace-nowrap ${statusColors[match.matchStatus]}`}
                     variant="outline"
                   >
-                    {match.status}
+                    {displayMatchStatus(match.matchStatus)}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">메뉴 열기</span>
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/matches/${match.id}`} className="cursor-pointer">
-                          <Eye className="mr-2 h-4 w-4" />
-                          상세 보기
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/matches/edit/${match.id}`} className="cursor-pointer">
-                          <Edit className="mr-2 h-4 w-4" />
-                          수정
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        onClick={() => handleDelete(match.id)}
-                      >
-                        <Trash className="mr-2 h-4 w-4" />
-                        삭제
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <TableCell className="text-right whitespace-nowrap relative">
+                  <div className="flex justify-center space-x-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        router.push(`/admin/matches/${match.matchId}`);
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span className="sr-only">View</span>
+                    </Button>
+                    
+                    {
+                      (match.matchStatus === MatchStatus.APPLICABLE || match.matchStatus === MatchStatus.CLOSE_TO_DEADLINE || match.matchStatus === MatchStatus.FINISH)
+                      && 
+                      (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            router.push(`/admin/matches/${match.matchId}/edit`);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                      )
+                    }
+                    
+                    {
+                      (match.matchStatus === MatchStatus.APPLICABLE || (match.matchStatus === MatchStatus.CLOSE_TO_DEADLINE && match.playerCnt < (match.teamCapacity / 2)))
+                      && 
+                      (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleDelete(match.matchId);
+                          }}
+                        >
+                          <Trash className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      )
+                    }
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
             
-            {filteredMatches.length === 0 && (
+            {adminMatches.length === 0 && !loading && (
               <TableRow>
                 <TableCell colSpan={8} className="h-24 text-center">
                   검색 결과가 없습니다.
@@ -393,6 +433,14 @@ export default function AdminMatchesPage() {
               </TableRow>
             )}
           </TableBody>
+        </Table>
+
+        <Table ref={observerRef}>
+            <TableBody>
+              <TableRow>
+                {loading && <TableCell className="text-center">불러오는 중...</TableCell>}
+              </TableRow>
+            </TableBody>
         </Table>
       </CardContent>
     </Card>

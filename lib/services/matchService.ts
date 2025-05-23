@@ -1,11 +1,43 @@
 import { api } from '../api';
 import { MatchStatus } from '../enum/matchEnum';
 import { ApiError, ApiResonse, Slice } from '../types/commonTypes';
-import { CreateMatchRequest, Match, MatchDetailRespone, MatchList, MatchSearch, MathDateCount } from '../types/matchTypes';
+import { AdminMatchDetail, AdminMatches, AdminMatchSearch, CreateMatchRequest, Match, MatchDetailRespone, MatchList, MatchRegist, MatchSearch, MatchStatusPost, MathDateCount } from '../types/matchTypes';
 import { FacilityManager } from './userService';
 
 // 매치 서비스
 export const matchService = {
+
+  // 관리자 매치 조회(관리자 전용)
+  adminGetMatches: (params: AdminMatchSearch) => {
+    let endPoint = `/admin/match/getMatches`;
+    return api.post<Slice<AdminMatches>>(endPoint, params);
+  },
+
+  // 매치 등록(관리자 전용)
+  registMatch: (params: MatchRegist) => {
+    let endPoint = `/match/registMatch`
+    return api.post(endPoint, params);
+  },
+
+  // 매치 상태 변경(관리자 전용)
+  updateMatchStat: (params: {matchId: number, matchStatus: MatchStatusPost}) => {
+    console.log(params.matchStatus);
+    let endPoint = `/admin/match/status/${params.matchId}`;
+    return api.post(endPoint, params.matchStatus);
+  },
+
+  // 매치 삭제(관리자 전용)
+  deleteMatch: (matchId: number) => {
+    let endPoint = `/admin/match/delete/${matchId}`;
+    return api.post(endPoint);
+  },
+
+  // 매치 상세 조회(관리자 전용)
+  getAdminMatch: (matchId: number) => {
+    let endPoint = `/admin/match/${matchId}`;
+    return api.get<AdminMatchDetail>(endPoint);
+  },
+
   // 매치 목록 조회
   getMatches: (params: MatchSearch) => {
     let endpoint = '/match/matches';
@@ -19,16 +51,12 @@ export const matchService = {
 
     return api.post<MathDateCount[]>(endpoint, params);
   },
-  
-  // 관리자용 매치 목록 조회
-  getAdminMatches: () => 
-    api.get<Match[]>('/admin/matches'),
-  
+
   // 매치 상세 조회
   getMatch: (matchId: number) => {
     return api.get<MatchDetailRespone>(`/match/matches/${matchId}`)
   },
-  
+
   // 매치 생성 (관리자 전용)
   createMatch: (data: CreateMatchRequest) => {
     const formData = new FormData();
@@ -63,16 +91,17 @@ export const matchService = {
   },
   
   // 매치 수정 (관리자 전용)
-  updateMatch: (id: number, data: Partial<Match>) => 
-    api.put<Match>(`/admin/matches/${id}`, data),
+  updateMatch: (matchid: number, data: Record<string, any>) => {
+    return api.put(`/admin/match/edit/${matchid}`, data)
+  },
   
   // 매치 상태 변경 (관리자 전용)
   updateMatchStatus: (id: number, status: MatchStatus) => 
     api.patch<Match>(`/admin/matches/${id}/status`, { status }),
   
   // 매치 삭제 (관리자 전용)
-  deleteMatch: (id: number) => 
-    api.delete(`/admin/matches/${id}`),
+  // deleteMatch: (id: number) => 
+  //   api.delete(`/admin/matches/${id}`),
     
   // 시설의 매니저 목록 조회
   getFacilityManagers: (facilityId: number) => 

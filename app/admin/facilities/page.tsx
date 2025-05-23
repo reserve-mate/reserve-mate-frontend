@@ -2,17 +2,15 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { facilityService } from "@/lib/services/facilityService"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { 
   Search, 
   Plus, 
-  MoreVertical, 
   Edit, 
   Trash, 
   Eye, 
@@ -45,9 +43,9 @@ export default function AdminFacilitiesPage() {
   const observerRef = useRef<HTMLTableRowElement | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const [showRegisterForm, setShowRegisterForm] = useState(false)
-
+  const router = useRouter();
   const PAGE_SIZE = 7
-
+  
   const loadFacilities = useCallback(async () => {
     if (loading || !hasMore ) return
     setLoading(true)
@@ -214,15 +212,14 @@ export default function AdminFacilitiesPage() {
           </TableHeader>
           <TableBody>
             {facilities.map((facility) => (
-              <TableRow key={facility.facilityId}>
+              <TableRow 
+                key={facility.facilityId}
+                className="isolate relative"
+                style={{ position: 'relative' }}
+              >
                 <TableCell className="font-medium">{facility.facilityName}</TableCell>
                 <TableCell>
-                  <div className="flex items-center">
-                    <Badge variant="outline" className="mr-2">
-                      {sportTypeIcons[facility.sportType]}
-                    </Badge>
-                    <span>{facility.sportType}</span>
-                  </div>
+                  <span className="whitespace-nowrap">{facility.sportType}</span>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">
@@ -237,43 +234,80 @@ export default function AdminFacilitiesPage() {
                     {facility.reservationCount}
                   </div>
                 </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/facilities/${facility.facilityId}`}>
-                          <Eye className="mr-2 h-4 w-4" /> 상세보기
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/facilities/${facility.facilityId}/edit`}>
-                          <Edit className="mr-2 h-4 w-4" /> 수정하기
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => toggleActive(facility.facilityId)}>
-                        {facility.active ? (
-                          <>
-                            <Trash className="mr-2 h-4 w-4 text-red-500" /> 
-                            <span className="text-red-500">비활성화</span>
-                          </>
-                        ) : (
-                          <>
-                            <Calendar className="mr-2 h-4 w-4 text-green-500" /> 
-                            <span className="text-green-500">활성화</span>
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(facility.facilityId)}>
-                        <Trash className="mr-2 h-4 w-4 text-red-500" /> 
-                        <span className="text-red-500">삭제하기</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <TableCell>
+                  <Badge 
+                    className={facility.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                    variant="outline"
+                  >
+                    {facility.active ? "활성" : "비활성"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right whitespace-nowrap relative">
+                  <div className="flex justify-end space-x-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        router.push(`/admin/facilities/${facility.facilityId}`);
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span className="sr-only">View</span>
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        router.push(`/admin/facilities/${facility.facilityId}/edit`);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className={`h-8 w-8 p-0 ${facility.active ? "text-red-500 hover:text-red-600 hover:bg-red-100" : "text-green-500 hover:text-green-600 hover:bg-green-100"}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        toggleActive(facility.facilityId);
+                      }}
+                    >
+                      {facility.active ? (
+                        <CircleDot className="h-4 w-4" />
+                      ) : (
+                        <Calendar className="h-4 w-4" />
+                      )}
+                      <span className="sr-only">{facility.active ? "Deactivate" : "Activate"}</span>
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleDelete(facility.facilityId);
+                      }}
+                    >
+                      <Trash className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

@@ -297,7 +297,7 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
                 {facility.active ? "비활성화" : "활성화"}
               </Button>
               <Button asChild variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50">
-                <Link href={`/admin/facilities/edit/${facility.id}`}>
+                <Link href={`/admin/facilities/${facility.id}/edit`}>
                   수정
                 </Link>
               </Button>
