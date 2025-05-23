@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import { api } from '../api';
 import { SportType } from '../enum/matchEnum';
 import { CourtName, FacilityManagerName, FacilityNames } from '../types/facilityTypes';
@@ -63,11 +64,32 @@ export interface CreateFacilityRequest {
   images?: File[];
 }
 
+export interface FacilityList {
+  facilityId: string;
+  facilityName: string;
+  address: string;
+  sportType: string;
+  courtCount: number;
+  reservationCount: number;
+  active? : boolean;
+}
+
+interface FacilityListResponse {
+  content: FacilityList[];
+  totalPages: number;
+
+}
+
 // 시설 서비스
 export const facilityService = {
   // 시설 목록 조회
-  getFacilities: () => 
-    api.get<Facility[]>('/facilities'),
+  getFacilities: async(data:{ keyword : string; lastId : string | null; size : string}) => {
+    const res =  await api.get<FacilityListResponse>("/admin/facilities",{
+      params: data,
+    })
+    console.log("시설 service data: ", JSON.stringify(res, null, 2));
+    return res.content;
+  },
 
   // 매치 등록 시 시설명 조회
   getMatchFacilityNames: (sportType: string) => {
@@ -95,9 +117,7 @@ export const facilityService = {
     const formData = new FormData();
     console.log(data.images);
     // JSON 데이터를 FormData에 추가
-    formData.append(
-      'facilityData', 
-      new Blob([JSON.stringify({
+    const facilityData = {
       name: data.name,
       sportType: data.sportType,
       address: data.address,
@@ -108,13 +128,17 @@ export const facilityService = {
       hasCafe: data.hasCafe,
       courts: data.courts,
       operatingHours: data.operatingHours,
-    })],{ type : 'application/json'})
-  );
-    
-    // 이미지 파일 추가
-    // 이미지 상세 정보
-    const imageMeta: {displayOrder: number; isMain: boolean}[] = [];
+    };
+
+    formData.append(
+      `facilityData`,
+      new Blob([JSON.stringify(facilityData)], {type: 'application/json'})
+    );
+  
+    // 이미지 존재하는 경우에만 images + meta 추가
     if (data.images && data.images.length > 0) {
+      const imageMeta: {displayOrder: number; isMain: boolean}[] = [];
+
       data.images.forEach((image, index) => {
         formData.append(`images`, image);
         imageMeta.push({
@@ -122,15 +146,12 @@ export const facilityService = {
           isMain: index === 0 // 첫번째 이미지를 메인으로
         })
       });
+      // 이미지 상세 정보 추가
+      formData.append(`imageMeta`, new Blob([JSON.stringify(imageMeta)], {type: 'application/json'}));
+      console.log(formData);
+    
     }
-    // 이미지 상세 정보 추가
-    formData.append(`imageMeta`, new Blob([JSON.stringify(imageMeta)], {type: 'application/json'}));
-
-    return api.post<Facility>('/admin/facilities', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return api.post<Facility>('/admin/facilities', formData) 
     
   },
   

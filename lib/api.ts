@@ -8,7 +8,6 @@ const apiInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
-    "Content-Type": "application/json",
     "Accept": "application/json, text/plain, */*"
   }
 });
@@ -94,13 +93,9 @@ apiInstance.interceptors.response.use(
         window.location.href = "/login";
         return Promise.reject(error);
       }
-    }else{
-      if(error.response.data) {
-        return Promise.reject(error.response.data);
-      }
     }
     console.log("응답 인터셉터 error",error);
-    return Promise.reject(error);
+    return Promise.reject(error.response.data);
   }
 );
 
