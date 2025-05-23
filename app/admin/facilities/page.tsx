@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { facilityService } from "@/lib/services/facilityService"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -27,63 +26,7 @@ import {
 // 시설 등록 폼 컴포넌트 import
 import RegisterFacilityForm from "@/components/admin/facility-register-form"
 import { toast } from "@/hooks/use-toast"
-// 더미 시설 데이터
-const dummyFacilities = [
-  {
-    id: "1",
-    name: "서울 테니스 센터",
-    address: "서울시 강남구 테헤란로 123",
-    sportType: "테니스",
-    courtsCount: 4,
-    reservationsCount: 120,
-    active: true,
-  },
-  {
-    id: "2",
-    name: "강남 풋살장",
-    address: "서울시 강남구 역삼동 456",
-    sportType: "풋살",
-    courtsCount: 2,
-    reservationsCount: 85,
-    active: true,
-  },
-  {
-    id: "3",
-    name: "종로 농구코트",
-    address: "서울시 종로구 종로 789",
-    sportType: "농구",
-    courtsCount: 3,
-    reservationsCount: 65,
-    active: true,
-  },
-  {
-    id: "4",
-    name: "한강 배드민턴장",
-    address: "서울시 영등포구 여의도동 101",
-    sportType: "배드민턴",
-    courtsCount: 6,
-    reservationsCount: 95,
-    active: false,
-  },
-  {
-    id: "5",
-    name: "송파 스포츠 센터",
-    address: "서울시 송파구 잠실동 202",
-    sportType: "테니스",
-    courtsCount: 5,
-    reservationsCount: 110,
-    active: true,
-  },
-  {
-    id: "6",
-    name: "마포 실내 풋살장",
-    address: "서울시 마포구 합정동 303",
-    sportType: "풋살",
-    courtsCount: 3,
-    reservationsCount: 75,
-    active: false,
-  },
-]
+import type { FacilityList } from "@/lib/services/facilityService"
 
 // 스포츠 종류별 아이콘
 const sportTypeIcons: Record<string, React.ReactNode> = {
@@ -95,25 +38,97 @@ const sportTypeIcons: Record<string, React.ReactNode> = {
 
 export default function AdminFacilitiesPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [facilities, setFacilities] = useState(dummyFacilities)
+  const [facilities, setFacilities] = useState<FacilityList[]>([])
+  const [lastId, setLastId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const observerRef = useRef<HTMLTableRowElement | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const [showRegisterForm, setShowRegisterForm] = useState(false)
-  
-  // 검색 기능
-  const filteredFacilities = facilities.filter(facility => 
-    facility.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    facility.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    facility.sportType.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-  
+
+  const PAGE_SIZE = 7
+
+  const loadFacilities = useCallback(async () => {
+    if (loading || !hasMore ) return
+    setLoading(true)
+    
+    try {
+      const response = await facilityService.getFacilities({
+        keyword: searchTerm,
+        lastId: lastId ?? null,
+        size: String(PAGE_SIZE),
+      })
+
+      const newFacilities = response;
+      console.log("시설 목록 data 확인: ", newFacilities);
+      const prevIds = new Set(facilities.map(f => f.facilityId));
+      const filtered = newFacilities.filter(f => !prevIds.has(f.facilityId));
+      
+      setFacilities(prev => [...prev, ...filtered]);
+      setLastId(filtered.length > 0 ? String(filtered[filtered.length - 1].facilityId) : lastId);
+      setHasMore(newFacilities.length === PAGE_SIZE);
+
+    } catch (error) {
+      console.log("시설 불러오기 실패: ", error)
+    } finally{
+      setLoading(false)
+    }
+    
+  }, [facilities, hasMore, lastId, loading, searchTerm])
+
+  // 검색어 입력시
+  useEffect(() => {
+    const fetchOnSearch = async () => {
+      setLoading(true)
+      try {
+        const response = await facilityService.getFacilities({
+          keyword: searchTerm,
+          lastId: null,  // 검색시 항상 처음부터
+          size: String(PAGE_SIZE),
+        });
+
+        setFacilities(response);
+        setLastId(response.length > 0 ? String(response[response.length - 1].facilityId) : null);
+        setHasMore(response.length === PAGE_SIZE);
+      } catch (e) {
+        console.error("검색 중 에러", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchOnSearch();
+  }, [searchTerm]);
+
+  //IntersectionObserver
+  useEffect(()=> {
+    if(!observerRef.current || !scrollContainerRef.current || !hasMore) return
+
+    const observer = new IntersectionObserver(entries => {
+      if(entries[0].isIntersecting && !loading){
+        loadFacilities()
+      }
+    }, 
+    {
+      root: scrollContainerRef.current,
+      rootMargin: "0px",
+      threshold: 0.5  // 화면의 절반 이상 보일 때만 호출하기
+    })
+
+    observer.observe(observerRef.current)
+
+    return () => observer.disconnect()
+  }, [ loadFacilities, hasMore, loading])
+
   // 삭제 처리
   const handleDelete = (id: string) => {
-    setFacilities(prev => prev.filter(facility => facility.id !== id))
+    setFacilities(prev => prev.filter(facility => facility.facilityId !== id))
   }
   
   // 활성/비활성 토글
   const toggleActive = (id: string) => {
     setFacilities(prev => prev.map(facility => 
-      facility.id === id ? { ...facility, active: !facility.active } : facility
+      facility.facilityId === id ? { ...facility, active: !facility.active } : facility
     ))
   }
   
@@ -144,14 +159,17 @@ export default function AdminFacilitiesPage() {
     // 주소 데이터 추가 확인
     console.log(newFacility.address);
 
-    // 새 시설을 목록에 추가
-    setFacilities(prev => [...prev, {
-      id: String(prev.length + 1),
-      ...newFacility,
-      active: true
-    }])
     // 등록 폼 닫기
     setShowRegisterForm(false)
+    
+    //리스트 초기화 후 다시 불러오기
+    setFacilities([]);
+    setLastId(null);
+    setHasMore(true);
+
+    setTimeout(()=>{
+      loadFacilities();
+    }, 100);
     
     // 성공 메시지 처리 등...
     toast({
@@ -182,6 +200,7 @@ export default function AdminFacilitiesPage() {
       </CardHeader>
       
       <CardContent>
+        <div ref={scrollContainerRef} className="max-h-[600px] overflow-y-auto pr-2">
         <Table>
           <TableHeader>
             <TableRow>
@@ -190,14 +209,13 @@ export default function AdminFacilitiesPage() {
               <TableHead className="hidden md:table-cell">주소</TableHead>
               <TableHead className="hidden md:table-cell">코트 수</TableHead>
               <TableHead className="hidden md:table-cell">예약 건수</TableHead>
-              <TableHead>상태</TableHead>
               <TableHead className="text-right">관리</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredFacilities.map((facility) => (
-              <TableRow key={facility.id}>
-                <TableCell className="font-medium">{facility.name}</TableCell>
+            {facilities.map((facility) => (
+              <TableRow key={facility.facilityId}>
+                <TableCell className="font-medium">{facility.facilityName}</TableCell>
                 <TableCell>
                   <div className="flex items-center">
                     <Badge variant="outline" className="mr-2">
@@ -212,20 +230,12 @@ export default function AdminFacilitiesPage() {
                     {facility.address}
                   </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell">{facility.courtsCount}</TableCell>
+                <TableCell className="hidden md:table-cell">{facility.courtCount}</TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">
                     <Calendar className="mr-2 h-4 w-4 text-gray-400" />
-                    {facility.reservationsCount}
+                    {facility.reservationCount}
                   </div>
-                </TableCell>
-                <TableCell>
-                  <Badge 
-                    className={facility.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
-                    variant="outline"
-                  >
-                    {facility.active ? "활성" : "비활성"}
-                  </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -236,16 +246,16 @@ export default function AdminFacilitiesPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/facilities/${facility.id}`}>
+                        <Link href={`/admin/facilities/${facility.facilityId}`}>
                           <Eye className="mr-2 h-4 w-4" /> 상세보기
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/facilities/${facility.id}/edit`}>
+                        <Link href={`/admin/facilities/${facility.facilityId}/edit`}>
                           <Edit className="mr-2 h-4 w-4" /> 수정하기
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => toggleActive(facility.id)}>
+                      <DropdownMenuItem onClick={() => toggleActive(facility.facilityId)}>
                         {facility.active ? (
                           <>
                             <Trash className="mr-2 h-4 w-4 text-red-500" /> 
@@ -258,7 +268,7 @@ export default function AdminFacilitiesPage() {
                           </>
                         )}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(facility.id)}>
+                      <DropdownMenuItem onClick={() => handleDelete(facility.facilityId)}>
                         <Trash className="mr-2 h-4 w-4 text-red-500" /> 
                         <span className="text-red-500">삭제하기</span>
                       </DropdownMenuItem>
@@ -267,8 +277,14 @@ export default function AdminFacilitiesPage() {
                 </TableCell>
               </TableRow>
             ))}
-            
-            {filteredFacilities.length === 0 && (
+            {hasMore &&(
+              <TableRow ref={observerRef}>
+                <TableCell colSpan={7} className="text-center py-2">
+                  <span className="text-gray-400 text-sm"> 불러오는중 ...</span>
+                </TableCell>
+              </TableRow>
+            )}
+            {facilities.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   검색 결과가 없습니다.
@@ -277,6 +293,8 @@ export default function AdminFacilitiesPage() {
             )}
           </TableBody>
         </Table>
+        
+        </div>
       </CardContent>
     </Card>
   )
