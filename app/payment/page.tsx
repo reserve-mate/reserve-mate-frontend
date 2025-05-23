@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,7 +29,8 @@ const calculatePrice = (duration: number, date: string) => {
   return basePrice * duration
 }
 
-export default function PaymentPage() {
+// Client component that uses useSearchParams
+function PaymentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [reservationData, setReservationData] = useState<ReservationData | null>(null)
@@ -238,5 +239,28 @@ export default function PaymentPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Loading fallback component
+function PaymentLoading() {
+  return (
+    <div className="container max-w-4xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">결제 정보를 불러오는 중...</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Page component with Suspense boundary
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<PaymentLoading />}>
+      <PaymentContent />
+    </Suspense>
   )
 } 
