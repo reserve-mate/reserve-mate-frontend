@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -17,6 +17,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { displayReservationStatus, Reservations } from "@/lib/types/reservationType"
+import { reservationService } from "@/lib/services/reservationService"
+import { displaySportName } from "@/lib/types/matchTypes"
+import { ReservationStatus } from "@/lib/enum/reservationEnum"
 
 // 예약 데이터 타입
 type Reservation = {
@@ -85,16 +89,79 @@ const dummyReservations: Reservation[] = [
 ]
 
 export default function ReservationsPage() {
+  
   const [reservations, setReservations] = useState<Reservation[]>(dummyReservations)
+  const [reservationDatas, setReservationDatas] = useState<Reservations[]>();   // 예약 목록 데이터
+  
+  // 무한 스크롤
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+
+  const [tabValue, setTabValue] = useState<"upcoming" | "past">("upcoming");
+
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const observeRef = useRef<HTMLDivElement | null>(null);
   
   useEffect(() => {
     const loggedInStatus = localStorage.getItem('isLoggedIn')
     setIsLoggedIn(loggedInStatus === 'true')
   }, [])
+
+  // 예약 목록 조회
+  const asyncReservations = async (type: string, pageNum: number) => {
+    if(loading) return;
+    setLoading(true);
+
+    try{
+      const response = await reservationService.getReservations({
+        type: type,
+        pageNum: pageNum
+      });
+      setReservationDatas((prev) => [...(prev || []), ...response.content]);
+      setPage(response.number);
+      setHasMore(!response.last);
+    }catch(error : any) {
+      setIsError(true);
+      setReservationDatas([])
+    }finally {
+      setLoading(false);
+    }
+
+  }
+
+  // 초기 조회
+  useEffect(() => {
+    asyncReservations(tabValue, 0) // 예약 목록 조회
+  }, [tabValue])
   
+  // 무한 스크롤
+  useEffect(() => {
+    if(!hasMore || loading || isError) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if(entries[0].isIntersecting) {
+          asyncReservations(tabValue, page + 1);
+        }
+      }, {threshold: 1}
+    );
+
+    if(observeRef.current) {
+      observer.observe(observeRef.current);
+    }
+
+    return () => {
+      if(observeRef.current) {
+        observer.unobserve(observeRef.current);
+      }
+    }
+  }, [page, hasMore, loading])
+
   useEffect(() => {
     localStorage.setItem('isLoggedIn', isLoggedIn.toString())
   }, [isLoggedIn])
@@ -137,9 +204,17 @@ export default function ReservationsPage() {
     setSelectedReservationId(null)
   }
 
-  // 상태별 예약 필터링
-  const upcomingReservations = reservations.filter((r) => r.status === "확정" || r.status === "대기중")
-  const pastReservations = reservations.filter((r) => r.status === "완료" || r.status === "취소")
+  const handleTab = (type:string) => {
+    setReservationDatas([]);
+    setPage(0);
+    setHasMore(false);
+    setLoading(false);
+    setTabValue(type as "upcoming" | "past")
+  }
+
+  if(!reservationDatas) {
+    return;
+  }
 
   if (!isLoggedIn) {
     return (
@@ -173,14 +248,14 @@ export default function ReservationsPage() {
 
       <Card className="styled-card mb-8">
         <CardContent className="p-6">
-          <Tabs defaultValue="upcoming" className="w-full">
+          <Tabs value={tabValue} className="w-full" onValueChange={(val) => handleTab(val)}>
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100">
               <TabsTrigger value="upcoming" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">예정된 예약</TabsTrigger>
               <TabsTrigger value="past" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">지난 예약</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="upcoming">
-              {upcomingReservations.length === 0 ? (
+            <TabsContent value={tabValue}>
+              {reservationDatas.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-500 mb-4">예정된 예약이 없습니다.</p>
                   <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
@@ -189,8 +264,8 @@ export default function ReservationsPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {upcomingReservations.map((reservation) => (
-                    <Card key={reservation.id} className="border border-indigo-100 hover:shadow-md transition-shadow">
+                  {reservationDatas.map((reservation) => (
+                    <Card key={reservation.reservationId} className="border border-indigo-100 hover:shadow-md transition-shadow">
                       <CardContent className="p-5">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                           <div className="space-y-2">
@@ -198,16 +273,18 @@ export default function ReservationsPage() {
                               <h3 className="text-lg font-semibold">{reservation.facilityName}</h3>
                               <Badge
                                 className={`
-                                  ${reservation.status === "확정" ? "bg-green-100 text-green-800 border-green-200" : ""}
-                                  ${reservation.status === "대기중" ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
-                                `}
+                                  ${reservation.reservationStatus === ReservationStatus.PENDING ? "bg-green-100 text-green-800 border-green-200" : ""}
+                                  ${reservation.reservationStatus === ReservationStatus.CONFIRMED ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
+                                  ${reservation.reservationStatus === ReservationStatus.COMPLETED ? "bg-indigo-100 text-indigo-800 border-indigo-200" : ""}
+                                  ${reservation.reservationStatus === ReservationStatus.CANCELED ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
+                                  `}
                               >
-                                {reservation.status}
+                                {displayReservationStatus(reservation.reservationStatus)}
                               </Badge>
                             </div>
 
                             <div className="text-sm text-gray-500">
-                              {reservation.courtName} | {reservation.sportType}
+                              {reservation.courtName} | {displaySportName(reservation.sportType)}
                             </div>
 
                             <div className="flex items-start">
@@ -222,29 +299,35 @@ export default function ReservationsPage() {
 
                             <div className="flex items-start">
                               <Clock className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
-                              <span className="text-sm text-gray-500">{reservation.timeSlot}</span>
+                              <span className="text-sm text-gray-500">{`${reservation.startTime}-${reservation.endTime}`}</span>
                             </div>
 
-                            <div className="flex items-start">
+                            {/* <div className="flex items-start">
                               <CreditCard className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
                               <span className="text-sm text-gray-500">
                                 {reservation.totalPrice} | {reservation.paymentStatus}
                               </span>
-                            </div>
+                            </div> */}
                           </div>
 
                           <div className="flex flex-col gap-2 md:min-w-[120px]">
                             <Button asChild variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300">
-                              <Link href={`/reservations/${reservation.id}`}>상세 보기</Link>
+                              <Link href={`/reservations/${reservation.reservationId}`}>상세 보기</Link>
                             </Button>
 
-                            {reservation.status !== "취소" && (
+                            {((reservation.reservationStatus === ReservationStatus.PENDING) || (reservation.reservationStatus === ReservationStatus.CONFIRMED)) && (
                               <Button 
                                 variant="destructive" 
                                 className="bg-red-600 hover:bg-red-700" 
-                                onClick={() => openCancelDialog(reservation.id)}
+                                onClick={() => openCancelDialog(reservation.reservationId.toString())}
                               >
                                 예약 취소
+                              </Button>
+                            )}
+
+                            {reservation.reservationStatus === ReservationStatus.COMPLETED && (
+                              <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                                <Link href={`/facilities/${reservation.reservationId}/review`}>리뷰 작성</Link>
                               </Button>
                             )}
                           </div>
@@ -252,11 +335,16 @@ export default function ReservationsPage() {
                       </CardContent>
                     </Card>
                   ))}
+
+                  {/* 무한 스크롤 트리거 지점 */}
+                  <div ref={observeRef} className="text-center">
+                  {loading && <p className="text-muted-foreground">불러오는 중...</p>}
+                  </div>
                 </div>
               )}
             </TabsContent>
 
-            <TabsContent value="past">
+            {/* <TabsContent value="past">
               {pastReservations.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-500">지난 예약이 없습니다.</p>
@@ -324,7 +412,7 @@ export default function ReservationsPage() {
                   ))}
                 </div>
               )}
-            </TabsContent>
+            </TabsContent> */}
           </Tabs>
         </CardContent>
       </Card>
