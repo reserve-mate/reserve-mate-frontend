@@ -44,6 +44,7 @@ export function SiteHeader() {
   useEffect(() => {
     const loggedInStatus = localStorage.getItem('isLoggedIn')
     const adminStatus = localStorage.getItem('isAdmin')
+    console.log("site-header"+loggedInStatus);
     setIsLoggedIn(loggedInStatus === 'true')
     setIsAdmin(adminStatus === 'true')
   }, [])
