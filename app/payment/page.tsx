@@ -10,6 +10,8 @@ import { MapPin, Clock, Calendar, CreditCard, User } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
+import { reservationService } from "@/lib/services/reservationService"
+import { ReservationDetail } from "@/lib/types/reservationType"
 
 interface ReservationData {
   facilityId: string
@@ -33,30 +35,39 @@ const calculatePrice = (duration: number, date: string) => {
 function PaymentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+
   const [reservationData, setReservationData] = useState<ReservationData | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [reservation, setReservation] = useState<ReservationDetail | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const getReservations = async(reservationId: number) => {
+
+    try {
+      const response = await reservationService.getReservationDetail(reservationId);
+      setReservation(response);
+    }catch(error: any) {
+      console.log(error);
+      router.push("/");
+    }
+
+  }
 
   useEffect(() => {
-    const data = searchParams.get('data')
-    if (data) {
-      try {
-        const parsed = JSON.parse(decodeURIComponent(data))
-        setReservationData(parsed)
-      } catch (error) {
-        toast({
-          title: "데이터 오류",
-          description: "예약 정보를 불러올 수 없습니다.",
-          variant: "destructive",
-        })
-        router.push('/')
-      }
-    } else {
-      router.push('/')
+    //const data = searchParams.get('data')
+    const reservationId = searchParams.get("reservationId");
+
+    if(!reservationId) {
+      return;
     }
+
+    // 예약 확인
+    getReservations(parseInt(reservationId));
+
   }, [searchParams, router])
 
+  // 결제 기능
   const handlePayment = async () => {
-    if (!reservationData) return
+    if (!reservation) return
 
     setIsProcessing(true)
 
@@ -67,7 +78,7 @@ function PaymentContent() {
 
       toast({
         title: "예약 완료",
-        description: `${reservationData.timeRange} 시간대 예약이 완료되었습니다.`,
+        description: `${timeSlot(reservation.startTime, reservation.endTime)} 시간대 예약이 완료되었습니다.`,
       })
 
       // 성공 페이지로 이동 (임시로 홈으로)
@@ -83,7 +94,7 @@ function PaymentContent() {
     }
   }
 
-  if (!reservationData) {
+  if (!reservation) {
     return (
       <div className="container max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -96,8 +107,38 @@ function PaymentContent() {
     )
   }
 
-  const totalPrice = calculatePrice(reservationData.duration, reservationData.date)
-  const formattedDate = format(new Date(reservationData.date), 'yyyy년 M월 d일 (E)', { locale: ko })
+  // 시간 간격
+  const timeDuration = (startTime: string, endTime: string) => {
+    const startHour = parseInt(startTime.split(":")[0], 10);
+    const endHour = parseInt(endTime.split(":")[0], 10);
+    return endHour - startHour;
+  }
+
+  // 타임 슬롯
+  const timeSlot = (startTime: string, endTime: string): {start: string, end: string}[] => {
+    const slots: {start: string, end: string}[] = [];
+
+    const startHour = parseInt(startTime.split(":")[0], 10);
+    const endHour = parseInt(endTime.split(":")[0], 10);
+
+    for(let hour = startHour; hour < endHour; hour++) {
+      const start = `${hour.toString().padStart(2, '0')}:00`;
+      const end = `${(hour + 1).toString().padStart(2, '0')}:00`;
+
+      slots.push({start, end});
+    }
+
+    return slots;
+  }
+
+  // 시간 포맷 00:00:00 -> 00:00
+  const timeFormat = (time: string) => {
+    const [hour, minute] = time.split(":");
+    return `${hour}:${minute}`;
+  }
+
+  const totalPrice = reservation.totalPrice; //calculatePrice(reservationData.duration, reservationData.date)
+  const formattedDate = format(new Date(reservation.reservationDate), 'yyyy년 M월 d일 (E)', { locale: ko })
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8">
@@ -118,9 +159,9 @@ function PaymentContent() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <h3 className="font-semibold text-lg mb-2">{reservationData.facilityName}</h3>
+                <h3 className="font-semibold text-lg mb-2">{reservation.facilityName}</h3>
                 <div className="flex items-center text-gray-600 mb-1">
-                  <span className="text-sm">{reservationData.courtName}</span>
+                  <span className="text-sm">{reservation.courtName}</span>
                 </div>
               </div>
 
@@ -139,10 +180,10 @@ function PaymentContent() {
                   <Clock className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
                     <span className="font-medium">예약 시간</span>
-                    <p className="text-gray-600">{reservationData.timeRange}</p>
+                    <p className="text-gray-600">{`${timeFormat(reservation.startTime)}-${timeFormat(reservation.endTime)}`}</p>
                     <div className="flex mt-2">
                       <Badge variant="secondary">
-                        {reservationData.duration}시간 이용
+                        {timeDuration(reservation.startTime, reservation.endTime)}시간 이용
                       </Badge>
                     </div>
                   </div>
@@ -154,13 +195,13 @@ function PaymentContent() {
               <div>
                 <h4 className="font-medium mb-3">선택된 시간 슬롯</h4>
                 <div className="grid grid-cols-3 gap-2">
-                  {reservationData.timeSlots.sort((a, b) => a - b).map((hour) => (
+                  {timeSlot(reservation.startTime, reservation.endTime).map((hour) => (
                     <div
-                      key={hour}
+                      key={hour.start}
                       className="p-2 bg-indigo-50 border border-indigo-200 rounded-lg text-center"
                     >
                       <span className="text-sm font-medium text-indigo-700">
-                        {hour.toString().padStart(2, "0")}:00 - {(hour + 1).toString().padStart(2, "0")}:00
+                        {hour.start} - {hour.end}
                       </span>
                     </div>
                   ))}
@@ -182,7 +223,7 @@ function PaymentContent() {
             <CardContent className="space-y-6">
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">기본 요금 ({reservationData.duration}시간)</span>
+                  <span className="text-gray-600">기본 요금 ({timeDuration(reservation.startTime, reservation.endTime)}시간)</span>
                   <span>{totalPrice.toLocaleString()}원</span>
                 </div>
                 <div className="flex justify-between">

@@ -1,3 +1,4 @@
+import { PaymentStatus } from "../enum/paymentEnum";
 import { MatchPaymentSuccess } from "./matchTypes";
 
 export type PaymentResultResponse = MatchPaymentSuccess | CancelResponse | PaymentFail | ReserveResponse;
@@ -27,4 +28,27 @@ interface CancelResponse extends PaymentResponse {
     type: 'cancelPayment';
     orderId: string;
     cancelReason: string;
+}
+
+export const displayPaymentStatus = (status: PaymentStatus) => {
+    let paymentStatus = "";
+    
+    switch (status) {
+        case PaymentStatus.PAID:
+            paymentStatus = "결제 완료";
+            break;
+        
+        case PaymentStatus.CANCELED:
+            paymentStatus = "환불";
+            break;
+        
+        case PaymentStatus.PARTIAL_CANCELED:
+            paymentStatus = "부분 환불";
+            break;
+        default:
+            paymentStatus = "결제 대기"
+            break;
+    }
+
+    return paymentStatus;
 }
