@@ -21,6 +21,7 @@ import { displayReservationStatus, Reservations } from "@/lib/types/reservationT
 import { reservationService } from "@/lib/services/reservationService"
 import { displaySportName } from "@/lib/types/matchTypes"
 import { ReservationStatus } from "@/lib/enum/reservationEnum"
+import { useRouter } from "next/navigation"
 
 // 예약 데이터 타입
 type Reservation = {
@@ -89,7 +90,7 @@ const dummyReservations: Reservation[] = [
 ]
 
 export default function ReservationsPage() {
-  
+  const router = useRouter();
   const [reservations, setReservations] = useState<Reservation[]>(dummyReservations)
   const [reservationDatas, setReservationDatas] = useState<Reservations[]>();   // 예약 목록 데이터
   
@@ -212,6 +213,11 @@ export default function ReservationsPage() {
     setTabValue(type as "upcoming" | "past")
   }
 
+  // 예약 취소 페이지 이동
+  const handleCancel = (reservationId: number) => {
+    router.push(`/reservations/cancel/${reservationId}`);
+  }
+
   if(!reservationDatas) {
     return;
   }
@@ -319,7 +325,7 @@ export default function ReservationsPage() {
                               <Button 
                                 variant="destructive" 
                                 className="bg-red-600 hover:bg-red-700" 
-                                onClick={() => openCancelDialog(reservation.reservationId.toString())}
+                                onClick={() => handleCancel(reservation.reservationId)}
                               >
                                 예약 취소
                               </Button>
