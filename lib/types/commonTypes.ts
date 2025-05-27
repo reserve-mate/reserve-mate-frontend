@@ -29,6 +29,14 @@ export interface Payment {
     matchId: number;
 }
 
+// 예약 결제 요청 후 데이터
+export interface ReservationPayment {
+    orderId: string;
+    paymentKey: string;
+    amount: number;
+    reservationId: number;
+}
+
 // 위도 경도
 export interface Location {
     latitude: number;   // 위도 y축

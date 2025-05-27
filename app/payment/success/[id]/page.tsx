@@ -59,8 +59,14 @@ export default function PaymentSuccessPage({params} : {params: {id: number}}) {
             <div className="flex justify-between mb-2">
               <span className="text-sm text-muted-foreground">예약 시설</span>
               {
-                (paymentInfo.type === 'matchPaymentSuccess' || paymentInfo.type === 'reservePayment') && (
+                (paymentInfo.type === 'matchPaymentSuccess' )&& (
                   <span className="text-sm font-medium">{paymentInfo.facilityCourt}</span>
+                )
+              }
+
+              {
+                (paymentInfo.type === 'reservePaymentSuccess' )&& (
+                  <span className="text-sm font-medium">{`${paymentInfo.facilityName}/${paymentInfo.courtName}`}</span>
                 )
               }
               
@@ -74,7 +80,7 @@ export default function PaymentSuccessPage({params} : {params: {id: number}}) {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">예약 시간</span>
-                  <span className="text-sm font-medium">14:00-16:00</span>
+                  <span className="text-sm font-medium">{`${paymentInfo.startTime}-${paymentInfo.endTime}`}</span>
                 </div>
               </>
               ) : ( // 매치 결제인 경우

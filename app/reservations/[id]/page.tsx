@@ -24,6 +24,7 @@ import { ReservationStatus } from "@/lib/enum/reservationEnum"
 import { displaySportName } from "@/lib/types/matchTypes"
 import { PaymentStatus } from "@/lib/enum/paymentEnum"
 import { displayPaymentStatus } from "@/lib/types/payment"
+import { toast } from "@/hooks/use-toast"
 
 // 예약 데이터 타입
 type Reservation = {
@@ -159,9 +160,14 @@ export default function ReservationDetailPage() {
           }
           setIsLoading(false)
         }, 500)
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching reservation:", error)
-        setIsLoading(false)
+        toast({
+          title: "조회 실패",
+          description: (error.message) ? (error.message) : "결제 처리 중 오류가 발생했습니다.",
+          variant: "destructive",
+        })
+        setIsLoading(false);
       }
     }
 
@@ -243,12 +249,13 @@ export default function ReservationDetailPage() {
     )
   }
 
-  if (!reservation) {
-    return notFound()
-  }
+  // if (!reservation) {
+  //   return notFound()
+  // }
 
   if(!reservationDetail) {
-    return notFound();
+    router.push('/reservations');
+    return;
   }
 
   const canCancel = reservationDetail.reservationStatus !== ReservationStatus.CANCELED && reservationDetail.reservationStatus !== ReservationStatus.COMPLETED;
@@ -328,12 +335,12 @@ export default function ReservationDetailPage() {
                       <span>결제 금액: {reservationDetail.totalPrice.toLocaleString()}</span>
                     </div>
 
-                    {(reservationDetail.reservationStatus !== ReservationStatus.PENDING && !reservationDetail.paymentStatus)
+                    {(reservationDetail.reservationStatus !== ReservationStatus.PENDING && reservationDetail.paymentStatus === PaymentStatus.PAID)
                     && 
                     (
                       <div className="flex items-center">
                         <CreditCard className="h-4 w-4 text-indigo-400 mr-2" />
-                        <span>결제 방법: {reservation.paymentMethod}</span>
+                        <span>결제 방법: {reservationDetail.paymentMethod}</span>
                       </div>
                     )}
                     
@@ -358,7 +365,7 @@ export default function ReservationDetailPage() {
 
               <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-2">취소 정책</h4>
-                <p className="text-gray-600 text-sm">{reservation.cancellationPolicy}</p>
+                <p className="text-gray-600 text-sm">예약 시작 24시간 이전 취소 시 전액 환불, 이후 취소 시 환불 불가</p>
               </div>
             </CardContent>
           </Card>
@@ -370,13 +377,16 @@ export default function ReservationDetailPage() {
               <CardTitle className="text-xl font-bold">예약 관리</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button 
-                variant="destructive" 
-                className="w-full bg-indigo-600 hover:bg-indigo-700"
-                onClick={() => reservePayment()}
-              >
-                예약 결제
-              </Button>
+
+              {(reservationDetail.reservationStatus === ReservationStatus.PENDING) && (
+                <Button 
+                  variant="destructive" 
+                  className="w-full bg-indigo-600 hover:bg-indigo-700"
+                  onClick={() => reservePayment()}
+                >
+                  예약 결제
+                </Button>
+              )}
 
               {canCancel && (
                 <Button 
@@ -389,15 +399,15 @@ export default function ReservationDetailPage() {
               )}
               
               <Button asChild variant="outline" className="w-full border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300">
-                <Link href={`/facilities/${reservation.id}`}>시설 정보 보기</Link>
+                <Link href={`/facilities/${reservationDetail.facilityId}`}>시설 정보 보기</Link>
               </Button>
               
-              {reservation.status === "완료" && (
+              {reservationDetail.reservationStatus === ReservationStatus.COMPLETED && (
                 <Button 
                   asChild 
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
                 >
-                  <Link href={`/facilities/${reservation.id}/review`}>리뷰 작성</Link>
+                  <Link href={`/facilities/${reservationDetail.reservationId}/review`}>리뷰 작성</Link>
                 </Button>
               )}
             </CardContent>

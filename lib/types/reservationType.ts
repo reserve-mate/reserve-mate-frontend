@@ -2,9 +2,17 @@ import { SportType } from "../enum/matchEnum";
 import { PaymentStatus } from "../enum/paymentEnum";
 import { ReservationStatus } from "../enum/reservationEnum";
 
-// 예약 확인
-export interface ReservationCheck {
-    
+// 예약 결제 성공 데이터
+export interface ReserveResponse extends PaymentResponse{
+    status: 'success';
+    type: 'reservePaymentSuccess';
+    reservationId: number;
+    reservationNumber: string;
+    facilityName: string;
+    courtName: string;
+    reserveDate: string;
+    startTime: string;
+    endTime: string;
 }
 
 // 예약 상세
@@ -16,6 +24,8 @@ export interface ReservationDetail {
     endTime: string;
     bookedName: string;
     reservationNumber: string;
+    userEmail: string;
+    userPhone: string;
     facilityId: number;
     facilityName: string;
     courtName: string;

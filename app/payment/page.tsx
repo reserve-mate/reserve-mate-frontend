@@ -12,6 +12,7 @@ import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 import { reservationService } from "@/lib/services/reservationService"
 import { ReservationDetail } from "@/lib/types/reservationType"
+import { loadTossPayments, TossPaymentsPayment } from "@tosspayments/tosspayments-sdk"
 
 interface ReservationData {
   facilityId: string
@@ -22,6 +23,16 @@ interface ReservationData {
   timeSlots: number[]
   timeRange: string
   duration: number
+}
+
+const clientKey = process.env.NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY || '';
+const customerKey: string = generateUniqueString();
+
+// 무작위 문자열 생성
+function generateUniqueString(): string {
+  return (
+    Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10)
+  );
 }
 
 // 가격 계산 함수 (임시)
@@ -40,6 +51,14 @@ function PaymentContent() {
   const [reservation, setReservation] = useState<ReservationDetail | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // 토스 결제
+  // 토스 결제
+    const [payment, setPayment] = useState<TossPaymentsPayment | null>(null);
+    const [amount, setAmount] = useState({
+      currency: "KRW",
+      value: 50000,
+    });
+
   const getReservations = async(reservationId: number) => {
 
     try {
@@ -52,6 +71,7 @@ function PaymentContent() {
 
   }
 
+  // 예약 확인 화면 노출
   useEffect(() => {
     //const data = searchParams.get('data')
     const reservationId = searchParams.get("reservationId");
@@ -65,6 +85,30 @@ function PaymentContent() {
 
   }, [searchParams, router])
 
+   // 토스 결제창 초기화
+  useEffect(() => {
+    async function fetchPayment() {
+      try {
+        const tossPayments = await loadTossPayments(clientKey);
+
+        // 회원 결제
+        // @docs https://docs.tosspayments.com/sdk/v2/js#tosspaymentspayment
+        const payment = tossPayments.payment({
+          customerKey,
+        });
+        // 비회원 결제
+        // const payment = tossPayments.payment({ customerKey: ANONYMOUS });
+
+        setPayment(payment);
+      } catch (error) {
+        console.error("Error fetching payment:", error);
+      }
+    }
+
+    fetchPayment();
+  }, [clientKey, customerKey]);
+
+
   // 결제 기능
   const handlePayment = async () => {
     if (!reservation) return
@@ -73,20 +117,42 @@ function PaymentContent() {
 
     try {
       // 실제 결제 API 호출을 여기에 구현
-      // 임시로 토스트 메시지만 표시
-      await new Promise(resolve => setTimeout(resolve, 2000)) // 2초 대기 (API 호출 시뮬레이션)
+      let verifyReservation = await reservationService.verifyReservation(reservation.reservationId);
 
-      toast({
-        title: "예약 완료",
-        description: `${timeSlot(reservation.startTime, reservation.endTime)} 시간대 예약이 완료되었습니다.`,
-      })
+      if(verifyReservation) {
+        toast({
+          title: "예약 실패",
+          description: `${timeFormat(reservation.startTime)}-${timeFormat(reservation.endTime)} 시간대에 이미 확정된 예약이 존재합니다.`,
+          variant: "destructive"
+        });
+        return;
+      }
 
-      // 성공 페이지로 이동 (임시로 홈으로)
-      router.push(`/reservations`)
-    } catch (error) {
+      await payment?.requestPayment({
+        method: "CARD", // 카드 및 간편결제
+        amount: {
+          currency: "KRW",
+          value: reservation.totalPrice,
+        },
+        orderId: customerKey, // 고유 주문번호
+        orderName: `${reservation.facilityName}/${reservation.courtName}`,
+        successUrl: window.location.origin + "/payment/processing/reservation/" + reservation.reservationId, // 결제 요청이 성공하면 리다이렉트되는 URL
+        failUrl: window.location.origin + "/payment/failed", // 결제 요청이 실패하면 리다이렉트되는 URL
+        customerEmail: (reservation.userEmail) ? reservation.userEmail : "",
+        customerName: reservation.bookedName,
+        customerMobilePhone: (reservation.userPhone) ? reservation.userPhone : "",
+        // 카드 결제에 필요한 정보
+        card: {
+          useEscrow: false,
+          flowMode: "DEFAULT", // 통합결제창 여는 옵션
+          useCardPoint: false,
+          useAppCardOnly: false,
+        },
+    })
+    } catch (error: any) {
       toast({
         title: "결제 실패",
-        description: "결제 처리 중 오류가 발생했습니다.",
+        description: (error.message) ? (error.message) : "결제 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       })
     } finally {

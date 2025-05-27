@@ -3,6 +3,12 @@ import { Slice } from "../types/commonTypes";
 import { ReservationDetail, Reservations } from "../types/reservationType";
 
 export const reservationService = {
+    // 예약 결제 전 검증
+    verifyReservation: (param: number) => {
+        let endPoint = `/reserve/verifyReservation?reservationId=${param}`;
+        return api.get<boolean>(endPoint);
+    },
+
     // 예약 목록 조회
     getReservations: (params: {type: string, pageNum: number}) => {
         let endPoint = `/reserve/reservations?type=${params.type}&pageNum=${params.pageNum}`;

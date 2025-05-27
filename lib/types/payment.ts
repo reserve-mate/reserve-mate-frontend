@@ -1,5 +1,6 @@
 import { PaymentStatus } from "../enum/paymentEnum";
 import { MatchPaymentSuccess } from "./matchTypes";
+import { ReserveResponse } from "./reservationType";
 
 export type PaymentResultResponse = MatchPaymentSuccess | CancelResponse | PaymentFail | ReserveResponse;
 
@@ -9,22 +10,17 @@ export interface PaymentResponse {
     type: string;
 }
 
-interface ReserveResponse extends PaymentResponse{
-    type: 'reservePayment';
-    facilityCourt: string;
-}
-
 // 페이 실패 데이터
 interface PaymentFail extends PaymentResponse {
+    status: 'fail';
     type: 'failPayment';
     errorCode: string;
     errorMsg: string;
 }
 
-//export interface 
-
 // 취소 이유
 interface CancelResponse extends PaymentResponse {
+    status: 'cancel'
     type: 'cancelPayment';
     orderId: string;
     cancelReason: string;
