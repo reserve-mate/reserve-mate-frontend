@@ -26,101 +26,9 @@ import { PaymentStatus } from "@/lib/enum/paymentEnum"
 import { displayPaymentStatus } from "@/lib/types/payment"
 import { toast } from "@/hooks/use-toast"
 
-// 예약 데이터 타입
-type Reservation = {
-  id: string
-  facilityName: string
-  courtName: string
-  address: string
-  sportType: string
-  reservationDate: string
-  timeSlot: string
-  status: "대기중" | "확정" | "취소" | "완료"
-  totalPrice: string
-  paymentStatus: "결제 대기" | "결제 완료" | "환불"
-  players?: number
-  bookedBy?: string
-  bookingNumber?: string
-  paymentMethod?: string
-  cancellationPolicy?: string
-}
-
-// 더미 데이터
-const dummyReservations: Reservation[] = [
-  {
-    id: "1",
-    facilityName: "서울 테니스 센터",
-    courtName: "코트 A",
-    address: "서울시 강남구 테헤란로 123",
-    sportType: "테니스",
-    reservationDate: "2025-03-28",
-    timeSlot: "18:00 - 20:00",
-    status: "확정",
-    totalPrice: "40,000원",
-    paymentStatus: "결제 완료",
-    players: 2,
-    bookedBy: "홍길동",
-    bookingNumber: "T-20250328-001",
-    paymentMethod: "신용카드",
-    cancellationPolicy: "예약 시작 24시간 이전 취소 시 전액 환불, 이후 취소 시 환불 불가"
-  },
-  {
-    id: "2",
-    facilityName: "강남 풋살장",
-    courtName: "실내 코트 1",
-    address: "서울시 강남구 역삼동 456",
-    sportType: "풋살",
-    reservationDate: "2025-03-29",
-    timeSlot: "19:00 - 21:00",
-    status: "대기중",
-    totalPrice: "60,000원",
-    paymentStatus: "결제 대기",
-    players: 10,
-    bookedBy: "김철수",
-    bookingNumber: "F-20250329-002",
-    paymentMethod: "계좌이체",
-    cancellationPolicy: "예약 시작 48시간 이전 취소 시 전액 환불, 이후 취소 시 50% 환불"
-  },
-  {
-    id: "3",
-    facilityName: "종로 농구코트",
-    courtName: "코트 B",
-    address: "서울시 종로구 종로 789",
-    sportType: "농구",
-    reservationDate: "2025-03-15",
-    timeSlot: "14:00 - 16:00",
-    status: "완료",
-    totalPrice: "30,000원",
-    paymentStatus: "결제 완료",
-    players: 10,
-    bookedBy: "이영희",
-    bookingNumber: "B-20250315-003",
-    paymentMethod: "카카오페이",
-    cancellationPolicy: "예약 시작 24시간 이전 취소 시 전액 환불, 이후 취소 시 환불 불가"
-  },
-  {
-    id: "4",
-    facilityName: "한강 배드민턴장",
-    courtName: "코트 2",
-    address: "서울시 영등포구 여의도동 101",
-    sportType: "배드민턴",
-    reservationDate: "2025-03-10",
-    timeSlot: "20:00 - 22:00",
-    status: "취소",
-    totalPrice: "20,000원",
-    paymentStatus: "환불",
-    players: 4,
-    bookedBy: "박지민",
-    bookingNumber: "BD-20250310-004",
-    paymentMethod: "네이버페이",
-    cancellationPolicy: "예약 시작 12시간 이전 취소 시 전액 환불, 이후 취소 시 환불 불가"
-  },
-]
-
 export default function ReservationDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const [reservation, setReservation] = useState<Reservation | null>(null)
   const [reservationDetail, setreservationDetail] = useState<ReservationDetail | null>(null);
 
   const [isLoading, setIsLoading] = useState(true)
@@ -153,13 +61,6 @@ export default function ReservationDetailPage() {
           return;
         }
         setreservationDetail(response);
-        setTimeout(() => {
-          const foundReservation = dummyReservations.find(r => r.id === id)
-          if (foundReservation) {
-            setReservation(foundReservation)
-          }
-          setIsLoading(false)
-        }, 500)
       } catch (error: any) {
         console.error("Error fetching reservation:", error)
         toast({
@@ -167,6 +68,8 @@ export default function ReservationDetailPage() {
           description: (error.message) ? (error.message) : "결제 처리 중 오류가 발생했습니다.",
           variant: "destructive",
         })
+        setIsLoading(false);
+      }finally {
         setIsLoading(false);
       }
     }
@@ -188,13 +91,6 @@ export default function ReservationDetailPage() {
   // 예약 취소 처리
   const handleCancelReservation = () => {
     // 실제 구현에서는 API 호출을 통해 예약을 취소
-    if (reservation) {
-      setReservation({
-        ...reservation,
-        status: "취소",
-        paymentStatus: "환불"
-      })
-    }
     setShowCancelDialog(false)
   }
 
@@ -256,6 +152,19 @@ export default function ReservationDetailPage() {
   if(!reservationDetail) {
     router.push('/reservations');
     return;
+  }
+
+  // 예약 취소 페이지 이동
+  const handleCancel = () => {
+    if(reservationDetail.reservationStatus === ReservationStatus.CANCELED || reservationDetail.reservationStatus === ReservationStatus.COMPLETED) {
+      toast({
+        title: "예약 취소 실패",
+        description: "이미 완료되었거나 취소된 예약입니다.",
+        variant: "destructive",
+      });
+    }
+
+    router.push(`/reservations/cancel/${reservationDetail.reservationId}?status=${reservationDetail.reservationStatus}`);
   }
 
   const canCancel = reservationDetail.reservationStatus !== ReservationStatus.CANCELED && reservationDetail.reservationStatus !== ReservationStatus.COMPLETED;
@@ -365,7 +274,11 @@ export default function ReservationDetailPage() {
 
               <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-2">취소 정책</h4>
-                <p className="text-gray-600 text-sm">예약 시작 24시간 이전 취소 시 전액 환불, 이후 취소 시 환불 불가</p>
+                <p className="text-gray-600 text-sm">
+                  • 예약 시작 48시간 전까지 취소: 전액 환불<br/>
+                  • 예약 시작 24시간 ~ 48시간 전 사이 취소: 50% 환불<br/>
+                  • 예약 시작 24시간 이내 취소: 환불 불가<br/>
+                  </p>
               </div>
             </CardContent>
           </Card>
@@ -392,7 +305,7 @@ export default function ReservationDetailPage() {
                 <Button 
                   variant="destructive" 
                   className="w-full bg-red-600 hover:bg-red-700"
-                  onClick={() => setShowCancelDialog(true)}
+                  onClick={handleCancel}
                 >
                   예약 취소
                 </Button>

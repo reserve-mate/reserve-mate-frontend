@@ -3,6 +3,13 @@ import { Slice } from "../types/commonTypes";
 import { ReservationDetail, Reservations } from "../types/reservationType";
 
 export const reservationService = {
+
+    // 예약 취소
+    cancelReservation: (params: {id: number, cancelReason: string}) => {
+        let endPoint = `/reserve/cancel/${params.id}?cancelReason=${params.cancelReason}`;
+        return api.put<string>(endPoint);
+    },
+
     // 예약 결제 전 검증
     verifyReservation: (param: number) => {
         let endPoint = `/reserve/verifyReservation?reservationId=${param}`;
