@@ -105,9 +105,9 @@ export default function MatchCancellationPage({ params }: { params: { id: number
       
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">매치 취소하기</CardTitle>
+          <CardTitle className="text-2xl">예약 취소하기</CardTitle>
           <CardDescription>
-            매치를 취소하기 위한 사유를 선택해주세요.
+            예약 취소하기 위한 사유를 선택해주세요.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -116,7 +116,7 @@ export default function MatchCancellationPage({ params }: { params: { id: number
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>취소 사유 필요</AlertTitle>
               <AlertDescription>
-                매치 취소를 위해 사유를 선택해주세요.
+                예약 취소를 위해 사유를 선택해주세요.
               </AlertDescription>
             </Alert>
           )}
@@ -161,8 +161,8 @@ export default function MatchCancellationPage({ params }: { params: { id: number
             <div className="mt-8 space-y-2">
               <p className="text-sm text-gray-500">취소 정책 안내</p>
               <ul className="text-xs text-gray-500 space-y-1 list-disc pl-5">
-                <li>매치 시작 24시간 전까지 취소 시 전액 환불됩니다.</li>
-                <li>매치 시작 12시간 전까지 취소 시 50% 환불됩니다.</li>
+                <li>예약 시작 24시간 전까지 취소 시 전액 환불됩니다.</li>
+                <li>예약 시작 12시간 전까지 취소 시 50% 환불됩니다.</li>
                 <li>그 이후에는 환불이 불가능합니다.</li>
               </ul>
             </div>

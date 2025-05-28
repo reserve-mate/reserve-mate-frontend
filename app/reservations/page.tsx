@@ -214,8 +214,8 @@ export default function ReservationsPage() {
   }
 
   // 예약 취소 페이지 이동
-  const handleCancel = (reservationId: number) => {
-    router.push(`/reservations/cancel/${reservationId}`);
+  const handleCancel = (reservationId: number, status: ReservationStatus) => {
+    router.push(`/reservations/cancel/${reservationId}?status=${status}`);
   }
 
   if(!reservationDatas) {
@@ -325,7 +325,7 @@ export default function ReservationsPage() {
                               <Button 
                                 variant="destructive" 
                                 className="bg-red-600 hover:bg-red-700" 
-                                onClick={() => handleCancel(reservation.reservationId)}
+                                onClick={() => handleCancel(reservation.reservationId, reservation.reservationStatus)}
                               >
                                 예약 취소
                               </Button>
