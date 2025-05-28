@@ -104,7 +104,7 @@ export default function PaymentSuccessPage({params} : {params: {id: number}}) {
             {
               (paymentInfo.type === 'matchPaymentSuccess') ? 
               <Link href={`/matches/${params.id}`}>매치 확인하기</Link> : 
-              <Link href={`/facilities/${params.id}`}>내 예약 확인하기</Link>
+              <Link href={`/reservations/${params.id}`}>내 예약 확인하기</Link>
             }
           </Button>
           <Button asChild variant="outline" className="w-full">

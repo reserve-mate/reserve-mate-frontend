@@ -145,10 +145,6 @@ export default function ReservationDetailPage() {
     )
   }
 
-  // if (!reservation) {
-  //   return notFound()
-  // }
-
   if(!reservationDetail) {
     router.push('/reservations');
     return;
@@ -241,7 +237,7 @@ export default function ReservationDetailPage() {
                   <div>
                     <div className="flex items-center mb-1">
                       <CreditCard className="h-4 w-4 text-indigo-400 mr-2" />
-                      <span>결제 금액: {reservationDetail.totalPrice.toLocaleString()}</span>
+                      <span>결제 금액: {reservationDetail.totalPrice.toLocaleString()}원</span>
                     </div>
 
                     {(reservationDetail.reservationStatus !== ReservationStatus.PENDING && reservationDetail.paymentStatus === PaymentStatus.PAID)
@@ -252,6 +248,24 @@ export default function ReservationDetailPage() {
                         <span>결제 방법: {reservationDetail.paymentMethod}</span>
                       </div>
                     )}
+
+                    {
+                      (reservationDetail.reservationStatus === ReservationStatus.CANCELED) && 
+                      (
+                        <>
+                          {(reservationDetail.refundPayment) && (
+                            <div className="flex items-center">
+                              <CreditCard className="h-4 w-4 text-indigo-400 mr-2" />
+                              <span>취소 금액: {reservationDetail.refundPayment.toLocaleString()}원</span>
+                            </div>
+                          )}
+                          <div className="flex items-center">
+                            <CreditCard className="h-4 w-4 text-indigo-400 mr-2" />
+                            <span>취소 사유: {reservationDetail.cancelReason}</span>
+                          </div>
+                        </>
+                      )
+                    }
                     
                   </div>
                   <div>
@@ -260,10 +274,12 @@ export default function ReservationDetailPage() {
                         className={`
                           ${reservationDetail.paymentStatus === PaymentStatus.PAID ? "bg-green-100 text-green-800 border-green-200" : ""}
                           ${(reservationDetail.reservationStatus === ReservationStatus.PENDING) ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
-                          ${(reservationDetail.paymentStatus === PaymentStatus.CANCELED || reservationDetail.paymentStatus === PaymentStatus.PARTIAL_CANCELED) ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
+                          ${(reservationDetail.reservationStatus === ReservationStatus.CANCELED || reservationDetail.paymentStatus === PaymentStatus.PARTIAL_CANCELED) ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
                         `}
                       >
-                        {displayPaymentStatus(reservationDetail.paymentStatus)}
+                        { (reservationDetail.reservationStatus === ReservationStatus.CANCELED) ? 
+                          "결제취소" : (displayPaymentStatus(reservationDetail.paymentStatus))
+                        }
                       </Badge>
                     </div>
                   </div>

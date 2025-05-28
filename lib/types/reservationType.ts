@@ -32,6 +32,7 @@ export interface ReservationDetail {
     sportType: SportType;
     address: string;
     totalPrice: number;
+    refundPayment: number;
     paymentStatus: PaymentStatus;
     paymentMethod: string;
     cancelReason: string;
