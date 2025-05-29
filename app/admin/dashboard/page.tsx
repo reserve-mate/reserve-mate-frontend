@@ -5,8 +5,41 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, DollarSign, Users, Building, Eye } from "lucide-react"
+import { useEffect, useState } from "react"
+import { DashboardReservation, displayReservationStatus } from "@/lib/types/reservationType"
+import { reservationService } from "@/lib/services/reservationService"
+import { ReservationStatus } from "@/lib/enum/reservationEnum"
+import { useRouter } from "next/navigation"
 
 export default function AdminDashboardPage() {
+
+  const router = useRouter();
+
+  const [reservaions, setReservations] = useState<DashboardReservation[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // 대시보드 최근예약
+  useEffect(() => {
+    if(loading) return;
+
+    setLoading(true);
+
+    // 관리자 대시보드 최근예약
+    const getDashboardReservations = async () => {
+      try{
+        const response = await reservationService.getDashboardReservations();
+        setReservations(response);
+      }catch(error: any) {
+        console.log(error)
+      }finally {
+        setLoading(false);
+      }
+    }
+
+    getDashboardReservations();
+
+  }, []);
+
   // 더미 데이터
   const stats = {
     totalReservations: 245,
@@ -191,7 +224,7 @@ export default function AdminDashboardPage() {
               <CardTitle>최근 예약</CardTitle>
               <CardDescription>최근에 등록된 예약 내역입니다.</CardDescription>
             </div>
-            <Button variant="outline" size="sm" className="text-sm">
+            <Button variant="outline" size="sm" className="text-sm" onClick={() => router.push("/admin/reservations")}>
               전체보기
             </Button>
           </div>
@@ -208,30 +241,31 @@ export default function AdminDashboardPage() {
                   <TableHead className="hidden md:table-cell">시간</TableHead>
                   <TableHead>상태</TableHead>
                   <TableHead className="hidden md:table-cell">금액</TableHead>
-                  <TableHead className="text-right">액션</TableHead>
+                  <TableHead className="text-left">액션</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentReservations.map((reservation) => (
-                  <TableRow key={reservation.id} className="hover:bg-gray-50">
-                    <TableCell className="font-medium">{reservation.id}</TableCell>
-                    <TableCell>{reservation.user}</TableCell>
-                    <TableCell className="hidden md:table-cell">{reservation.facility}</TableCell>
-                    <TableCell className="hidden md:table-cell">{reservation.date}</TableCell>
-                    <TableCell className="hidden md:table-cell">{reservation.time}</TableCell>
+                {(reservaions.length > 0) ? reservaions.map((reservation, index) => (
+                  <TableRow key={reservation.reservationId} className="hover:bg-gray-50">
+                    <TableCell className="font-medium">{reservaions.length - index}</TableCell>
+                    <TableCell>{reservation.userName}</TableCell>
+                    <TableCell className="hidden md:table-cell">{reservation.facilityName}</TableCell>
+                    <TableCell className="hidden md:table-cell">{reservation.reserveDate}</TableCell>
+                    <TableCell className="hidden md:table-cell">{`${reservation.startTime}-${reservation.endTime}`}</TableCell>
                     <TableCell>
                       <Badge
                         className={`
                           whitespace-nowrap text-xs px-2 py-1
-                          ${reservation.status === "확정" ? "bg-green-100 text-green-800" : ""}
-                          ${reservation.status === "대기중" ? "bg-yellow-100 text-yellow-800" : ""}
-                          ${reservation.status === "취소" ? "bg-gray-100 text-gray-800" : ""}
+                          ${reservation.reservationStatus === ReservationStatus.COMPLETED ? "bg-indigo-100 text-indigo-800" : ""}
+                          ${reservation.reservationStatus === ReservationStatus.PENDING ? "bg-yellow-100 text-yellow-800" : ""}
+                          ${reservation.reservationStatus === ReservationStatus.CANCELED ? "bg-gray-100 text-gray-800" : ""}
+                          ${reservation.reservationStatus === ReservationStatus.CONFIRMED ? "bg-green-100 text-green-800" : ""}
                         `}
                       >
-                        {reservation.status}
+                        {displayReservationStatus(reservation.reservationStatus)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{reservation.amount}</TableCell>
+                    <TableCell className="hidden md:table-cell">{reservation.totalPrice.toLocaleString()}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" className="h-8 px-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50">
                         <Eye className="h-4 w-4 mr-1" />
@@ -239,7 +273,9 @@ export default function AdminDashboardPage() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                )) : (
+                  <TableCell className="font-medium text-center" colSpan={8}>아직 예약이 없습니다.</TableCell>
+                )}
               </TableBody>
             </Table>
           </div>

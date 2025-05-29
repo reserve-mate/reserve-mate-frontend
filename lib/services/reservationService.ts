@@ -1,8 +1,13 @@
 import { api } from "../api";
 import { Slice } from "../types/commonTypes";
-import { ReservationDetail, Reservations } from "../types/reservationType";
+import { DashboardReservation, ReservationDetail, Reservations } from "../types/reservationType";
 
 export const reservationService = {
+
+    // 관리자 대시보드 최근예약
+    getDashboardReservations: () => {
+        return api.get<DashboardReservation[]>(`/admin/reservation/dashboardReservations`);
+    },
 
     // 예약 취소
     cancelReservation: (params: {id: number, cancelReason: string}) => {
