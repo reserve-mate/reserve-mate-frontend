@@ -218,6 +218,12 @@ export default function ReservationsPage() {
     router.push(`/reservations/cancel/${reservationId}?status=${status}`);
   }
 
+  // 시간 포맷
+  const timeFormat = (time: string): string => {
+    const hour = parseInt(time.split(":")[0], 10);
+    return `${hour.toString().padStart(2, '0')}:00`;
+  }
+
   if(!reservationDatas) {
     return;
   }
@@ -279,8 +285,8 @@ export default function ReservationsPage() {
                               <h3 className="text-lg font-semibold">{reservation.facilityName}</h3>
                               <Badge
                                 className={`
-                                  ${reservation.reservationStatus === ReservationStatus.PENDING ? "bg-green-100 text-green-800 border-green-200" : ""}
-                                  ${reservation.reservationStatus === ReservationStatus.CONFIRMED ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
+                                  ${reservation.reservationStatus === ReservationStatus.PENDING ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
+                                  ${reservation.reservationStatus === ReservationStatus.CONFIRMED ? "bg-green-100 text-green-800 border-green-200" : ""}
                                   ${reservation.reservationStatus === ReservationStatus.COMPLETED ? "bg-indigo-100 text-indigo-800 border-indigo-200" : ""}
                                   ${reservation.reservationStatus === ReservationStatus.CANCELED ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
                                   `}
@@ -305,7 +311,7 @@ export default function ReservationsPage() {
 
                             <div className="flex items-start">
                               <Clock className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
-                              <span className="text-sm text-gray-500">{`${reservation.startTime}-${reservation.endTime}`}</span>
+                              <span className="text-sm text-gray-500">{`${timeFormat(reservation.startTime)}-${timeFormat(reservation.endTime)}`}</span>
                             </div>
 
                             {/* <div className="flex items-start">

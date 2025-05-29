@@ -99,6 +99,12 @@ export default function ReservationDetailPage() {
     router.push(`/payment?reservationId=${parseInt(id)}`);
   }
 
+  // 시간 포맷
+  const timeFormat = (time: string) => {
+    const hour = parseInt(time.split(":")[0], 10);
+    return `${hour.toString().padStart(2, '0')}:00`;
+  }
+
   // 로그인이 필요한 경우 안내 메시지 표시
   if (!isLoggedIn) {
     return (
@@ -213,7 +219,7 @@ export default function ReservationDetailPage() {
                   </div>
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 text-indigo-400 mr-2" />
-                    <span>{`${reservationDetail.startTime}-${reservationDetail.endTime}`}</span>
+                    <span>{`${timeFormat(reservationDetail.startTime)}-${timeFormat(reservationDetail.endTime)}`}</span>
                   </div>
                 </div>
                 <div>
