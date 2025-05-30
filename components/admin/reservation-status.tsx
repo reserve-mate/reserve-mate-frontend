@@ -36,11 +36,13 @@ import {
 } from "@/components/ui/dialog"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
-import { AdminReservationResponse } from "@/lib/types/reservationType"
+import { AdminReservationDetail, AdminReservationResponse } from "@/lib/types/reservationType"
 import { reservationService } from "@/lib/services/reservationService"
 import { FacilityNames } from "@/lib/types/facilityTypes"
 import { facilityService } from "@/lib/services/facilityService"
 import { timeFormat } from "@/lib/types/commonTypes"
+import { displayPaymentStatus } from "@/lib/types/payment"
+import { PaymentStatus } from "@/lib/enum/paymentEnum"
 
 // 예약 상태 유형
 const reservationStatuses = [
@@ -75,11 +77,7 @@ type Reservation = {
   createdAt: string
 }
 
-interface ReservationStatusProps {
-  facilityId?: string; // 선택적으로 시설 ID를 받을 수 있음
-}
-
-export default function ReservationStatus({ facilityId }: ReservationStatusProps) {
+export default function ReservationStatus() {
   const [isLoading, setIsLoading] = useState(false)
   const [reservations, setReservations] = useState<Reservation[]>([])
   
@@ -100,6 +98,9 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
   const [hasMore, setHasMore] = useState(false);
   const [isError, setIsError] = useState(false);
 
+  // 예약 상세
+  const [reservationDetail, setReservationDetail] = useState<AdminReservationDetail | null>(null);
+
   const observerRef = useRef<HTMLTableElement | null>(null);
   
   // 예약 현황 api
@@ -116,11 +117,17 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
 
     try{
       const response = await reservationService.getAdminReservations(searchParam);
-      setAdminReservations((prev) => [...prev, ...response.content]);
+      setAdminReservations((prev) => {
+        const merged = [...prev, ...response.content];
+        const unique = [...new Map(merged.map(r => [r.reservationId, r])).values()];
+        return unique;
+      });
       setPage(response.number);
       setHasMore(!response.last);
     }catch(error: any) {
       console.log(error)
+      setIsError(true);
+      setAdminReservations([])
     }finally {
       setIsLoading(false);
     }
@@ -132,7 +139,7 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
       const response = await facilityService.getMatchFacilityNames(undefined);
       setFacilityNames(response);
     } catch (error) {
-      
+      setFacilityNames([])
     }
   }
 
@@ -140,7 +147,7 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
   useEffect(() => {
     fetchGetFacilities(); // 시설명 조회
     getAdminReservations("ALL", 0); // 예약 현황 조회
-  }, [facilityId]);
+  }, []);
 
   // 무한 스크롤
   useEffect(() => {
@@ -177,7 +184,7 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
   // 예약 필터 초기화
   const resetFilters = () => {
     setSearchTerm("")
-    setStatusFilter("ALL")
+    setSelectFacility("all")
     setDate(undefined)
   }
 
@@ -211,9 +218,30 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
   }
   
   // 예약 세부 정보 보기
-  const viewReservationDetails = (reservation: AdminReservationResponse) => {
-    setSelectedReservation(reservation)
-    setIsDetailsDialogOpen(true)
+  const viewReservationDetails = async (reservationId: number) => {
+    try {
+      const response = await reservationService.getAdminReservaionDetail(reservationId);
+      if(!response) {
+        toast({
+          title: "조회 실패",
+          description: "예약 정보가 존재하지 않습니다.",
+          variant: "destructive"
+        })
+      } 
+      setReservationDetail(response);
+      setIsDetailsDialogOpen(true);
+    } catch (error: any) {
+      let errormsg = "조회 중 에러가 발생하였습니다."
+      if(error.message) {
+        errormsg = error.message;
+      }
+      toast({
+          title: "조회 실패",
+          description: error.message,
+          variant: "destructive"
+        })
+    }
+
   }
   
   // 예약 상태 변경
@@ -346,115 +374,152 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
       </Card>
       
       {/* 예약 세부정보 다이얼로그 */}
-      {/* <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>예약 세부 정보</DialogTitle>
-            <DialogDescription>
-              예약 ID: {selectedReservation?.reservationId}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedReservation && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <div className="text-sm text-gray-500">예약 상태</div>
-                  <Badge className={getStatusBadgeStyle(selectedReservation.reservationStatus)}>
-                    {getStatusLabel(selectedReservation.reservationStatus)}
-                  </Badge>
+      {(reservationDetail) && (
+        <>
+          <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>예약 세부 정보</DialogTitle>
+                <DialogDescription>
+                  예약 ID: {reservationDetail.reservationId}
+                </DialogDescription>
+              </DialogHeader>
+              
+              {reservationDetail && (
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <div className="text-sm text-gray-500">예약 상태</div>
+                      <Badge className={getStatusBadgeStyle(reservationDetail.reservationStatus)}>
+                        {getStatusLabel(reservationDetail.reservationStatus)}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <div className="text-sm text-gray-500">결제 상태</div>
+                      <Badge className={getPaymentStatusBadgeStyle(reservationDetail.paymentStatus)}>
+                        {reservationDetail.reservationStatus === "CANCELED" && !reservationDetail.paymentStatus
+                          ? "미결제"
+                          : displayPaymentStatus(reservationDetail.paymentStatus)}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">고객 정보</div>
+                    <div className="text-sm">{reservationDetail.userName}</div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">시설 정보</div>
+                    <div className="text-sm">{reservationDetail.facilityName}</div>
+                    <div className="text-sm">{reservationDetail.courtName}</div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">예약 정보</div>
+                    <div className="text-sm">
+                      {format(new Date(reservationDetail.reservationDate), 'PPP', { locale: ko })}
+                    </div>
+                    <div className="text-sm">
+                      {timeFormat(reservationDetail.startTime)}-{timeFormat(reservationDetail.endTime)}
+                    </div>
+                    <div className="text-sm">
+                      {reservationDetail.totalPrice.toLocaleString()}원
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">예약 생성일</div>
+                    <div className="text-sm">
+                      {format(new Date(reservationDetail.createAt), 'PPP p', { locale: ko })}
+                    </div>
+                  </div>
+
+                {(reservationDetail.reservationStatus === "CANCELED") && 
+                  (
+                    <>
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">취소 사유</div>
+                        <div className="text-sm">
+                          {reservationDetail.cancelReason}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">취소일</div>
+                        <div className="text-sm">
+                          {format(new Date(reservationDetail.cancelAt), 'PPP p', { locale: ko })}
+                        </div>
+                      </div>
+                    </>
+                  )
+                }
+
+                  {(reservationDetail.reservationStatus === "CANCELED" && reservationDetail.paymentStatus === PaymentStatus.CANCELED)
+                  && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">취소 가격</div>
+                      <div className="text-sm">
+                        {reservationDetail.refundAmount.toLocaleString()}원
+                      </div>
+                    </div>
+                  )
+                  }
                 </div>
+              )}
+              
+              <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                {reservationDetail.reservationStatus === "PENDING" && (
+                  <>
+                    <Button
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CONFIRMED")}
+                      disabled={isLoading}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      예약 확정
+                    </Button>
+                    <Button
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CANCELED")}
+                      disabled={isLoading}
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      예약 취소
+                    </Button>
+                  </>
+                )}
                 
-                <div className="flex justify-between">
-                  <div className="text-sm text-gray-500">결제 상태</div>
-                  <Badge className={getPaymentStatusBadgeStyle(selectedReservation.paymentStatus)}>
-                    {getPaymentStatusLabel(selectedReservation.paymentStatus)}
-                  </Badge>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="text-sm font-medium">고객 정보</div>
-                <div className="text-sm">{selectedReservation.userName}</div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="text-sm font-medium">시설 정보</div>
-                <div className="text-sm">{selectedReservation.facilityName}</div>
-                <div className="text-sm">{selectedReservation.courtName}</div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="text-sm font-medium">예약 정보</div>
-                <div className="text-sm">
-                  {format(new Date(selectedReservation.reservationDate), 'PPP', { locale: ko })}
-                </div>
-                <div className="text-sm">
-                  {selectedReservation.startTime} - {selectedReservation.endTime}
-                </div>
-                <div className="text-sm">
-                  {selectedReservation.totalPrice.toLocaleString()}원
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="text-sm font-medium">예약 생성일</div>
-                <div className="text-sm">
-                  {format(new Date(selectedReservation.createdAt), 'PPP p', { locale: ko })}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            {selectedReservation?.reservationStatus === "PENDING" && (
-              <>
-                <Button
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => updateReservationStatus(selectedReservation.id, "CONFIRMED")}
-                  disabled={isLoading}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  예약 확정
+                {reservationDetail.reservationStatus === "CONFIRMED" && (
+                  <>
+                    <Button
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "COMPLETED")}
+                      disabled={isLoading}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      이용 완료
+                    </Button>
+                    <Button
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CANCELED")}
+                      disabled={isLoading}
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      예약 취소
+                    </Button>
+                  </>
+                )}
+                
+                <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>
+                  닫기
                 </Button>
-                <Button
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                  onClick={() => updateReservationStatus(selectedReservation.id, "CANCELED")}
-                  disabled={isLoading}
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  예약 취소
-                </Button>
-              </>
-            )}
-            
-            {selectedReservation?.reservationStatus === "CONFIRMED" && (
-              <>
-                <Button
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                  onClick={() => updateReservationStatus(selectedReservation.id, "COMPLETED")}
-                  disabled={isLoading}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  이용 완료
-                </Button>
-                <Button
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                  onClick={() => updateReservationStatus(selectedReservation.id, "CANCELED")}
-                  disabled={isLoading}
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  예약 취소
-                </Button>
-              </>
-            )}
-            
-            <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>
-              닫기
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog> */}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
     </div>
   )
 }
@@ -473,7 +538,7 @@ function ReservationTable({
   getPaymentStatusBadgeStyle: (status: string) => string
   getStatusLabel: (status: string) => string
   getPaymentStatusLabel: (status: string) => string
-  viewReservationDetails: (reservation: AdminReservationResponse) => void
+  viewReservationDetails: (reservationId: number) => void
 }) {
   if (reservations.length === 0) {
     return (
@@ -528,7 +593,7 @@ function ReservationTable({
                 <Button 
                   size="sm" 
                   variant="outline"
-                  onClick={() => viewReservationDetails(reservation)}
+                  onClick={() => viewReservationDetails(reservation.reservationId)}
                 >
                   상세
                 </Button>

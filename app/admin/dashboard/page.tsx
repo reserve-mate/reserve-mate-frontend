@@ -274,7 +274,9 @@ export default function AdminDashboardPage() {
                     </TableCell>
                   </TableRow>
                 )) : (
-                  <TableCell className="font-medium text-center" colSpan={8}>아직 예약이 없습니다.</TableCell>
+                  <TableRow>
+                    <TableCell className="font-medium text-center" colSpan={8}>아직 예약이 없습니다.</TableCell>
+                  </TableRow>
                 )}
               </TableBody>
             </Table>
