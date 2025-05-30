@@ -92,8 +92,11 @@ export const facilityService = {
   },
 
   // 매치 등록 시 시설명 조회
-  getMatchFacilityNames: (sportType: string) => {
+  getMatchFacilityNames: (sportType: string | undefined) => {
     let endPoint = `/admin/facilities/getFacilityNames?sportType=${sportType}`;
+    if(!sportType) {
+      endPoint = `/admin/facilities/getFacilityNames`;
+    }
     return api.get<FacilityNames[]>(endPoint);
   },
 

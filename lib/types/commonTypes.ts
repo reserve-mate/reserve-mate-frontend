@@ -42,3 +42,9 @@ export interface Location {
     latitude: number;   // 위도 y축
     longitude: number;  // 경도 x축
 }
+
+// 시간 포맷
+export const timeFormat = (time: string) => {
+    const hour = parseInt(time.split(":")[0], 10);
+    return `${hour.toString().padStart(2, '0')}:00`;
+}

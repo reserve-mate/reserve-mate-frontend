@@ -1,8 +1,15 @@
 import { api } from "../api";
+import { ReservationStatus } from "../enum/reservationEnum";
 import { Slice } from "../types/commonTypes";
-import { DashboardReservation, ReservationDetail, Reservations } from "../types/reservationType";
+import { AdminReservationResponse, DashboardReservation, ReservationDetail, Reservations } from "../types/reservationType";
 
 export const reservationService = {
+
+    // 관리자 예약현황
+    getAdminReservations: (params: {searchTerm: string, reserveStatus: string, facility: number, searchDate: string, pageNum: number}) => {
+        let endPoint = `/admin/reservation/reservations?searchTerm=${params.searchTerm}&reserveStatus=${params.reserveStatus}&facility=${params.facility}&searchDate=${params.searchDate}&pageNum=${params.pageNum}`;
+        return api.get<Slice<AdminReservationResponse>>(endPoint);
+    },
 
     // 관리자 대시보드 최근예약
     getDashboardReservations: () => {
