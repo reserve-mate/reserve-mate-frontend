@@ -503,7 +503,11 @@ function ReservationTable({
               <TableCell className="font-medium">#{reservation.reservationId}</TableCell>
               <TableCell>{reservation.userName}</TableCell>
               <TableCell>
-                <div>{reservation.facilityName}</div>
+                <div>{reservation.facilityName
+                  ? reservation.facilityName.length > 9
+                    ? reservation.facilityName.slice(0, 9) + "…"
+                    : reservation.facilityName
+                  : ""}</div>
                 <div className="text-xs text-gray-500">{reservation.courtName}</div>
               </TableCell>
               <TableCell>
