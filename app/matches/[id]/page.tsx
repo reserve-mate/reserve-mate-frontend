@@ -106,8 +106,8 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     setSelectedPaymentMethod(method);
   }
 
-  const generateUniqueString = (): string => {
-    return Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
+  const noDashPhone = (phone: string) => {
+    return phone.replace(/-/g, '');
   }
 
   // 매치 상세 조회
@@ -225,7 +225,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
           failUrl: window.location.origin + "/payment/failed", // 결제 요청이 실패하면 리다이렉트되는 URL
           customerEmail: (matchDetail.userDataDto) ? matchDetail.userDataDto.userEmail : "",
           customerName: (matchDetail.userDataDto) ? matchDetail.userDataDto.userName : "",
-          customerMobilePhone: (matchDetail.userDataDto) ? matchDetail.userDataDto.phone : "",
+          customerMobilePhone: (matchDetail.userDataDto) ? noDashPhone(matchDetail.userDataDto.phone) : "",
           // 카드 결제에 필요한 정보
           card: {
             useEscrow: false,
@@ -676,17 +676,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                 </div> : ""
               }
 
-              {isMatchApplyBtn()}
-
-              {/* <Button
-                className="w-full py-6 text-lg font-bold"
-                disabled={!canJoin || isJoining}
-                onClick={requestPayment}
-              >
-                {isJoining
-                ? "처리 중..."
-                : "참가 신청하기"}
-              </Button> */}
+              {isMatchApplyBtn()} {/**매치 시청 및 취소 버튼 */}
 
               {!canJoin && (
                 <p className="text-center text-red-500 text-sm">모집이 마감되었습니다.</p>

@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Payment } from "@/lib/types/commonTypes";
+import { Payment, ReservationPayment } from "@/lib/types/commonTypes";
 import { paymentService } from "@/lib/services/paymentService"
 import { MatchPaymentSuccess } from "@/lib/types/matchTypes"
+import { toast } from "@/hooks/use-toast"
 
 export default function PaymentProcessingPage({ params }: { params: { id: number } }) {
 
@@ -20,11 +21,11 @@ export default function PaymentProcessingPage({ params }: { params: { id: number
 
   const orderId = String(searchParams.get("orderId"));
 
-  const savePayment = async(payment: Payment) => {
+  const savePayment = async(payment: ReservationPayment) => {
 
     try {
-      const paymentRes = await paymentService.paymentApprove(payment);
-      
+      const paymentRes = await paymentService.reservationPayment(payment);
+
       if('status' in paymentRes) {
         if(paymentRes.status === 'fail') {  // 결제를 실패한 경우
           if(paymentRes.type === 'failPayment') {
@@ -33,7 +34,7 @@ export default function PaymentProcessingPage({ params }: { params: { id: number
               errorCode: paymentRes.errorCode,
               message: paymentRes.errorMsg,
               id: params.id,
-              type: "match"
+              type: "reservation"
             };
 
             localStorage.setItem("paymentFail", JSON.stringify(paymentFail));
@@ -43,39 +44,22 @@ export default function PaymentProcessingPage({ params }: { params: { id: number
           localStorage.setItem("paymentResult", JSON.stringify(paymentRes));
 
           if(paymentRes.status === 'success') { // 결제를 성공한 경우
-            if(paymentRes.type === 'matchPaymentSuccess') {
+            if(paymentRes.type === 'reservePaymentSuccess') {
               router.push("/payment/success/" + params.id + "?orderId=" + orderId);
             }
           }else if(paymentRes.status === 'cancel'){ // toss에 결제를 시도했지만 모종의 이유로 실패해 결제가 취소된 경우
             if(paymentRes.type === 'cancelPayment') {
-              router.push("/payment/cancel?orderId=" + orderId);
+              toast({
+                title: "결제 실패",
+                description: (paymentRes.cancelReason) ? (paymentRes.cancelReason) : "결제 처리 중 오류가 발생했습니다.",
+                variant: "destructive",
+              })
+              router.push(`/reservations/${params.id}`);
             }
           }
         }
       }
 
-      // if(paymentRes.status === 'success') {
-      //   if(paymentRes.type === 'matchPaymentSuccess') {
-      //     router.push("/payment/success/" + params.id + "?orderId=" + orderId);
-      //   }
-      // }else if(paymentRes.status === 'cancel'){
-      //   if(paymentRes.type === 'cancelPayment') {
-      //     router.push("/payment/cancel?orderId=" + orderId);
-      //   }
-      // }else if(paymentRes.status === 'fail'){
-      //   if(paymentRes.type === 'failPayment') {
-
-      //     // const paymentFail = {
-      //     //   errorCode: paymentRes.errorCode,
-      //     //   message: paymentRes.errorMsg,
-      //     //   id: params.id,
-      //     //   type: "match"
-      //     // };
-
-      //     // localStorage.setItem("paymentFail", JSON.stringify(paymentFail));
-      //     router.push("/payment/failed");
-      //   }
-      // }
     } catch (error: any) {
       error.type = "match"
       error.id = params.id;
@@ -93,11 +77,11 @@ export default function PaymentProcessingPage({ params }: { params: { id: number
     const paymentKey = String(searchParams.get("paymentKey"));
     const amount = Number(searchParams.get("amount"));
 
-    const payment: Payment = {
+    const payment: ReservationPayment = {
       orderId: orderId,
       paymentKey: paymentKey,
       amount: amount,
-      matchId: params.id
+      reservationId: params.id
     }
 
     savePayment(payment);

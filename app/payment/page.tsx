@@ -10,6 +10,9 @@ import { MapPin, Clock, Calendar, CreditCard, User } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
+import { reservationService } from "@/lib/services/reservationService"
+import { ReservationDetail } from "@/lib/types/reservationType"
+import { loadTossPayments, TossPaymentsPayment } from "@tosspayments/tosspayments-sdk"
 
 interface ReservationData {
   facilityId: string
@@ -20,6 +23,16 @@ interface ReservationData {
   timeSlots: number[]
   timeRange: string
   duration: number
+}
+
+const clientKey = process.env.NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY || '';
+const customerKey: string = generateUniqueString();
+
+// 무작위 문자열 생성
+function generateUniqueString(): string {
+  return (
+    Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10)
+  );
 }
 
 // 가격 계산 함수 (임시)
@@ -33,49 +46,113 @@ const calculatePrice = (duration: number, date: string) => {
 function PaymentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [reservationData, setReservationData] = useState<ReservationData | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
 
-  useEffect(() => {
-    const data = searchParams.get('data')
-    if (data) {
-      try {
-        const parsed = JSON.parse(decodeURIComponent(data))
-        setReservationData(parsed)
-      } catch (error) {
-        toast({
-          title: "데이터 오류",
-          description: "예약 정보를 불러올 수 없습니다.",
-          variant: "destructive",
-        })
-        router.push('/')
-      }
-    } else {
-      router.push('/')
+  const [reservationData, setReservationData] = useState<ReservationData | null>(null)
+  const [reservation, setReservation] = useState<ReservationDetail | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // 토스 결제
+  // 토스 결제
+    const [payment, setPayment] = useState<TossPaymentsPayment | null>(null);
+    const [amount, setAmount] = useState({
+      currency: "KRW",
+      value: 50000,
+    });
+
+  const getReservations = async(reservationId: number) => {
+
+    try {
+      const response = await reservationService.getReservationDetail(reservationId);
+      setReservation(response);
+    }catch(error: any) {
+      console.log(error);
+      router.push("/");
     }
+
+  }
+
+  // 예약 확인 화면 노출
+  useEffect(() => {
+    //const data = searchParams.get('data')
+    const reservationId = searchParams.get("reservationId");
+
+    if(!reservationId) {
+      return;
+    }
+
+    // 예약 확인
+    getReservations(parseInt(reservationId));
+
   }, [searchParams, router])
 
+   // 토스 결제창 초기화
+  useEffect(() => {
+    async function fetchPayment() {
+      try {
+        const tossPayments = await loadTossPayments(clientKey);
+
+        // 회원 결제
+        // @docs https://docs.tosspayments.com/sdk/v2/js#tosspaymentspayment
+        const payment = tossPayments.payment({
+          customerKey,
+        });
+        // 비회원 결제
+        // const payment = tossPayments.payment({ customerKey: ANONYMOUS });
+
+        setPayment(payment);
+      } catch (error) {
+        console.error("Error fetching payment:", error);
+      }
+    }
+
+    fetchPayment();
+  }, [clientKey, customerKey]);
+
+
+  // 결제 기능
   const handlePayment = async () => {
-    if (!reservationData) return
+    if (!reservation) return
 
     setIsProcessing(true)
 
     try {
       // 실제 결제 API 호출을 여기에 구현
-      // 임시로 토스트 메시지만 표시
-      await new Promise(resolve => setTimeout(resolve, 2000)) // 2초 대기 (API 호출 시뮬레이션)
+      let verifyReservation = await reservationService.verifyReservation(reservation.reservationId);
 
-      toast({
-        title: "예약 완료",
-        description: `${reservationData.timeRange} 시간대 예약이 완료되었습니다.`,
-      })
+      if(verifyReservation) {
+        toast({
+          title: "예약 실패",
+          description: `${timeFormat(reservation.startTime)}-${timeFormat(reservation.endTime)} 시간대에 이미 확정된 예약이 존재합니다.`,
+          variant: "destructive"
+        });
+        return;
+      }
 
-      // 성공 페이지로 이동 (임시로 홈으로)
-      router.push(`/reservations`)
-    } catch (error) {
+      await payment?.requestPayment({
+        method: "CARD", // 카드 및 간편결제
+        amount: {
+          currency: "KRW",
+          value: reservation.totalPrice,
+        },
+        orderId: customerKey, // 고유 주문번호
+        orderName: `${reservation.facilityName}/${reservation.courtName}`,
+        successUrl: window.location.origin + "/payment/processing/reservation/" + reservation.reservationId, // 결제 요청이 성공하면 리다이렉트되는 URL
+        failUrl: window.location.origin + "/payment/failed", // 결제 요청이 실패하면 리다이렉트되는 URL
+        customerEmail: (reservation.userEmail) ? reservation.userEmail : "",
+        customerName: reservation.bookedName,
+        customerMobilePhone: (reservation.userPhone) ? reservation.userPhone : "",
+        // 카드 결제에 필요한 정보
+        card: {
+          useEscrow: false,
+          flowMode: "DEFAULT", // 통합결제창 여는 옵션
+          useCardPoint: false,
+          useAppCardOnly: false,
+        },
+    })
+    } catch (error: any) {
       toast({
         title: "결제 실패",
-        description: "결제 처리 중 오류가 발생했습니다.",
+        description: (error.message) ? (error.message) : "결제 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       })
     } finally {
@@ -83,7 +160,7 @@ function PaymentContent() {
     }
   }
 
-  if (!reservationData) {
+  if (!reservation) {
     return (
       <div className="container max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -96,8 +173,38 @@ function PaymentContent() {
     )
   }
 
-  const totalPrice = calculatePrice(reservationData.duration, reservationData.date)
-  const formattedDate = format(new Date(reservationData.date), 'yyyy년 M월 d일 (E)', { locale: ko })
+  // 시간 간격
+  const timeDuration = (startTime: string, endTime: string) => {
+    const startHour = parseInt(startTime.split(":")[0], 10);
+    const endHour = parseInt(endTime.split(":")[0], 10);
+    return endHour - startHour;
+  }
+
+  // 타임 슬롯
+  const timeSlot = (startTime: string, endTime: string): {start: string, end: string}[] => {
+    const slots: {start: string, end: string}[] = [];
+
+    const startHour = parseInt(startTime.split(":")[0], 10);
+    const endHour = parseInt(endTime.split(":")[0], 10);
+
+    for(let hour = startHour; hour < endHour; hour++) {
+      const start = `${hour.toString().padStart(2, '0')}:00`;
+      const end = `${(hour + 1).toString().padStart(2, '0')}:00`;
+
+      slots.push({start, end});
+    }
+
+    return slots;
+  }
+
+  // 시간 포맷 00:00:00 -> 00:00
+  const timeFormat = (time: string) => {
+    const [hour, minute] = time.split(":");
+    return `${hour}:${minute}`;
+  }
+
+  const totalPrice = reservation.totalPrice; //calculatePrice(reservationData.duration, reservationData.date)
+  const formattedDate = format(new Date(reservation.reservationDate), 'yyyy년 M월 d일 (E)', { locale: ko })
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8">
@@ -118,9 +225,9 @@ function PaymentContent() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <h3 className="font-semibold text-lg mb-2">{reservationData.facilityName}</h3>
+                <h3 className="font-semibold text-lg mb-2">{reservation.facilityName}</h3>
                 <div className="flex items-center text-gray-600 mb-1">
-                  <span className="text-sm">{reservationData.courtName}</span>
+                  <span className="text-sm">{reservation.courtName}</span>
                 </div>
               </div>
 
@@ -139,10 +246,10 @@ function PaymentContent() {
                   <Clock className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
                     <span className="font-medium">예약 시간</span>
-                    <p className="text-gray-600">{reservationData.timeRange}</p>
+                    <p className="text-gray-600">{`${timeFormat(reservation.startTime)}-${timeFormat(reservation.endTime)}`}</p>
                     <div className="flex mt-2">
                       <Badge variant="secondary">
-                        {reservationData.duration}시간 이용
+                        {timeDuration(reservation.startTime, reservation.endTime)}시간 이용
                       </Badge>
                     </div>
                   </div>
@@ -154,13 +261,13 @@ function PaymentContent() {
               <div>
                 <h4 className="font-medium mb-3">선택된 시간 슬롯</h4>
                 <div className="grid grid-cols-3 gap-2">
-                  {reservationData.timeSlots.sort((a, b) => a - b).map((hour) => (
+                  {timeSlot(reservation.startTime, reservation.endTime).map((hour) => (
                     <div
-                      key={hour}
+                      key={hour.start}
                       className="p-2 bg-indigo-50 border border-indigo-200 rounded-lg text-center"
                     >
                       <span className="text-sm font-medium text-indigo-700">
-                        {hour.toString().padStart(2, "0")}:00 - {(hour + 1).toString().padStart(2, "0")}:00
+                        {hour.start} - {hour.end}
                       </span>
                     </div>
                   ))}
@@ -182,7 +289,7 @@ function PaymentContent() {
             <CardContent className="space-y-6">
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">기본 요금 ({reservationData.duration}시간)</span>
+                  <span className="text-gray-600">기본 요금 ({timeDuration(reservation.startTime, reservation.endTime)}시간)</span>
                   <span>{totalPrice.toLocaleString()}원</span>
                 </div>
                 <div className="flex justify-between">

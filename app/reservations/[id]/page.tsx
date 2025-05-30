@@ -18,102 +18,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-
-// 예약 데이터 타입
-type Reservation = {
-  id: string
-  facilityName: string
-  courtName: string
-  address: string
-  sportType: string
-  reservationDate: string
-  timeSlot: string
-  status: "대기중" | "확정" | "취소" | "완료"
-  totalPrice: string
-  paymentStatus: "결제 대기" | "결제 완료" | "환불"
-  players?: number
-  bookedBy?: string
-  bookingNumber?: string
-  paymentMethod?: string
-  cancellationPolicy?: string
-}
-
-// 더미 데이터
-const dummyReservations: Reservation[] = [
-  {
-    id: "1",
-    facilityName: "서울 테니스 센터",
-    courtName: "코트 A",
-    address: "서울시 강남구 테헤란로 123",
-    sportType: "테니스",
-    reservationDate: "2025-03-28",
-    timeSlot: "18:00 - 20:00",
-    status: "확정",
-    totalPrice: "40,000원",
-    paymentStatus: "결제 완료",
-    players: 2,
-    bookedBy: "홍길동",
-    bookingNumber: "T-20250328-001",
-    paymentMethod: "신용카드",
-    cancellationPolicy: "예약 시작 24시간 이전 취소 시 전액 환불, 이후 취소 시 환불 불가"
-  },
-  {
-    id: "2",
-    facilityName: "강남 풋살장",
-    courtName: "실내 코트 1",
-    address: "서울시 강남구 역삼동 456",
-    sportType: "풋살",
-    reservationDate: "2025-03-29",
-    timeSlot: "19:00 - 21:00",
-    status: "대기중",
-    totalPrice: "60,000원",
-    paymentStatus: "결제 대기",
-    players: 10,
-    bookedBy: "김철수",
-    bookingNumber: "F-20250329-002",
-    paymentMethod: "계좌이체",
-    cancellationPolicy: "예약 시작 48시간 이전 취소 시 전액 환불, 이후 취소 시 50% 환불"
-  },
-  {
-    id: "3",
-    facilityName: "종로 농구코트",
-    courtName: "코트 B",
-    address: "서울시 종로구 종로 789",
-    sportType: "농구",
-    reservationDate: "2025-03-15",
-    timeSlot: "14:00 - 16:00",
-    status: "완료",
-    totalPrice: "30,000원",
-    paymentStatus: "결제 완료",
-    players: 10,
-    bookedBy: "이영희",
-    bookingNumber: "B-20250315-003",
-    paymentMethod: "카카오페이",
-    cancellationPolicy: "예약 시작 24시간 이전 취소 시 전액 환불, 이후 취소 시 환불 불가"
-  },
-  {
-    id: "4",
-    facilityName: "한강 배드민턴장",
-    courtName: "코트 2",
-    address: "서울시 영등포구 여의도동 101",
-    sportType: "배드민턴",
-    reservationDate: "2025-03-10",
-    timeSlot: "20:00 - 22:00",
-    status: "취소",
-    totalPrice: "20,000원",
-    paymentStatus: "환불",
-    players: 4,
-    bookedBy: "박지민",
-    bookingNumber: "BD-20250310-004",
-    paymentMethod: "네이버페이",
-    cancellationPolicy: "예약 시작 12시간 이전 취소 시 전액 환불, 이후 취소 시 환불 불가"
-  },
-]
+import { reservationService } from "@/lib/services/reservationService"
+import { displayReservationStatus, ReservationDetail } from "@/lib/types/reservationType"
+import { ReservationStatus } from "@/lib/enum/reservationEnum"
+import { displaySportName } from "@/lib/types/matchTypes"
+import { PaymentStatus } from "@/lib/enum/paymentEnum"
+import { displayPaymentStatus } from "@/lib/types/payment"
+import { toast } from "@/hooks/use-toast"
 
 export default function ReservationDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const [reservation, setReservation] = useState<Reservation | null>(null)
+  const [reservationDetail, setreservationDetail] = useState<ReservationDetail | null>(null);
+
   const [isLoading, setIsLoading] = useState(true)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -133,22 +50,27 @@ export default function ReservationDetailPage() {
 
   useEffect(() => {
     // 실제 구현에서는 API 호출을 통해 예약 정보를 가져옴
-    const fetchReservation = () => {
+    const fetchReservation = async () => {
       if (!isLoggedIn) return // 로그인 상태가 아니면 API 호출 하지 않음
       
       setIsLoading(true)
       try {
         // API 호출 시뮬레이션
-        setTimeout(() => {
-          const foundReservation = dummyReservations.find(r => r.id === id)
-          if (foundReservation) {
-            setReservation(foundReservation)
-          }
-          setIsLoading(false)
-        }, 500)
-      } catch (error) {
+        const response = await reservationService.getReservationDetail(parseInt(id));
+        if(!response) {
+          return;
+        }
+        setreservationDetail(response);
+      } catch (error: any) {
         console.error("Error fetching reservation:", error)
-        setIsLoading(false)
+        toast({
+          title: "조회 실패",
+          description: (error.message) ? (error.message) : "결제 처리 중 오류가 발생했습니다.",
+          variant: "destructive",
+        })
+        setIsLoading(false);
+      }finally {
+        setIsLoading(false);
       }
     }
 
@@ -169,14 +91,18 @@ export default function ReservationDetailPage() {
   // 예약 취소 처리
   const handleCancelReservation = () => {
     // 실제 구현에서는 API 호출을 통해 예약을 취소
-    if (reservation) {
-      setReservation({
-        ...reservation,
-        status: "취소",
-        paymentStatus: "환불"
-      })
-    }
     setShowCancelDialog(false)
+  }
+
+  // 에약결제로 이동
+  const reservePayment = () => {
+    router.push(`/payment?reservationId=${parseInt(id)}`);
+  }
+
+  // 시간 포맷
+  const timeFormat = (time: string) => {
+    const hour = parseInt(time.split(":")[0], 10);
+    return `${hour.toString().padStart(2, '0')}:00`;
   }
 
   // 로그인이 필요한 경우 안내 메시지 표시
@@ -225,11 +151,25 @@ export default function ReservationDetailPage() {
     )
   }
 
-  if (!reservation) {
-    return notFound()
+  if(!reservationDetail) {
+    router.push('/reservations');
+    return;
   }
 
-  const canCancel = reservation.status !== "취소" && reservation.status !== "완료"
+  // 예약 취소 페이지 이동
+  const handleCancel = () => {
+    if(reservationDetail.reservationStatus === ReservationStatus.CANCELED || reservationDetail.reservationStatus === ReservationStatus.COMPLETED) {
+      toast({
+        title: "예약 취소 실패",
+        description: "이미 완료되었거나 취소된 예약입니다.",
+        variant: "destructive",
+      });
+    }
+
+    router.push(`/reservations/cancel/${reservationDetail.reservationId}?status=${reservationDetail.reservationStatus}`);
+  }
+
+  const canCancel = reservationDetail.reservationStatus !== ReservationStatus.CANCELED && reservationDetail.reservationStatus !== ReservationStatus.COMPLETED;
 
   return (
     <div className="container py-8">
@@ -248,23 +188,23 @@ export default function ReservationDetailPage() {
                 <CardTitle className="text-2xl font-bold">예약 상세 정보</CardTitle>
                 <Badge
                   className={`
-                    ${reservation.status === "확정" ? "bg-green-100 text-green-800 border-green-200" : ""}
-                    ${reservation.status === "대기중" ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
-                    ${reservation.status === "완료" ? "bg-indigo-100 text-indigo-800 border-indigo-200" : ""}
-                    ${reservation.status === "취소" ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
+                    ${reservationDetail.reservationStatus === ReservationStatus.CONFIRMED ? "bg-green-100 text-green-800 border-green-200" : ""}
+                    ${reservationDetail.reservationStatus === ReservationStatus.PENDING ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
+                    ${reservationDetail.reservationStatus === ReservationStatus.COMPLETED ? "bg-indigo-100 text-indigo-800 border-indigo-200" : ""}
+                    ${reservationDetail.reservationStatus === ReservationStatus.CANCELED ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
                   `}
                 >
-                  {reservation.status}
+                  {displayReservationStatus(reservationDetail.reservationStatus)}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="pt-2">
               <div className="mb-6">
-                <h3 className="text-xl font-bold mb-2">{reservation.facilityName}</h3>
-                <p className="text-indigo-600 mb-1">{reservation.courtName} | {reservation.sportType}</p>
+                <h3 className="text-xl font-bold mb-2">{reservationDetail.facilityName}</h3>
+                <p className="text-indigo-600 mb-1">{reservationDetail.courtName} | {displaySportName(reservationDetail.sportType)}</p>
                 <div className="flex items-center mb-1">
                   <MapPin className="h-4 w-4 text-indigo-400 mr-2" />
-                  <span className="text-gray-600">{reservation.address}</span>
+                  <span className="text-gray-600">{reservationDetail.address}</span>
                 </div>
               </div>
 
@@ -275,26 +215,22 @@ export default function ReservationDetailPage() {
                   <h4 className="text-sm font-medium text-gray-500 mb-2">예약 일시</h4>
                   <div className="flex items-center mb-1">
                     <Calendar className="h-4 w-4 text-indigo-400 mr-2" />
-                    <span>{formatDate(reservation.reservationDate)}</span>
+                    <span>{formatDate(reservationDetail.reservationDate)}</span>
                   </div>
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 text-indigo-400 mr-2" />
-                    <span>{reservation.timeSlot}</span>
+                    <span>{`${timeFormat(reservationDetail.startTime)}-${timeFormat(reservationDetail.endTime)}`}</span>
                   </div>
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-gray-500 mb-2">예약 정보</h4>
                   <div className="flex items-center mb-1">
                     <User className="h-4 w-4 text-indigo-400 mr-2" />
-                    <span>예약자: {reservation.bookedBy}</span>
+                    <span>예약자: {reservationDetail.bookedName}</span>
                   </div>
                   <div className="flex items-center mb-1">
                     <Receipt className="h-4 w-4 text-indigo-400 mr-2" />
-                    <span>예약 번호: {reservation.bookingNumber}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <User className="h-4 w-4 text-indigo-400 mr-2" />
-                    <span>인원: {reservation.players}명</span>
+                    <span>예약 번호: {reservationDetail.reservationNumber}</span>
                   </div>
                 </div>
               </div>
@@ -307,23 +243,49 @@ export default function ReservationDetailPage() {
                   <div>
                     <div className="flex items-center mb-1">
                       <CreditCard className="h-4 w-4 text-indigo-400 mr-2" />
-                      <span>결제 금액: {reservation.totalPrice}</span>
+                      <span>결제 금액: {reservationDetail.totalPrice.toLocaleString()}원</span>
                     </div>
-                    <div className="flex items-center">
-                      <CreditCard className="h-4 w-4 text-indigo-400 mr-2" />
-                      <span>결제 방법: {reservation.paymentMethod}</span>
-                    </div>
+
+                    {(reservationDetail.reservationStatus !== ReservationStatus.PENDING && reservationDetail.paymentStatus === PaymentStatus.PAID)
+                    && 
+                    (
+                      <div className="flex items-center">
+                        <CreditCard className="h-4 w-4 text-indigo-400 mr-2" />
+                        <span>결제 방법: {reservationDetail.paymentMethod}</span>
+                      </div>
+                    )}
+
+                    {
+                      (reservationDetail.reservationStatus === ReservationStatus.CANCELED) && 
+                      (
+                        <>
+                          {(reservationDetail.refundPayment) && (
+                            <div className="flex items-center">
+                              <CreditCard className="h-4 w-4 text-indigo-400 mr-2" />
+                              <span>취소 금액: {reservationDetail.refundPayment.toLocaleString()}원</span>
+                            </div>
+                          )}
+                          <div className="flex items-center">
+                            <CreditCard className="h-4 w-4 text-indigo-400 mr-2" />
+                            <span>취소 사유: {reservationDetail.cancelReason}</span>
+                          </div>
+                        </>
+                      )
+                    }
+                    
                   </div>
                   <div>
                     <div className="flex items-center">
                       <Badge
                         className={`
-                          ${reservation.paymentStatus === "결제 완료" ? "bg-green-100 text-green-800 border-green-200" : ""}
-                          ${reservation.paymentStatus === "결제 대기" ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
-                          ${reservation.paymentStatus === "환불" ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
+                          ${reservationDetail.paymentStatus === PaymentStatus.PAID ? "bg-green-100 text-green-800 border-green-200" : ""}
+                          ${(reservationDetail.reservationStatus === ReservationStatus.PENDING) ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
+                          ${(reservationDetail.reservationStatus === ReservationStatus.CANCELED || reservationDetail.paymentStatus === PaymentStatus.PARTIAL_CANCELED) ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
                         `}
                       >
-                        {reservation.paymentStatus}
+                        { (reservationDetail.reservationStatus === ReservationStatus.CANCELED) ? 
+                          "결제취소" : (displayPaymentStatus(reservationDetail.paymentStatus))
+                        }
                       </Badge>
                     </div>
                   </div>
@@ -334,7 +296,11 @@ export default function ReservationDetailPage() {
 
               <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-2">취소 정책</h4>
-                <p className="text-gray-600 text-sm">{reservation.cancellationPolicy}</p>
+                <p className="text-gray-600 text-sm">
+                  • 예약 시작 48시간 전까지 취소: 전액 환불<br/>
+                  • 예약 시작 24시간 ~ 48시간 전 사이 취소: 50% 환불<br/>
+                  • 예약 시작 24시간 이내 취소: 환불 불가<br/>
+                  </p>
               </div>
             </CardContent>
           </Card>
@@ -346,26 +312,37 @@ export default function ReservationDetailPage() {
               <CardTitle className="text-xl font-bold">예약 관리</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+
+              {(reservationDetail.reservationStatus === ReservationStatus.PENDING) && (
+                <Button 
+                  variant="destructive" 
+                  className="w-full bg-indigo-600 hover:bg-indigo-700"
+                  onClick={() => reservePayment()}
+                >
+                  예약 결제
+                </Button>
+              )}
+
               {canCancel && (
                 <Button 
                   variant="destructive" 
                   className="w-full bg-red-600 hover:bg-red-700"
-                  onClick={() => setShowCancelDialog(true)}
+                  onClick={handleCancel}
                 >
                   예약 취소
                 </Button>
               )}
               
               <Button asChild variant="outline" className="w-full border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300">
-                <Link href={`/facilities/${reservation.id}`}>시설 정보 보기</Link>
+                <Link href={`/facilities/${reservationDetail.facilityId}`}>시설 정보 보기</Link>
               </Button>
               
-              {reservation.status === "완료" && (
+              {reservationDetail.reservationStatus === ReservationStatus.COMPLETED && (
                 <Button 
                   asChild 
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
                 >
-                  <Link href={`/facilities/${reservation.id}/review`}>리뷰 작성</Link>
+                  <Link href={`/facilities/${reservationDetail.reservationId}/review`}>리뷰 작성</Link>
                 </Button>
               )}
             </CardContent>
