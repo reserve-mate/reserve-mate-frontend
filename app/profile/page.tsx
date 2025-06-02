@@ -13,6 +13,7 @@ import { toast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Image from "next/image"
 import { userService } from "@/lib/services/userService"
+import Link from "next/link"
 
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false)
