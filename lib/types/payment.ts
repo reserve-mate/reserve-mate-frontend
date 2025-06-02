@@ -34,6 +34,7 @@ export interface PaymentHistory {
     amount: number;
     status: PaymentStatus;
     paymentMethod: string;
+    type: 'MATCH' | 'FACILITY';
     matchName?: string;
     facilityName?: string;
     reservationDate?: string;
