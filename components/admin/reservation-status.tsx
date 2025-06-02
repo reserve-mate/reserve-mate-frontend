@@ -46,17 +46,17 @@ import { PaymentStatus } from "@/lib/enum/paymentEnum"
 
 // 예약 상태 유형
 const reservationStatuses = [
-  { value: "PENDING", label: "대기중", color: "bg-amber-50 text-amber-600 border-amber-200" },
-  { value: "CONFIRMED", label: "확정", color: "bg-green-100 text-green-800 border-green-200" },
-  { value: "CANCELED", label: "취소됨", color: "bg-gray-50 text-gray-600 border-gray-200" },
-  { value: "COMPLETED", label: "완료", color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
+  { value: "PENDING", label: "대기중", color: "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 hover:text-amber-700" },
+  { value: "CONFIRMED", label: "확정", color: "bg-green-100 text-green-800 border-green-200 hover:bg-green-200 hover:text-green-900" },
+  { value: "CANCELED", label: "취소됨", color: "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-700" },
+  { value: "COMPLETED", label: "완료", color: "bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100 hover:text-indigo-700" },
 ]
 
 // 결제 상태 유형
 const paymentStatuses = [
-  { value: "PENDING", label: "결제 대기", color: "bg-gray-100 text-gray-800 border-gray-200" },
-  { value: "PAID", label: "결제 완료", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
-  { value: "REFUNDED", label: "환불", color: "bg-purple-50 text-purple-600 border-purple-200" },
+  { value: "PENDING", label: "결제 대기", color: "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200 hover:text-gray-900" },
+  { value: "PAID", label: "결제 완료", color: "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-700" },
+  { value: "REFUNDED", label: "환불", color: "bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100 hover:text-purple-700" },
 ]
 
 // 예약 타입 정의
@@ -389,6 +389,11 @@ export default function ReservationStatus() {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <div className="flex justify-between">
+                      <div className="text-sm font-medium">예약 번호</div>
+                      <div className="text-sm">{reservationDetail.reservationNumber}</div>
+                    </div>
+
+                    <div className="flex justify-between">
                       <div className="text-sm text-gray-500">예약 상태</div>
                       <Badge className={getStatusBadgeStyle(reservationDetail.reservationStatus)}>
                         {getStatusLabel(reservationDetail.reservationStatus)}
@@ -419,13 +424,13 @@ export default function ReservationStatus() {
                   <div className="space-y-2">
                     <div className="text-sm font-medium">예약 정보</div>
                     <div className="text-sm">
-                      {format(new Date(reservationDetail.reservationDate), 'PPP', { locale: ko })}
+                      예약날짜: {format(new Date(reservationDetail.reservationDate), 'PPP', { locale: ko })}
                     </div>
                     <div className="text-sm">
-                      {timeFormat(reservationDetail.startTime)}-{timeFormat(reservationDetail.endTime)}
+                      예약시간: {timeFormat(reservationDetail.startTime)}-{timeFormat(reservationDetail.endTime)}
                     </div>
                     <div className="text-sm">
-                      {reservationDetail.totalPrice.toLocaleString()}원
+                      가격: {reservationDetail.totalPrice.toLocaleString()}원
                     </div>
                   </div>
                   

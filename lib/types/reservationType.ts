@@ -6,6 +6,7 @@ import { ReservationStatus } from "../enum/reservationEnum";
 export interface AdminReservationDetail {
     reservationId: number;
     reservationStatus: ReservationStatus;
+    reservationNumber: string
     userName: string;
     facilityName: string;
     courtName: string;
