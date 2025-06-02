@@ -26,6 +26,21 @@ interface CancelResponse extends PaymentResponse {
     cancelReason: string;
 }
 
+// 결제내역 조회용 인터페이스
+export interface PaymentHistory {
+    id: number;
+    orderId: string;
+    paymentKey: string;
+    amount: number;
+    status: PaymentStatus;
+    paymentMethod: string;
+    matchName?: string;
+    facilityName?: string;
+    reservationDate?: string;
+    createdAt: string;
+    cancelReason?: string;
+}
+
 export const displayPaymentStatus = (status: PaymentStatus) => {
     let paymentStatus = "";
     

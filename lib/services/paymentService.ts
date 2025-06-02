@@ -1,6 +1,13 @@
 import { api } from '../api';
-import { Payment, ReservationPayment } from '../types/commonTypes';
-import { PaymentResultResponse } from '../types/payment';
+import { Payment, ReservationPayment, Slice } from '../types/commonTypes';
+import { PaymentResultResponse, PaymentHistory } from '../types/payment';
+
+// 환불 신청 인터페이스
+export interface RefundRequest {
+    paymentId: number;
+    reason: string;
+    refundAmount?: number;
+}
 
 export const paymentService = {
     // 예약 결제 승인
@@ -22,5 +29,20 @@ export const paymentService = {
     // 결제 취소 상태 확인
     checkCancelStatus: (refundId: string) => {
         return api.get<PaymentResultResponse>(`/payment/cancelStatus?orderId=${refundId}`);
+    },
+
+    // 결제내역 조회
+    getPaymentHistory: (page: number = 0, size: number = 10) => {
+        return api.get<Slice<PaymentHistory>>(`/payment/history?page=${page}&size=${size}`);
+    },
+
+    // 환불 신청
+    requestRefund: (params: RefundRequest) => {
+        return api.post<PaymentResultResponse>('/payment/refund', params);
+    },
+
+    // 결제 상세 조회
+    getPaymentDetail: (paymentId: number) => {
+        return api.get<PaymentHistory>(`/payment/${paymentId}`);
     }
 }
