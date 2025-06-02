@@ -43,6 +43,7 @@ import { facilityService } from "@/lib/services/facilityService"
 import { timeFormat } from "@/lib/types/commonTypes"
 import { displayPaymentStatus } from "@/lib/types/payment"
 import { PaymentStatus } from "@/lib/enum/paymentEnum"
+import { ReservationStatus } from "@/lib/enum/reservationEnum"
 
 // 예약 상태 유형
 const reservationStatuses = [
@@ -77,7 +78,7 @@ type Reservation = {
   createdAt: string
 }
 
-export default function ReservationStatus() {
+export default function AdminReservationStatus() {
   const [isLoading, setIsLoading] = useState(false)
   const [reservations, setReservations] = useState<Reservation[]>([])
   
@@ -245,27 +246,43 @@ export default function ReservationStatus() {
   }
   
   // 예약 상태 변경
-  const updateReservationStatus = (id: string, status: "CONFIRMED" | "CANCELED" | "COMPLETED") => {
+  const updateReservationStatus = (id: string, status: ReservationStatus) => {
     setIsLoading(true)
-    
     // 실제로는 API 호출
-    setTimeout(() => {
-      setReservations(prev => 
-        prev.map(reservation => 
-          reservation.id === id
-            ? { ...reservation, status }
-            : reservation
+    setTimeout(async  () => {
+      try {
+        await reservationService.chgReservationStatus({
+          id: parseInt(id),
+          status: status
+        })
+        setAdminReservations(prev => 
+          prev.map(reservation => 
+            reservation.reservationId === parseInt(id)
+              ? { ...reservation, reservationStatus: status }
+              : reservation
+          )
         )
-      )
+        
+        setIsDetailsDialogOpen(false)
+        
+        toast({
+          title: "예약 상태 변경 완료",
+          description: `예약이 ${getStatusLabel(status)}(으)로 변경되었습니다.`
+        })
+      }catch(error: any) {
+        let errorMsg = `${getStatusLabel(status)} 변경 처리 중 에러가 발생하였습니다.`;
+        if(errorMsg) {
+          errorMsg = error.message;
+        }
+        toast({
+          title: "예약 상태 변경 실패",
+          description: errorMsg,
+          variant: "destructive"
+        })
+      } finally {
+        setIsLoading(false)
+      }
       
-      setIsDetailsDialogOpen(false)
-      
-      toast({
-        title: "예약 상태 변경 완료",
-        description: `예약이 ${getStatusLabel(status)}(으)로 변경되었습니다.`
-      })
-      
-      setIsLoading(false)
     }, 500)
   }
   
@@ -412,13 +429,15 @@ export default function ReservationStatus() {
                   
                   <div className="space-y-2">
                     <div className="text-sm font-medium">고객 정보</div>
-                    <div className="text-sm">{reservationDetail.userName}</div>
+                    <div className="text-sm">이름: {reservationDetail.userName}</div>
+                    <div className="text-sm">계정: {reservationDetail.userEmail}</div>
+                    <div className="text-sm">전화번호: {reservationDetail.phone}</div>
                   </div>
                   
                   <div className="space-y-2">
                     <div className="text-sm font-medium">시설 정보</div>
-                    <div className="text-sm">{reservationDetail.facilityName}</div>
-                    <div className="text-sm">{reservationDetail.courtName}</div>
+                    <div className="text-sm">시설: {reservationDetail.facilityName}</div>
+                    <div className="text-sm">코트: {reservationDetail.courtName}</div>
                   </div>
                   
                   <div className="space-y-2">
@@ -479,7 +498,7 @@ export default function ReservationStatus() {
                   <>
                     <Button
                       className="bg-green-600 hover:bg-green-700 text-white"
-                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CONFIRMED")}
+                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CONFIRMED" as ReservationStatus)}
                       disabled={isLoading}
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
@@ -487,7 +506,7 @@ export default function ReservationStatus() {
                     </Button>
                     <Button
                       className="bg-red-600 hover:bg-red-700 text-white"
-                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CANCELED")}
+                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CANCELED" as ReservationStatus)}
                       disabled={isLoading}
                     >
                       <XCircle className="h-4 w-4 mr-2" />
@@ -500,7 +519,7 @@ export default function ReservationStatus() {
                   <>
                     <Button
                       className="bg-blue-600 hover:bg-blue-700 text-white"
-                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "COMPLETED")}
+                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "COMPLETED" as ReservationStatus)}
                       disabled={isLoading}
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
@@ -508,7 +527,7 @@ export default function ReservationStatus() {
                     </Button>
                     <Button
                       className="bg-red-600 hover:bg-red-700 text-white"
-                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CANCELED")}
+                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CANCELED" as ReservationStatus)}
                       disabled={isLoading}
                     >
                       <XCircle className="h-4 w-4 mr-2" />

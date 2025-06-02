@@ -8,6 +8,8 @@ export interface AdminReservationDetail {
     reservationStatus: ReservationStatus;
     reservationNumber: string
     userName: string;
+    userEmail: string;
+    phone: string;
     facilityName: string;
     courtName: string;
     reservationDate: string;

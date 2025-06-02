@@ -256,10 +256,10 @@ export default function AdminDashboardPage() {
                       <Badge
                         className={`
                           whitespace-nowrap text-xs px-2 py-1
-                          ${reservation.reservationStatus === ReservationStatus.COMPLETED ? "bg-indigo-100 text-indigo-800" : ""}
-                          ${reservation.reservationStatus === ReservationStatus.PENDING ? "bg-yellow-100 text-yellow-800" : ""}
-                          ${reservation.reservationStatus === ReservationStatus.CANCELED ? "bg-gray-100 text-gray-800" : ""}
-                          ${reservation.reservationStatus === ReservationStatus.CONFIRMED ? "bg-green-100 text-green-800" : ""}
+                          ${reservation.reservationStatus === ReservationStatus.COMPLETED ? "bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-200 hover:text-indigo-900 hover:border-indigo-300" : ""}
+                          ${reservation.reservationStatus === ReservationStatus.PENDING ? "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200 hover:text-yellow-900 hover:border-yellow-300" : ""}
+                          ${reservation.reservationStatus === ReservationStatus.CANCELED ? "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200 hover:text-gray-900 hover:border-gray-300" : ""}
+                          ${reservation.reservationStatus === ReservationStatus.CONFIRMED ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200 hover:text-green-900 hover:border-green-300" : ""}
                         `}
                       >
                         {displayReservationStatus(reservation.reservationStatus)}
