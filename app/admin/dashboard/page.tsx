@@ -12,10 +12,23 @@ import { ReservationStatus } from "@/lib/enum/reservationEnum"
 import { useRouter } from "next/navigation"
 import { paymentService } from "@/lib/services/paymentService"
 import { matchPlayerService } from "@/lib/services/matchplayerService"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FacilityNames } from "@/lib/types/facilityTypes"
+import { timeFormat } from "@/lib/types/commonTypes"
+import { facilityService } from "@/lib/services/facilityService"
 
 export default function AdminDashboardPage() {
 
   const router = useRouter();
+
+  const cuurentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+
+  const [year, setYear] = useState<string>(cuurentYear.toString());
+  const [month, setMonth] = useState<string>(currentMonth.toString().padStart(2, '0')); // 월
+  const [facilityNames, setFacilityNames] = useState<FacilityNames[]>([]);
+  const [selectFacility, setSelectFacility] = useState<string>("all");
 
   const [reservaions, setReservations] = useState<DashboardReservation[]>([]);  // 최근 예약
   const [totalRevenues, setTotalRevenues] = useState<number>(0);  // 총 매출
@@ -23,11 +36,30 @@ export default function AdminDashboardPage() {
   const [totalPlayerCnt, setTotalPlayerCnt] = useState<number>(0); // 매치 총 이용자 수
   const [loading, setLoading] = useState(false);
 
+  // 시설명 조회
+  useEffect(() => {
+    // 시설명 조회 api
+    const fetchGetFacilities = async () => {
+      try {
+        const response = await facilityService.getMatchFacilityNames(undefined);
+        setFacilityNames(response);
+      } catch (error) {
+        setFacilityNames([])
+      }
+    }
+
+    fetchGetFacilities();
+  }, [])
+
   // 대시보드 매치 총 이용자 수
   useEffect(() => {
     const getAdminMatchPlayerCount = async () => {
       try {
-        const response = await matchPlayerService.getAdminMatchPlayerCount();
+        const response = await matchPlayerService.getAdminMatchPlayerCount({
+          facilityId: isNaN(parseInt(selectFacility)) ? 0 : parseInt(selectFacility),
+          year: parseInt(year),
+          month: parseInt(month)
+        });
         setTotalPlayerCnt(response);
       } catch (error: any) {
         setTotalPlayerCnt(0);
@@ -35,13 +67,17 @@ export default function AdminDashboardPage() {
     }
 
     getAdminMatchPlayerCount();
-  }, [])
+  }, [selectFacility, year, month])
 
   // 대시보드 총 예약 수
   useEffect(() => {
     const getAdminTotalReservation = async () => {
       try {
-        const response = await reservationService.getAdminTotalReservation();
+        const response = await reservationService.getAdminTotalReservation({
+          facilityId: isNaN(parseInt(selectFacility)) ? 0 : parseInt(selectFacility),
+          year: parseInt(year),
+          month: parseInt(month)
+        });
         setTotalReservation(response);
       } catch (error: any) {
         setTotalReservation(0);
@@ -49,13 +85,17 @@ export default function AdminDashboardPage() {
     }
 
     getAdminTotalReservation();
-  }, []);
+  }, [selectFacility, year, month]);
 
   // 대시보드 총 매출
   useEffect(() => {
     const getTotalRevenues = async () => {
       try{
-        const response = await paymentService.getTotalRevenues();
+        const response = await paymentService.getTotalRevenues({
+          facilityId: isNaN(parseInt(selectFacility)) ? 0 : parseInt(selectFacility),
+          year: parseInt(year),
+          month: parseInt(month)
+        });
         setTotalRevenues(response);
       }catch(error: any) {
         setTotalRevenues(0);
@@ -63,7 +103,7 @@ export default function AdminDashboardPage() {
     }
 
     getTotalRevenues();
-  }, [])
+  }, [selectFacility, year, month])
 
   // 대시보드 최근예약
   useEffect(() => {
@@ -74,10 +114,15 @@ export default function AdminDashboardPage() {
     // 관리자 대시보드 최근예약
     const getDashboardReservations = async () => {
       try{
-        const response = await reservationService.getDashboardReservations();
+        const response = await reservationService.getDashboardReservations({
+          facilityId: isNaN(parseInt(selectFacility)) ? 0 : parseInt(selectFacility),
+          year: parseInt(year),
+          month: parseInt(month)
+        });
         setReservations(response);
       }catch(error: any) {
         console.log(error)
+        setReservations([])
       }finally {
         setLoading(false);
       }
@@ -85,7 +130,7 @@ export default function AdminDashboardPage() {
 
     getDashboardReservations();
 
-  }, []);
+  }, [selectFacility, year, month]);
 
   // 더미 데이터
   const stats = {
@@ -210,7 +255,80 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="animate-in fade-in duration-500">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6">관리자 대시보드</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold mb-0 sm:mb-0">관리자 대시보드</h1>
+
+        <div className="flex flex-col">
+            <Select
+              value={selectFacility}
+              onValueChange={setSelectFacility}
+            >
+              <SelectTrigger id="dateRange" className="mt-1 h-9 sm:h-10 text-sm sm:text-base min-w-[9rem] w-36 truncate">
+                <SelectValue 
+                  placeholder="시설 선택" 
+                  className="truncate whitespace-nowrap overflow-hidden"/>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">모든 시설</SelectItem>
+                {facilityNames.length > 0 ? facilityNames.map((facility) => (
+                  <SelectItem key={facility.facilityId} value={String(facility.facilityId)} className="text-sm sm:text-base truncate">
+                    {facility.facilityName}
+                  </SelectItem>
+                )) : "아직 등록된 시설이 없습니다."}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col">
+            <Select
+              value={year}
+              onValueChange={(value) => setYear(value)}
+            >
+              <SelectTrigger id="year" className="mt-1 h-9 sm:h-10 text-sm sm:text-base min-w-[8rem]">
+                <SelectValue placeholder="연도를 선택하세요" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 5 }, (_, i) => {
+                  const y = new Date().getFullYear() - i; // 최근 연도부터 과거로 10개
+                  return (
+                    <SelectItem
+                      key={y}
+                      value={String(y)}
+                      className="text-sm sm:text-base"
+                    >
+                      {y}년
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col">
+            <Select
+              value={month}
+              onValueChange={(value) => setMonth(value)}
+            >
+              <SelectTrigger id="month" className="mt-1 h-9 sm:h-10 text-sm sm:text-base min-w-[8rem]">
+                <SelectValue placeholder="월을 선택하세요" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 12 }, (_, i) => {
+                  const month = i + 1;
+                  return (
+                    <SelectItem
+                      key={month}
+                      value={String(month).padStart(2, '0')}
+                      className="text-sm sm:text-base"
+                    >
+                      {month}월
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+      </div>
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
@@ -298,7 +416,7 @@ export default function AdminDashboardPage() {
                     <TableCell>{reservation.userName}</TableCell>
                     <TableCell className="hidden md:table-cell">{reservation.facilityName}</TableCell>
                     <TableCell className="hidden md:table-cell">{reservation.reserveDate}</TableCell>
-                    <TableCell className="hidden md:table-cell">{`${reservation.startTime}-${reservation.endTime}`}</TableCell>
+                    <TableCell className="hidden md:table-cell">{`${timeFormat(reservation.startTime)}-${timeFormat(reservation.endTime)}`}</TableCell>
                     <TableCell>
                       <Badge
                         className={`

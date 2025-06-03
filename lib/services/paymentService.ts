@@ -12,8 +12,8 @@ export interface RefundRequest {
 export const paymentService = {
 
     // 관리자 대시보드 총 매출
-    getTotalRevenues: () => {
-        let endPoint = `/admin/payment/getTotalRevenues`;
+    getTotalRevenues: (params: {facilityId: number, year: number, month: number}) => {
+        let endPoint = `/admin/payment/getTotalRevenues?facilityId=${params.facilityId}&year=${params.year}&month=${params.month}`;
         return api.get<number>(endPoint);
     },
 

@@ -6,8 +6,8 @@ import { AdminReservationDetail, AdminReservationResponse, DashboardReservation,
 export const reservationService = {
 
     // 관리자 대시보드 총 에약 수
-    getAdminTotalReservation: () => {
-        let endPoint = `/admin/reservation/getAdminTotalReservation`;
+    getAdminTotalReservation: (params: {facilityId: number, year: number, month: number}) => {
+        let endPoint = `/admin/reservation/getAdminTotalReservation?facilityId=${params.facilityId}&year=${params.year}&month=${params.month}`;
         return api.get<number>(endPoint);
     },
 
@@ -30,8 +30,8 @@ export const reservationService = {
     },
 
     // 관리자 대시보드 최근예약
-    getDashboardReservations: () => {
-        return api.get<DashboardReservation[]>(`/admin/reservation/dashboardReservations`);
+    getDashboardReservations: (params: {facilityId: number, year: number, month: number}) => {
+        return api.get<DashboardReservation[]>(`/admin/reservation/dashboardReservations?facilityId=${params.facilityId}&year=${params.year}&month=${params.month}`);
     },
 
     // 예약 취소

@@ -5,8 +5,8 @@ import { PlayerEject } from '../types/matchTypes';
 export const matchPlayerService = {
 
     // 대시보드 매치 총 이용자 수
-    getAdminMatchPlayerCount: () => {
-        let endPoint = `/admin/player/getAdminMatchPlayerCount`;
+    getAdminMatchPlayerCount: (params: {facilityId: number, year: number, month: number}) => {
+        let endPoint = `/admin/player/getAdminMatchPlayerCount?facilityId=${params.facilityId}&year=${params.year}&month=${params.month}`;
         return api.get<number>(endPoint);
     },
 
