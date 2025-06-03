@@ -10,6 +10,13 @@ export interface RefundRequest {
 }
 
 export const paymentService = {
+
+    // 관리자 대시보드 총 매출
+    getTotalRevenues: () => {
+        let endPoint = `/admin/payment/getTotalRevenues`;
+        return api.get<number>(endPoint);
+    },
+
     // 예약 결제 승인
     reservationPayment: (params: ReservationPayment) => {
         let endPoint = '/payment/reservationApprove';

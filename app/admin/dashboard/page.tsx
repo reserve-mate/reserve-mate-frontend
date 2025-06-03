@@ -10,13 +10,29 @@ import { DashboardReservation, displayReservationStatus } from "@/lib/types/rese
 import { reservationService } from "@/lib/services/reservationService"
 import { ReservationStatus } from "@/lib/enum/reservationEnum"
 import { useRouter } from "next/navigation"
+import { paymentService } from "@/lib/services/paymentService"
 
 export default function AdminDashboardPage() {
 
   const router = useRouter();
 
   const [reservaions, setReservations] = useState<DashboardReservation[]>([]);
+  const [totalRevenues, setTotalRevenues] = useState<number>(0);
   const [loading, setLoading] = useState(false);
+
+  // 대시보드 총 매출
+  useEffect(() => {
+    const getTotalRevenues = async () => {
+      try{
+        const response = await paymentService.getTotalRevenues();
+        setTotalRevenues(response);
+      }catch(error: any) {
+        setTotalRevenues(0);
+      }
+    }
+
+    getTotalRevenues();
+  }, [])
 
   // 대시보드 최근예약
   useEffect(() => {
@@ -166,7 +182,7 @@ export default function AdminDashboardPage() {
       <h1 className="text-2xl md:text-3xl font-bold mb-6">관리자 대시보드</h1>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
         <Card className="overflow-hidden border-t-4 border-t-blue-500 shadow-sm hover:shadow transition-shadow">
           <CardContent className="p-4 md:p-6 flex items-center justify-between">
             <div>
@@ -179,26 +195,14 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden border-t-4 border-t-green-500 shadow-sm hover:shadow transition-shadow">
-          <CardContent className="p-4 md:p-6 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">활성 사용자</p>
-              <p className="text-2xl md:text-3xl font-bold mt-1">{stats.activeUsers}</p>
-            </div>
-            <div className="p-3 rounded-full bg-green-100 text-green-600">
-              <Users className="h-5 w-5 md:h-6 md:w-6" />
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="overflow-hidden border-t-4 border-t-yellow-500 shadow-sm hover:shadow transition-shadow">
           <CardContent className="p-4 md:p-6 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">총 매출</p>
-              <p className="text-xl md:text-2xl font-bold mt-1 whitespace-nowrap">{stats.totalRevenue}</p>
+              <p className="text-xl md:text-2xl font-bold mt-1 whitespace-nowrap">{totalRevenues.toLocaleString()}</p>
             </div>
             <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
-              <DollarSign className="h-5 w-5 md:h-6 md:w-6" />
+              <span className="h-5 w-5 md:h-6 md:w-6 flex items-center justify-center">₩</span>
             </div>
           </CardContent>
         </Card>
