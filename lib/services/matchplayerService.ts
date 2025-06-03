@@ -4,6 +4,13 @@ import { PlayerEject } from '../types/matchTypes';
 
 export const matchPlayerService = {
 
+    // 대시보드 매치 총 이용자 수
+    getAdminMatchPlayerCount: () => {
+        let endPoint = `/admin/player/getAdminMatchPlayerCount`;
+        return api.get<number>(endPoint);
+    },
+
+    // 참가자 퇴장
     ejectPlayer: (params: {playerId: number, ejectRequest: RemovalReason, facilityId: number}) => {
         const ejectRequest: PlayerEject = {
             ejectionReason: params.ejectRequest,

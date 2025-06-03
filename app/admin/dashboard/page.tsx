@@ -11,6 +11,7 @@ import { reservationService } from "@/lib/services/reservationService"
 import { ReservationStatus } from "@/lib/enum/reservationEnum"
 import { useRouter } from "next/navigation"
 import { paymentService } from "@/lib/services/paymentService"
+import { matchPlayerService } from "@/lib/services/matchplayerService"
 
 export default function AdminDashboardPage() {
 
@@ -18,8 +19,23 @@ export default function AdminDashboardPage() {
 
   const [reservaions, setReservations] = useState<DashboardReservation[]>([]);  // 최근 예약
   const [totalRevenues, setTotalRevenues] = useState<number>(0);  // 총 매출
-  const [totalReservation, setTotalReservation] = useState<number>(0);
+  const [totalReservation, setTotalReservation] = useState<number>(0);  // 총 예약 수
+  const [totalPlayerCnt, setTotalPlayerCnt] = useState<number>(0); // 매치 총 이용자 수
   const [loading, setLoading] = useState(false);
+
+  // 대시보드 매치 총 이용자 수
+  useEffect(() => {
+    const getAdminMatchPlayerCount = async () => {
+      try {
+        const response = await matchPlayerService.getAdminMatchPlayerCount();
+        setTotalPlayerCnt(response);
+      } catch (error: any) {
+        setTotalPlayerCnt(0);
+      }
+    }
+
+    getAdminMatchPlayerCount();
+  }, [])
 
   // 대시보드 총 예약 수
   useEffect(() => {
@@ -197,7 +213,7 @@ export default function AdminDashboardPage() {
       <h1 className="text-2xl md:text-3xl font-bold mb-6">관리자 대시보드</h1>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
         <Card className="overflow-hidden border-t-4 border-t-blue-500 shadow-sm hover:shadow transition-shadow">
           <CardContent className="p-4 md:p-6 flex items-center justify-between">
             <div>
@@ -206,6 +222,18 @@ export default function AdminDashboardPage() {
             </div>
             <div className="p-3 rounded-full bg-blue-100 text-blue-600">
               <Calendar className="h-5 w-5 md:h-6 md:w-6" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden border-t-4 border-t-green-500 shadow-sm hover:shadow transition-shadow">
+          <CardContent className="p-4 md:p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">매치 총 이용자 수</p>
+              <p className="text-2xl md:text-3xl font-bold mt-1">{totalPlayerCnt}</p>
+            </div>
+            <div className="p-3 rounded-full bg-green-100 text-green-600">
+              <Users className="h-5 w-5 md:h-6 md:w-6" />
             </div>
           </CardContent>
         </Card>
