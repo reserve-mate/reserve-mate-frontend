@@ -96,6 +96,7 @@ type Court = {
   width: string;
   height: string;
   isActive: boolean;
+  fee: string;
 }
 
 // 주소 타입 정의
@@ -232,6 +233,7 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
     subType: "",
     width: "",
     height: "",
+    fee: "",
     isActive: true
   })
   
@@ -276,8 +278,8 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
   const handleCourtInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target
-    setCourtFormData(prev => ({ ...prev, [name]: value }))
+    const { name, value, type } = e.target
+    setCourtFormData(prev => ({ ...prev, [name] : value, }))
   }
 
   // 코트 셀렉트 변경 처리 
@@ -289,7 +291,7 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
   const handleAddCourt = () => {
     // 필수 필드 체크
     if (!courtFormData.name || !courtFormData.mainType || !courtFormData.subType || !courtFormData.width || 
-        !courtFormData.height) {
+        !courtFormData.height || !courtFormData.fee) {
       toast({
         title: "입력 오류",
         description: "코트 이름, 대분류, 소분류, 가로/세로 길이는 필수 입력 항목입니다.",
@@ -298,6 +300,26 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
       return
     }
 
+    // fee 유효성 검사
+    const fee = parseInt(courtFormData.fee,10); 
+    if (isNaN(fee)){
+      toast({
+        title: "입력오류",
+        description: "숫자로 요금을 입력해주세요.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (fee < 0){
+      toast({
+        title: "입력 오류",
+        description: "요금은 0 이상이어야 합니다.",
+        variant: "destructive"
+      })
+      return
+    }
+    
     if (editingCourt) {
       // 기존 코트 수정
       setCourts(prev => 
@@ -323,6 +345,7 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
       subType: "",
       width: "",
       height: "",
+      fee: "",
       isActive: true
     })
 
@@ -399,6 +422,7 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
         height: parseInt(court.height),
         indoor: court.mainType === "INDOOR",
         active: court.isActive,
+        fee: parseInt(court.fee)
       }));
 
       // 변환된 데이터 형식으로 전달
@@ -700,7 +724,9 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                       className="h-12 text-base"
                     />
                   </div>
-                  
+                </div>
+                
+                <div className="grid gap-6 md:grid-cols-3 mt-6">
                   <div className="space-y-4">
                     <Label htmlFor="courtMainType" className="text-base">코트 대분류 *</Label>
                     <Select 
@@ -719,9 +745,6 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-                
-                <div className="grid gap-6 md:grid-cols-3 mt-6">
                   <div className="space-y-4">
                     <Label htmlFor="courtSubType" className="text-base">코트 소분류 *</Label>
                     <Select 
@@ -749,7 +772,9 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                       </p>
                     )}
                   </div>
-                  
+                </div>
+
+                <div className="mt-6 flex items-center space-x-3">
                   <div className="space-y-4">
                     <Label htmlFor="courtWidth" className="text-base">가로 길이 (m) *</Label>
                     <Input
@@ -775,8 +800,20 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                       className="h-12 text-base"
                     />
                   </div>
+                  <div className="space-y-4">
+                    <Label htmlFor="courtName" className="text-base">시간당 요금 *</Label>
+                    <Input
+                      type="number"
+                      id="courtFee"
+                      name="fee"
+                      value={courtFormData.fee}
+                      onChange={handleCourtInputChange}
+                      placeholder="예: 10000"
+                      className="h-12 text-base"
+                      min={0} //음수 방지
+                    />
+                  </div>
                 </div>
-                
                 <div className="mt-6 flex items-center space-x-3">
                   <Checkbox 
                     id="courtIsActive" 
@@ -818,7 +855,7 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                               <p className="text-sm text-gray-500 mt-1">
                                 {court.mainType} | {court.subType} | 
                                 {" "}{parseInt(court.width).toLocaleString()}m × {parseInt(court.height).toLocaleString()}m | 
-                                상태: {court.isActive ? "활성화" : "비활성화"}
+                                상태: {court.isActive ? "활성화" : "비활성화"} | 시간당 요금: {court.fee} 원
                               </p>
                             </div>
                             <div className="flex space-x-2 self-end md:self-start">

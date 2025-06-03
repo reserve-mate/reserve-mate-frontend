@@ -20,3 +20,10 @@ export interface FacilityManagerName {
     managerName: string;
     managerEmail: string;
 }
+
+export interface operatingHours {
+    dayOfWeek: string;
+    openTime: string | null;
+    closeTime: string | null;
+    holiday: boolean;
+}

@@ -38,6 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { facilityService } from "@/lib/services/facilityService"
 
 // 코트 대분류 유형
 const courtMainTypes = [
@@ -153,12 +154,12 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
   
   // 가상의 시설 데이터 로드 (실제로는 API 호출)
   useEffect(() => {
-    const dummyFacilities = [
-      { id: "1", name: "서울 테니스 센터", sportType: "TENNIS" },
-      { id: "2", name: "강남 풋살장", sportType: "FUTSAL" },
-      { id: "3", name: "종로 농구코트", sportType: "BASKETBALL" },
-    ]
-    setFacilities(dummyFacilities)
+    // const dummyFacilities = [
+    //   { id: "1", name: "서울 테니스 센터", sportType: "TENNIS" },
+    //   { id: "2", name: "강남 풋살장", sportType: "FUTSAL" },
+    //   { id: "3", name: "종로 농구코트", sportType: "BASKETBALL" },
+    // ]
+    // setFacilities(dummyFacilities)
     
     // 외부에서 선택된 시설 ID가 있으면 자동으로 선택
     if (selectedFacilityId) {
@@ -169,44 +170,61 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
   // 시설 선택 시 코트 데이터 로드 (실제로는 API 호출)
   useEffect(() => {
     if (selectedFacility) {
-      // 시설 ID에 따른 가상 코트 데이터
-      const dummyCourts = [
-        {
-          id: "1",
-          name: "코트 A",
-          facilityId: "1",
-          mainType: "indoor",
-          subType: "HARD",
-          width: "20",
-          height: "40",
-          hourlyRate: "20000",
-          isActive: true
-        },
-        {
-          id: "2",
-          name: "코트 B",
-          facilityId: "1",
-          mainType: "outdoor",
-          subType: "CLAY_TENNIS",
-          width: "20",
-          height: "40",
-          hourlyRate: "15000",
-          isActive: true
-        },
-        {
-          id: "3",
-          name: "코트 C",
-          facilityId: "1",
-          mainType: "outdoor",
-          subType: "SYNTHETIC_TENNIS",
-          width: "20",
-          height: "40",
-          hourlyRate: "18000",
-          isActive: false
+      const fetchCourts = async () => {
+        try {
+          const facilityId = Number(selectedFacility);
+          const response = await facilityService.getCourts(facilityId);
+          console.log(response);
+          // setCourts();
+        } catch (error) {
+          console.log("코트 목록 조회 실패", error);
+          toast({
+            title: "코트 목록 조회 실패",
+            description: "코트 목록을 불러오는 중 실패하였습니다.",
+            variant: "destructive"
+          })
         }
-      ].filter(court => court.facilityId === selectedFacility)
+        
+      }
+      // // 시설 ID에 따른 가상 코트 데이터
+      // const dummyCourts = [
+      //   {
+      //     id: "1",
+      //     name: "코트 A",
+      //     facilityId: "1",
+      //     mainType: "indoor",
+      //     subType: "HARD",
+      //     width: "20",
+      //     height: "40",
+      //     hourlyRate: "20000",
+      //     isActive: true
+      //   },
+      //   {
+      //     id: "2",
+      //     name: "코트 B",
+      //     facilityId: "1",
+      //     mainType: "outdoor",
+      //     subType: "CLAY_TENNIS",
+      //     width: "20",
+      //     height: "40",
+      //     hourlyRate: "15000",
+      //     isActive: true
+      //   },
+      //   {
+      //     id: "3",
+      //     name: "코트 C",
+      //     facilityId: "1",
+      //     mainType: "outdoor",
+      //     subType: "SYNTHETIC_TENNIS",
+      //     width: "20",
+      //     height: "40",
+      //     hourlyRate: "18000",
+      //     isActive: false
+      //   }
+      // ].filter(court => court.facilityId === selectedFacility)
       
-      setCourts(dummyCourts)
+      // setCourts(dummyCourts)
+      fetchCourts()
     } else {
       setCourts([])
     }
@@ -367,7 +385,7 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div>
+            {/* <div>
               <Label htmlFor="facility">시설 선택</Label>
               <Select
                 value={selectedFacility}
@@ -384,7 +402,7 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
             
             {selectedFacility && (
               <>

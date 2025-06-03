@@ -33,6 +33,7 @@ export interface Court {
   height: number;
   indoor: boolean;
   active: boolean;
+  fee: number;
 }
 
 // 주소 타입 정의
@@ -42,6 +43,13 @@ export interface Address {
   district: string,
   streetAddress: string,
   detailAddress: string,
+}
+
+export interface operatingHours {
+  dayOfWeek: string,
+  openTime: string | null,
+  closeTime: string | null,
+  holiday: boolean
 }
 
 // 시설 등록 요청 타입
@@ -109,8 +117,11 @@ export const facilityService = {
   },
   
   // 시설 상세 조회
-  getFacility: (id: number) => 
-    api.get<Facility>(`/facilities/${id}`),
+  getFacility: async (id: number) => {
+    const response = await api.get<Facility>(`/admin/facilities/${id}`)
+    console.log(response);
+    return response;
+  },
   
   // 시설 등록 (관리자 전용)
   createFacility: (data: CreateFacilityRequest) => {
@@ -169,7 +180,7 @@ export const facilityService = {
   
   // 시설의 코트 목록 조회
   getCourts: (facilityId: number) => 
-    api.get<Court[]>(`/facilities/${facilityId}/courts`),
+    api.get<Court[]>(`/facility/${facilityId}/courts`),
   
   // 코트 추가 (관리자 전용)
   createCourt: (facilityId: number, data: Omit<Court, 'id' | 'facilityId'>) => 
