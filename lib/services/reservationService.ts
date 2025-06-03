@@ -5,6 +5,12 @@ import { AdminReservationDetail, AdminReservationResponse, DashboardReservation,
 
 export const reservationService = {
 
+    // 관리자 대시보드 총 에약 수
+    getAdminTotalReservation: () => {
+        let endPoint = `/admin/reservation/getAdminTotalReservation`;
+        return api.get<number>(endPoint);
+    },
+
     // 관리자 예약 상태 변경
     chgReservationStatus: (params: {id: number, status: string}) => {
         let endPoint = `/admin/reservation/status/${params.id}?status=${params.status}`;

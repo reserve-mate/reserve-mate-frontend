@@ -16,9 +16,24 @@ export default function AdminDashboardPage() {
 
   const router = useRouter();
 
-  const [reservaions, setReservations] = useState<DashboardReservation[]>([]);
-  const [totalRevenues, setTotalRevenues] = useState<number>(0);
+  const [reservaions, setReservations] = useState<DashboardReservation[]>([]);  // 최근 예약
+  const [totalRevenues, setTotalRevenues] = useState<number>(0);  // 총 매출
+  const [totalReservation, setTotalReservation] = useState<number>(0);
   const [loading, setLoading] = useState(false);
+
+  // 대시보드 총 예약 수
+  useEffect(() => {
+    const getAdminTotalReservation = async () => {
+      try {
+        const response = await reservationService.getAdminTotalReservation();
+        setTotalReservation(response);
+      } catch (error: any) {
+        setTotalReservation(0);
+      }
+    }
+
+    getAdminTotalReservation();
+  }, []);
 
   // 대시보드 총 매출
   useEffect(() => {
@@ -187,7 +202,7 @@ export default function AdminDashboardPage() {
           <CardContent className="p-4 md:p-6 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">총 예약 수</p>
-              <p className="text-2xl md:text-3xl font-bold mt-1">{stats.totalReservations}</p>
+              <p className="text-2xl md:text-3xl font-bold mt-1">{totalReservation}</p>
             </div>
             <div className="p-3 rounded-full bg-blue-100 text-blue-600">
               <Calendar className="h-5 w-5 md:h-6 md:w-6" />
