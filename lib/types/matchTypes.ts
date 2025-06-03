@@ -83,6 +83,7 @@ export interface MatchRegist {
 
 // 페이 실패 데이터
 export interface MatchPaymentSuccess extends PaymentResponse {
+    status: 'success'
     type: 'matchPaymentSuccess';
     matchName: string;
     matchDate: string;

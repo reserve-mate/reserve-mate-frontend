@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Calendar as CalendarIcon, Search, Filter, Clock, CheckCircle, XCircle } from "lucide-react"
@@ -36,13 +36,18 @@ import {
 } from "@/components/ui/dialog"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
+import { AdminReservationResponse } from "@/lib/types/reservationType"
+import { reservationService } from "@/lib/services/reservationService"
+import { FacilityNames } from "@/lib/types/facilityTypes"
+import { facilityService } from "@/lib/services/facilityService"
+import { timeFormat } from "@/lib/types/commonTypes"
 
 // 예약 상태 유형
 const reservationStatuses = [
   { value: "PENDING", label: "대기중", color: "bg-amber-50 text-amber-600 border-amber-200" },
   { value: "CONFIRMED", label: "확정", color: "bg-green-100 text-green-800 border-green-200" },
-  { value: "CANCELED", label: "취소됨", color: "bg-red-50 text-red-600 border-red-200" },
-  { value: "COMPLETED", label: "완료", color: "bg-blue-50 text-blue-600 border-blue-200" },
+  { value: "CANCELED", label: "취소됨", color: "bg-gray-50 text-gray-600 border-gray-200" },
+  { value: "COMPLETED", label: "완료", color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
 ]
 
 // 결제 상태 유형
@@ -77,110 +82,112 @@ interface ReservationStatusProps {
 export default function ReservationStatus({ facilityId }: ReservationStatusProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [reservations, setReservations] = useState<Reservation[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("ALL")
-  const [date, setDate] = useState<Date | undefined>(undefined)
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
-  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
+  const [selectedReservation, setSelectedReservation] = useState<AdminReservationResponse | null>(null)
+
+  // 검색 조건
+  const [tabValue, setTabValue] = useState<"ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED">("ALL");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [facilityNames, setFacilityNames] = useState<FacilityNames[]>([]);
+  const [selectFacility, setSelectFacility] = useState<string>("all");
+
+  // 페이징
+  const [adminReservations, setAdminReservations] = useState<AdminReservationResponse[]>([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isError, setIsError] = useState(false);
+
+  const observerRef = useRef<HTMLTableElement | null>(null);
+  
+  // 예약 현황 api
+  const getAdminReservations = async (type: string, page: number) => {
+    if(isLoading) return;
+    setIsLoading(true);
+    const searchParam = {
+      searchTerm: searchTerm,
+      reserveStatus: (type === "ALL") ? "" : type,
+      facility: isNaN(parseInt(selectFacility)) ? 0 : parseInt(selectFacility),
+      searchDate: (date) ? format(date, "yyyy-MM-dd") : "",
+      pageNum: page
+    }
+
+    try{
+      const response = await reservationService.getAdminReservations(searchParam);
+      setAdminReservations((prev) => [...prev, ...response.content]);
+      setPage(response.number);
+      setHasMore(!response.last);
+    }catch(error: any) {
+      console.log(error)
+    }finally {
+      setIsLoading(false);
+    }
+  }
+
+  // 시설명 조회 api
+  const fetchGetFacilities = async () => {
+    try {
+      const response = await facilityService.getMatchFacilityNames(undefined);
+      setFacilityNames(response);
+    } catch (error) {
+      
+    }
+  }
+
   // 가상의 예약 데이터 로드 (실제로는 API 호출)
   useEffect(() => {
-    const dummyReservations: Reservation[] = [
-      {
-        id: "1",
-        userId: "user1",
-        userName: "홍길동",
-        facilityId: "1",
-        facilityName: "서울 테니스 센터",
-        courtId: "1",
-        courtName: "코트 A",
-        reservationDate: "2024-06-01",
-        startTime: "18:00",
-        endTime: "20:00",
-        totalPrice: 40000,
-        status: "CONFIRMED",
-        paymentStatus: "PAID",
-        createdAt: "2024-05-28T14:30:00"
-      },
-      {
-        id: "2",
-        userId: "user2",
-        userName: "김철수",
-        facilityId: "1",
-        facilityName: "서울 테니스 센터",
-        courtId: "2",
-        courtName: "코트 B",
-        reservationDate: "2024-06-02",
-        startTime: "16:00",
-        endTime: "18:00",
-        totalPrice: 30000,
-        status: "PENDING",
-        paymentStatus: "PENDING",
-        createdAt: "2024-05-29T10:15:00"
-      },
-      {
-        id: "3",
-        userId: "user3",
-        userName: "이영희",
-        facilityId: "2",
-        facilityName: "강남 풋살장",
-        courtId: "4",
-        courtName: "실내 코트 1",
-        reservationDate: "2024-06-03",
-        startTime: "19:00",
-        endTime: "21:00",
-        totalPrice: 60000,
-        status: "CANCELED",
-        paymentStatus: "REFUNDED",
-        createdAt: "2024-05-30T09:45:00"
-      },
-      {
-        id: "4",
-        userId: "user1",
-        userName: "홍길동",
-        facilityId: "3",
-        facilityName: "종로 농구코트",
-        courtId: "7",
-        courtName: "코트 B",
-        reservationDate: "2024-05-15",
-        startTime: "14:00",
-        endTime: "16:00",
-        totalPrice: 30000,
-        status: "COMPLETED",
-        paymentStatus: "PAID",
-        createdAt: "2024-05-10T11:20:00"
-      }
-    ]
-    
-    // 특정 시설 ID가 주어진 경우 해당 시설의 예약만 필터링
-    if (facilityId) {
-      setReservations(dummyReservations.filter(r => r.facilityId === facilityId))
-    } else {
-      setReservations(dummyReservations)
+    fetchGetFacilities(); // 시설명 조회
+    getAdminReservations("ALL", 0); // 예약 현황 조회
+  }, [facilityId]);
+
+  // 무한 스크롤
+  useEffect(() => {
+    if(isLoading || !hasMore || isError) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if(entries[0].isIntersecting) {
+          getAdminReservations(tabValue, page + 1); // 예약 현황 조회
+        }
+      }, {threshold: 1}
+    );
+
+    if(observerRef.current) {
+      observer.observe(observerRef.current);
     }
-  }, [facilityId])
+
+    return () => {
+      if(observerRef.current) {
+        observer.unobserve(observerRef.current);
+      }
+    }
+  }, [page, hasMore, isLoading]);
   
-  // 예약 필터링
-  const filteredReservations = reservations.filter(reservation => {
-    const matchesSearch = 
-      reservation.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reservation.facilityName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reservation.courtName.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = statusFilter === "ALL" || !statusFilter ? true : reservation.status === statusFilter
-    
-    const matchesDate = date 
-      ? reservation.reservationDate === format(date, 'yyyy-MM-dd')
-      : true
-      
-    return matchesSearch && matchesStatus && matchesDate
-  })
-  
+  // 예약 필터 검색
+  const searchReservation = () => {
+    setPage(0);
+    setHasMore(false);
+    setIsLoading(false);
+    setAdminReservations([]);
+    getAdminReservations(tabValue, 0);
+  }
+
   // 예약 필터 초기화
   const resetFilters = () => {
     setSearchTerm("")
     setStatusFilter("ALL")
     setDate(undefined)
+  }
+
+  const handleTab = (type:string) => {
+    setTabValue(type as "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED");
+    setPage(0);
+    setHasMore(false);
+    setIsLoading(false);
+    setAdminReservations([]);
+    getAdminReservations(type, 0);
   }
   
   // 상태 배지 스타일 가져오기
@@ -204,7 +211,7 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
   }
   
   // 예약 세부 정보 보기
-  const viewReservationDetails = (reservation: Reservation) => {
+  const viewReservationDetails = (reservation: AdminReservationResponse) => {
     setSelectedReservation(reservation)
     setIsDetailsDialogOpen(true)
   }
@@ -235,25 +242,26 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
   }
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6"> 
       <Card>
         <CardHeader>
           <CardTitle>예약 현황</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 lg:w-[400px] mb-6 bg-gray-100">
-              <TabsTrigger value="all" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">전체</TabsTrigger>
-              <TabsTrigger value="pending" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">대기중</TabsTrigger>
-              <TabsTrigger value="confirmed" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">확정</TabsTrigger>
-              <TabsTrigger value="completed" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">완료/취소</TabsTrigger>
+          <Tabs className="w-full" value={tabValue} onValueChange={(val) => handleTab(val)}>
+            <TabsList className="grid w-full grid-cols-5 lg:w-[400px] mb-6 bg-gray-100">
+              <TabsTrigger value="ALL" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">전체</TabsTrigger>
+              <TabsTrigger value="PENDING" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">대기중</TabsTrigger>
+              <TabsTrigger value="CONFIRMED" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">확정</TabsTrigger>
+              <TabsTrigger value="COMPLETED" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">완료</TabsTrigger>
+              <TabsTrigger value="CANCELED" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">취소</TabsTrigger>
             </TabsList>
             
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               <div className="relative w-full md:w-1/3">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="고객명, 시설명 또는 코트명 검색..."
+                  placeholder="고객명, 시설명 검색"
                   className="pl-8"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -262,19 +270,19 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
               
               <div className="flex gap-2">
                 <Select
-                  value={statusFilter}
-                  onValueChange={setStatusFilter}
+                  value={selectFacility}
+                  onValueChange={setSelectFacility}
                 >
                   <SelectTrigger className="w-[130px]">
-                    <SelectValue placeholder="상태 필터" />
+                    <SelectValue placeholder="시설 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ALL">모든 상태</SelectItem>
-                    {reservationStatuses.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        {status.label}
+                    <SelectItem value="all">모든 시설</SelectItem>
+                    {facilityNames.length > 0 ? facilityNames.map((facility) => (
+                      <SelectItem key={facility.facilityId} value={String(facility.facilityId)} className="text-sm sm:text-base">
+                        {facility.facilityName}
                       </SelectItem>
-                    ))}
+                    )) : "아직 등록된 시설이 없습니다."}
                   </SelectContent>
                 </Select>
                 
@@ -298,6 +306,13 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
                     />
                   </PopoverContent>
                 </Popover>
+
+                <Button 
+                  onClick={searchReservation}
+                  className="bg-indigo-600 text-white hover:bg-indigo-500"
+                >
+                  검색
+                </Button>
                 
                 <Button 
                   variant="outline" 
@@ -308,44 +323,9 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
               </div>
             </div>
             
-            <TabsContent value="all">
+            <TabsContent value={tabValue}>
               <ReservationTable 
-                reservations={filteredReservations}
-                getStatusBadgeStyle={getStatusBadgeStyle}
-                getPaymentStatusBadgeStyle={getPaymentStatusBadgeStyle}
-                getStatusLabel={getStatusLabel}
-                getPaymentStatusLabel={getPaymentStatusLabel}
-                viewReservationDetails={viewReservationDetails}
-              />
-            </TabsContent>
-            
-            <TabsContent value="pending">
-              <ReservationTable 
-                reservations={filteredReservations.filter(r => r.status === "PENDING")}
-                getStatusBadgeStyle={getStatusBadgeStyle}
-                getPaymentStatusBadgeStyle={getPaymentStatusBadgeStyle}
-                getStatusLabel={getStatusLabel}
-                getPaymentStatusLabel={getPaymentStatusLabel}
-                viewReservationDetails={viewReservationDetails}
-              />
-            </TabsContent>
-            
-            <TabsContent value="confirmed">
-              <ReservationTable 
-                reservations={filteredReservations.filter(r => r.status === "CONFIRMED")}
-                getStatusBadgeStyle={getStatusBadgeStyle}
-                getPaymentStatusBadgeStyle={getPaymentStatusBadgeStyle}
-                getStatusLabel={getStatusLabel}
-                getPaymentStatusLabel={getPaymentStatusLabel}
-                viewReservationDetails={viewReservationDetails}
-              />
-            </TabsContent>
-            
-            <TabsContent value="completed">
-              <ReservationTable 
-                reservations={filteredReservations.filter(r => 
-                  r.status === "COMPLETED" || r.status === "CANCELED"
-                )}
+                reservations={adminReservations}
                 getStatusBadgeStyle={getStatusBadgeStyle}
                 getPaymentStatusBadgeStyle={getPaymentStatusBadgeStyle}
                 getStatusLabel={getStatusLabel}
@@ -354,16 +334,24 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
               />
             </TabsContent>
           </Tabs>
+          {/* 무한스크롤 */}
+          <Table ref={observerRef}>
+            <TableBody>
+              <TableRow>
+                {isLoading && <TableCell className="text-center">불러오는 중...</TableCell>}
+              </TableRow>
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
       
       {/* 예약 세부정보 다이얼로그 */}
-      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+      {/* <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>예약 세부 정보</DialogTitle>
             <DialogDescription>
-              예약 ID: {selectedReservation?.id}
+              예약 ID: {selectedReservation?.reservationId}
             </DialogDescription>
           </DialogHeader>
           
@@ -372,8 +360,8 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <div className="text-sm text-gray-500">예약 상태</div>
-                  <Badge className={getStatusBadgeStyle(selectedReservation.status)}>
-                    {getStatusLabel(selectedReservation.status)}
+                  <Badge className={getStatusBadgeStyle(selectedReservation.reservationStatus)}>
+                    {getStatusLabel(selectedReservation.reservationStatus)}
                   </Badge>
                 </div>
                 
@@ -419,7 +407,7 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
           )}
           
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            {selectedReservation?.status === "PENDING" && (
+            {selectedReservation?.reservationStatus === "PENDING" && (
               <>
                 <Button
                   className="bg-green-600 hover:bg-green-700 text-white"
@@ -440,7 +428,7 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
               </>
             )}
             
-            {selectedReservation?.status === "CONFIRMED" && (
+            {selectedReservation?.reservationStatus === "CONFIRMED" && (
               <>
                 <Button
                   className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -466,7 +454,7 @@ export default function ReservationStatus({ facilityId }: ReservationStatusProps
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </div>
   )
 }
@@ -480,12 +468,12 @@ function ReservationTable({
   getPaymentStatusLabel,
   viewReservationDetails
 }: {
-  reservations: Reservation[]
+  reservations: AdminReservationResponse[]
   getStatusBadgeStyle: (status: string) => string
   getPaymentStatusBadgeStyle: (status: string) => string
   getStatusLabel: (status: string) => string
   getPaymentStatusLabel: (status: string) => string
-  viewReservationDetails: (reservation: Reservation) => void
+  viewReservationDetails: (reservation: AdminReservationResponse) => void
 }) {
   if (reservations.length === 0) {
     return (
@@ -511,29 +499,30 @@ function ReservationTable({
         </TableHeader>
         <TableBody>
           {reservations.map((reservation) => (
-            <TableRow key={reservation.id}>
-              <TableCell className="font-medium">#{reservation.id}</TableCell>
+            <TableRow key={reservation.reservationId}>
+              <TableCell className="font-medium">#{reservation.reservationId}</TableCell>
               <TableCell>{reservation.userName}</TableCell>
               <TableCell>
-                <div>{reservation.facilityName}</div>
+                <div>{reservation.facilityName
+                  ? reservation.facilityName.length > 9
+                    ? reservation.facilityName.slice(0, 9) + "…"
+                    : reservation.facilityName
+                  : ""}</div>
                 <div className="text-xs text-gray-500">{reservation.courtName}</div>
               </TableCell>
               <TableCell>
-                <div>{format(new Date(reservation.reservationDate), 'yy-MM-dd')}</div>
+                <div>{format(new Date(reservation.reservationDate), 'yyyy-MM-dd (EEE)', { locale: ko })}</div>
                 <div className="text-xs text-gray-500">
-                  {reservation.startTime} - {reservation.endTime}
+                  {timeFormat(reservation.startTime)} - {timeFormat(reservation.endTime)}
                 </div>
               </TableCell>
               <TableCell>
-                <Badge className={getStatusBadgeStyle(reservation.status)}>
-                  {getStatusLabel(reservation.status)}
+                <Badge className={getStatusBadgeStyle(reservation.reservationStatus)}>
+                  {getStatusLabel(reservation.reservationStatus)}
                 </Badge>
               </TableCell>
               <TableCell>
                 <div>{reservation.totalPrice.toLocaleString()}원</div>
-                <Badge className={getPaymentStatusBadgeStyle(reservation.paymentStatus)}>
-                  {getPaymentStatusLabel(reservation.paymentStatus)}
-                </Badge>
               </TableCell>
               <TableCell className="text-right">
                 <Button 

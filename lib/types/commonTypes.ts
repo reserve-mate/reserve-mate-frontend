@@ -29,8 +29,22 @@ export interface Payment {
     matchId: number;
 }
 
+// 예약 결제 요청 후 데이터
+export interface ReservationPayment {
+    orderId: string;
+    paymentKey: string;
+    amount: number;
+    reservationId: number;
+}
+
 // 위도 경도
 export interface Location {
     latitude: number;   // 위도 y축
     longitude: number;  // 경도 x축
+}
+
+// 시간 포맷
+export const timeFormat = (time: string) => {
+    const hour = parseInt(time.split(":")[0], 10);
+    return `${hour.toString().padStart(2, '0')}:00`;
 }
