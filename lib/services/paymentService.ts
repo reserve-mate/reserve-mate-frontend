@@ -1,6 +1,6 @@
 import { api } from '../api';
 import { Payment, ReservationPayment, Slice } from '../types/commonTypes';
-import { PaymentResultResponse, PaymentHistory } from '../types/payment';
+import { PaymentResultResponse, PaymentHistory, PaymentHistResponse, PaymentHistCntResponse } from '../types/payment';
 
 // 환불 신청 인터페이스
 export interface RefundRequest {
@@ -15,6 +15,18 @@ export const paymentService = {
     getTotalRevenues: (params: {facilityId: number, year: number, month: number}) => {
         let endPoint = `/admin/payment/getTotalRevenues?facilityId=${params.facilityId}&year=${params.year}&month=${params.month}`;
         return api.get<number>(endPoint);
+    },
+
+    // 결제 내역 카운트
+    getPaymentHistCnt: () => {
+        let endPoint = `/payment/getPaymentHistCnt`;
+        return api.get<PaymentHistCntResponse>(endPoint);
+    },
+
+    // 결제 내역
+    getPaymentHist: (params: {type: string, pageNum: number}) => {
+        let endPoint = `/payment/paymentHist?type=${params.type}&pageNum=${params.pageNum}`;
+        return api.get<Slice<PaymentHistResponse>>(endPoint);
     },
 
     // 예약 결제 승인

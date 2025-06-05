@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,105 +13,32 @@ import { Input } from "@/components/ui/input"
 import { ArrowLeft, Calendar, CreditCard, MapPin, Users, AlertCircle, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { paymentService, RefundRequest } from "@/lib/services/paymentService"
-import { PaymentHistory, displayPaymentStatus } from "@/lib/types/payment"
+import { PaymentHistCntResponse, PaymentHistResponse, PaymentHistory, displayPaymentStatus } from "@/lib/types/payment"
 import { PaymentStatus } from "@/lib/enum/paymentEnum"
 import { toast } from "@/hooks/use-toast"
 import { Slice } from "@/lib/types/commonTypes"
 
-// 더미 데이터 (개발/테스트용)
-const dummyPaymentHistory: PaymentHistory[] = [
-  {
-    id: 1,
-    orderId: "ORDER-20241201-001",
-    paymentKey: "pay_test_123456789",
-    amount: 50000,
-    status: PaymentStatus.PAID,
-    paymentMethod: "카드",
-    type: 'MATCH',
-    matchName: "서울 FC vs 인천 FC",
-    facilityName: "서울월드컵경기장",
-    reservationDate: "2024-12-15T14:00:00",
-    createdAt: "2024-12-01T10:30:00"
-  },
-  {
-    id: 2,
-    orderId: "ORDER-20241130-002",
-    paymentKey: "pay_test_987654321",
-    amount: 30000,
-    status: PaymentStatus.CANCELED,
-    paymentMethod: "카드",
-    type: 'FACILITY',
-    facilityName: "올림픽공원 테니스장",
-    reservationDate: "2024-12-10T16:00:00",
-    createdAt: "2024-11-30T15:20:00",
-    cancelReason: "개인 사유로 인한 취소"
-  },
-  {
-    id: 3,
-    orderId: "ORDER-20241125-003",
-    paymentKey: "pay_test_456789123",
-    amount: 25000,
-    status: PaymentStatus.PAID,
-    paymentMethod: "계좌이체",
-    type: 'MATCH',
-    matchName: "풋살 친선 경기",
-    facilityName: "강남 스포츠센터",
-    reservationDate: "2024-11-28T19:00:00",
-    createdAt: "2024-11-25T09:15:00"
-  },
-  {
-    id: 4,
-    orderId: "ORDER-20241120-004",
-    paymentKey: "pay_test_111222333",
-    amount: 80000,
-    status: PaymentStatus.PAID,
-    paymentMethod: "카드",
-    type: 'FACILITY',
-    facilityName: "잠실 종합운동장 수영장",
-    reservationDate: "2024-11-22T10:00:00",
-    createdAt: "2024-11-20T14:30:00"
-  },
-  {
-    id: 5,
-    orderId: "ORDER-20241118-005",
-    paymentKey: "pay_test_444555666",
-    amount: 35000,
-    status: PaymentStatus.PARTIAL_CANCELED,
-    paymentMethod: "카드",
-    type: 'MATCH',
-    matchName: "주말 축구 매치",
-    facilityName: "한강공원 축구장",
-    reservationDate: "2024-11-20T15:00:00",
-    createdAt: "2024-11-18T11:45:00",
-    cancelReason: "일부 인원 참석 불가"
-  },
-  {
-    id: 6,
-    orderId: "ORDER-20241115-006",
-    paymentKey: "pay_test_777888999",
-    amount: 60000,
-    status: PaymentStatus.PAID,
-    paymentMethod: "계좌이체",
-    type: 'FACILITY',
-    facilityName: "송파구민체육센터 배드민턴장",
-    reservationDate: "2024-11-17T18:00:00",
-    createdAt: "2024-11-15T16:20:00"
-  }
-]
-
 export default function PaymentsPage() {
-  const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
-  const [hasMore, setHasMore] = useState(false)
-  const [useDummyData, setUseDummyData] = useState(false)
-  const [activeTab, setActiveTab] = useState('all')
+  
+  const [activeTab, setActiveTab] = useState('match');
+
+  // 결제 내역 카운트
+  const [paymentMatchCnt, setPaymentMatchCnt] = useState<number>(0);  // 매치 결제 내역 카운트
+  const [paymentReservationCnt , setPaymentReservationCnt] = useState<number>(0); // 예약 결제 내역 카운트
+
+  // 결제 내역
+  const [paymentHist, setPaymentHist] = useState<PaymentHistResponse[]>([]);
+  const [page, setPage] = useState<number>(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isError, setIsError] = useState(false);
 
   // 모달 상태
   const [showRefundModal, setShowRefundModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
-  const [selectedPayment, setSelectedPayment] = useState<PaymentHistory | null>(null)
+  const [selectedPayment, setSelectedPayment] = useState<PaymentHistResponse | null>(null)
   const [isRefunding, setIsRefunding] = useState(false)
 
   // 환불 신청 폼 데이터
@@ -120,77 +47,92 @@ export default function PaymentsPage() {
     refundAmount: 0
   })
 
-  // 탭별 필터링된 결제내역
-  const getFilteredPaymentHistory = () => {
-    switch (activeTab) {
-      case 'match':
-        return paymentHistory.filter(payment => payment.type === 'MATCH')
-      case 'facility':
-        return paymentHistory.filter(payment => payment.type === 'FACILITY')
-      default:
-        return paymentHistory
+  const observerRef = useRef<HTMLDivElement | null>(null);
+
+  // 결제 내역 카운트
+  useEffect(() => {
+
+    const getPaymentHistCnt = async () => {
+      try {
+        const response = await paymentService.getPaymentHistCnt();
+        setPaymentMatchCnt(response.matchPaymentCnt);
+        setPaymentReservationCnt(response.reservationPaymentCnt);
+      } catch (error: any) {
+        setPaymentMatchCnt(0);
+        setPaymentReservationCnt(0);
+      }
     }
-  }
+    
+    getPaymentHistCnt();
+  }, []);
+
+  const getPaymentHist = async (type: string, pageNum: number) => {
+    if(isLoading) return;
+      setIsLoading(true);
+
+      try {
+        const response = await paymentService.getPaymentHist({
+          type: type
+          , pageNum: pageNum
+        });
+        setPaymentHist((prev) => {
+          const merged = [...prev, ...response.content];
+          const unique = [...new Map(merged.map(r => [r.paymentId, r])).values()];
+          return unique;
+      });
+        setPage(response.number);
+        setHasMore(!response.last);
+        setIsError(false);
+      } catch (error: any) {
+        setPaymentHist([]);
+        setIsError(true);
+      }finally {
+        setIsLoading(false);
+      }
+      
+    }
+
+  // 결제 내역 조회
+  useEffect(() => {
+    getPaymentHist("match", 0);
+  }, []);
+
+  // 무한 스크롤
+  useEffect(() => {
+    if(!hasMore || isLoading || isError) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if(entries[0].isIntersecting) {
+          getPaymentHist(activeTab, page + 1);
+        }
+      }, {threshold: 1}
+    );
+
+    if(observerRef.current) {
+      observer.observe(observerRef.current);
+    }
+
+    return () => {
+      if(observerRef.current) {
+        observer.unobserve(observerRef.current);
+      }
+    }
+
+  }, [page, hasMore, isLoading])
 
   // 탭별 개수 계산
   const getTabCounts = () => {
-    const matchCount = paymentHistory.filter(payment => payment.type === 'MATCH').length
-    const facilityCount = paymentHistory.filter(payment => payment.type === 'FACILITY').length
+    const matchCount = paymentHist.filter(payment => payment.paymentType === 'MATCH').length
+    const facilityCount = paymentHist.filter(payment => payment.paymentType === 'RESERVATION').length
     return {
-      all: paymentHistory.length,
       match: matchCount,
       facility: facilityCount
     }
   }
 
-  // 결제내역 조회
-  const loadPaymentHistory = async (page: number = 0) => {
-    try {
-      setIsLoading(true)
-      
-      // API 호출 시도
-      const response = await paymentService.getPaymentHistory(page, 10)
-      
-      if (page === 0) {
-        setPaymentHistory(response.content)
-      } else {
-        setPaymentHistory(prev => [...prev, ...response.content])
-      }
-      
-      setCurrentPage(response.number)
-      setTotalPages(response.numberOfElements)
-      setHasMore(!response.last)
-      setUseDummyData(false)
-      
-    } catch (error) {
-      console.error("결제내역 조회 실패:", error)
-      
-      // API 실패 시 더미 데이터 사용
-      if (page === 0) {
-        setPaymentHistory(dummyPaymentHistory)
-        setUseDummyData(true)
-        setHasMore(false)
-        
-        toast({
-          title: "개발 모드",
-          description: "API 연결이 되지 않아 더미 데이터를 표시합니다.",
-          variant: "default",
-        })
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // 더보기 로드 (더미 데이터 사용 시에는 실행하지 않음)
-  const loadMore = () => {
-    if (hasMore && !isLoading && !useDummyData) {
-      loadPaymentHistory(currentPage + 1)
-    }
-  }
-
   // 환불 신청 모달 열기
-  const openRefundModal = (payment: PaymentHistory) => {
+  const openRefundModal = (payment: PaymentHistResponse) => {
     setSelectedPayment(payment)
     setRefundForm({
       reason: "",
@@ -200,19 +142,19 @@ export default function PaymentsPage() {
   }
 
   // 상세보기 모달 열기
-  const openDetailModal = async (payment: PaymentHistory) => {
+  const openDetailModal = async (payment: PaymentHistResponse) => {
     setSelectedPayment(payment)
     setShowDetailModal(true)
     
     // 실제 환경에서는 상세 정보를 다시 불러올 수 있음
-    if (!useDummyData) {
-      try {
-        const detailResponse = await paymentService.getPaymentDetail(payment.id)
-        setSelectedPayment(detailResponse)
-      } catch (error) {
-        console.error("상세 정보 조회 실패:", error)
-      }
-    }
+    // if (!useDummyData) {
+    //   try {
+    //     const detailResponse = await paymentService.getPaymentDetail(payment.id)
+    //     setSelectedPayment(detailResponse)
+    //   } catch (error) {
+    //     console.error("상세 정보 조회 실패:", error)
+    //   }
+    // }
   }
 
   // 환불 신청 처리
@@ -232,28 +174,28 @@ export default function PaymentsPage() {
     
     try {
       const refundRequest: RefundRequest = {
-        paymentId: selectedPayment.id,
+        paymentId: selectedPayment.paymentId,
         reason: refundForm.reason,
         refundAmount: refundForm.refundAmount
       }
 
-      if (useDummyData) {
+      if (paymentHist) {
         // 더미 데이터 환경에서는 시뮬레이션
         await new Promise(resolve => setTimeout(resolve, 2000))
         
         // 로컬 상태 업데이트
-        setPaymentHistory(prev => 
-          prev.map(p => 
-            p.id === selectedPayment.id 
-              ? { ...p, status: PaymentStatus.CANCELED, cancelReason: refundForm.reason }
-              : p
-          )
-        )
+        // setPaymentHistory(prev => 
+        //   prev.map(p => 
+        //     p.id === selectedPayment.paymentId 
+        //       ? { ...p, status: PaymentStatus.CANCELED, cancelReason: refundForm.reason }
+        //       : p
+        //   )
+        // )
       } else {
         await paymentService.requestRefund(refundRequest)
         
         // 성공 시 데이터 새로고침
-        loadPaymentHistory(0)
+        //loadPaymentHistory(0)
       }
 
       toast({
@@ -275,11 +217,6 @@ export default function PaymentsPage() {
       setIsRefunding(false)
     }
   }
-
-  // 컴포넌트 마운트 시 데이터 로드
-  useEffect(() => {
-    loadPaymentHistory()
-  }, [])
 
   // 금액 포맷팅
   const formatAmount = (amount: number) => {
@@ -313,12 +250,12 @@ export default function PaymentsPage() {
   }
 
   // 결제 타입별 정보 가져오기
-  const getPaymentTypeInfo = (payment: PaymentHistory) => {
-    if (payment.type === 'MATCH') {
+  const getPaymentTypeInfo = (payment: PaymentHistResponse) => {
+    if (payment.paymentType === 'MATCH') {
       return {
         icon: Users,
         label: "소셜 매치",
-        title: payment.matchName || "매치 예약",
+        title: payment.refName || "매치 예약",
         subtitle: payment.facilityName || "",
         bgColor: "bg-blue-50",
         borderColor: "border-blue-200",
@@ -337,6 +274,15 @@ export default function PaymentsPage() {
     }
   }
 
+  // 탭 변경
+  const handleTab = (type: string) => {
+    setActiveTab(type);
+    setPage(0);
+    setHasMore(false);
+    setPaymentHist([]);
+    getPaymentHist(type, 0);
+  }
+
   return (
     <div className="page-container">
       <div className="max-w-4xl mx-auto py-8">
@@ -346,42 +292,28 @@ export default function PaymentsPage() {
             <h1 className="text-3xl font-bold">결제내역</h1>
             <p className="text-muted-foreground">
               결제 및 환불 내역을 확인할 수 있습니다.
-              {useDummyData && " (데모 데이터)"}
             </p>
           </div>
         </div>
 
         {/* 탭 네비게이션 */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all" className="flex items-center gap-2">
-              전체
-              {(() => {
-                const counts = getTabCounts()
-                return counts.all > 0 && <Badge variant="secondary" className="ml-1 h-5 text-xs">{counts.all}</Badge>
-              })()}
-            </TabsTrigger>
+        <Tabs value={activeTab} onValueChange={(val) => handleTab(val)} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="match" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               소셜 매치
-              {(() => {
-                const counts = getTabCounts()
-                return counts.match > 0 && <Badge variant="secondary" className="ml-1 h-5 text-xs">{counts.match}</Badge>
-              })()}
+              <Badge variant="secondary" className="ml-1 h-5 text-xs">{paymentMatchCnt}</Badge>
             </TabsTrigger>
-            <TabsTrigger value="facility" className="flex items-center gap-2">
+            <TabsTrigger value="reservation" className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               시설 예약
-              {(() => {
-                const counts = getTabCounts()
-                return counts.facility > 0 && <Badge variant="secondary" className="ml-1 h-5 text-xs">{counts.facility}</Badge>
-              })()}
+              <Badge variant="secondary" className="ml-1 h-5 text-xs">{paymentReservationCnt}</Badge>
             </TabsTrigger>
           </TabsList>
 
           {/* 전체 탭 */}
-          <TabsContent value="all" className="space-y-4">
-            {isLoading && paymentHistory.length === 0 ? (
+          <TabsContent value={activeTab} className="space-y-4">
+            {isLoading && paymentHist.length === 0 ? (
               <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
                   <Card key={i} className="animate-pulse">
@@ -396,7 +328,7 @@ export default function PaymentsPage() {
                   </Card>
                 ))}
               </div>
-            ) : getFilteredPaymentHistory().length === 0 ? (
+            ) : paymentHist.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -411,12 +343,12 @@ export default function PaymentsPage() {
               </Card>
             ) : (
               <div className="space-y-4">
-                {getFilteredPaymentHistory().map((payment) => {
+                {paymentHist.map((payment) => {
                   const typeInfo = getPaymentTypeInfo(payment)
                   const TypeIcon = typeInfo.icon
                   
                   return (
-                    <Card key={payment.id} className={`hover:shadow-md transition-shadow ${typeInfo.borderColor} border-l-4`}>
+                    <Card key={payment.paymentId} className={`hover:shadow-md transition-shadow ${typeInfo.borderColor} border-l-4`}>
                       <CardHeader className="pb-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -437,12 +369,12 @@ export default function PaymentsPage() {
                               )}
                               <CardDescription className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />
-                                {formatDate(payment.createdAt)}
+                                {formatDate(payment.paidAt)}
                               </CardDescription>
                             </div>
                           </div>
-                          <Badge variant={getStatusVariant(payment.status)}>
-                            {displayPaymentStatus(payment.status)}
+                          <Badge variant={getStatusVariant(payment.paymentStatus)}>
+                            {displayPaymentStatus(payment.paymentStatus)}
                           </Badge>
                         </div>
                       </CardHeader>
@@ -458,10 +390,10 @@ export default function PaymentsPage() {
                               <span className="text-muted-foreground">결제수단</span>
                               <span>{payment.paymentMethod}</span>
                             </div>
-                            {payment.reservationDate && (
+                            {payment.useDate && (
                               <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">이용일시</span>
-                                <span>{formatDate(payment.reservationDate)}</span>
+                                <span>{formatDate(payment.useDate)}</span>
                               </div>
                             )}
                           </div>
@@ -471,7 +403,7 @@ export default function PaymentsPage() {
                               <span className="text-muted-foreground">주문번호</span>
                               <span className="font-mono text-xs">{payment.orderId}</span>
                             </div>
-                            {payment.type === 'MATCH' && payment.facilityName && (
+                            {payment.paymentType === 'MATCH' && payment.facilityName && (
                               <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">경기장</span>
                                 <span className="flex items-center gap-1">
@@ -492,7 +424,7 @@ export default function PaymentsPage() {
                         {/* 추가 액션 버튼들 */}
                         <Separator className="my-4" />
                         <div className="flex justify-end gap-2">
-                          {payment.status === PaymentStatus.PAID && (
+                          {payment.paymentStatus === PaymentStatus.PAID && (
                             <Button 
                               variant="outline" 
                               size="sm"
@@ -515,266 +447,12 @@ export default function PaymentsPage() {
                 })}
               </div>
             )}
-          </TabsContent>
 
-          {/* 매치 탭 */}
-          <TabsContent value="match" className="space-y-4">
-            {getFilteredPaymentHistory().length === 0 ? (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">매치 결제내역이 없습니다</h3>
-                  <p className="text-muted-foreground mb-6">
-                    아직 소셜 매치 결제 내역이 없습니다. 매치에 참여해보세요.
-                  </p>
-                  <Link href="/matches">
-                    <Button>매치 둘러보기</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {getFilteredPaymentHistory().map((payment) => {
-                  const typeInfo = getPaymentTypeInfo(payment)
-                  const TypeIcon = typeInfo.icon
-                  
-                  return (
-                    <Card key={payment.id} className={`hover:shadow-md transition-shadow ${typeInfo.borderColor} border-l-4`}>
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${typeInfo.bgColor}`}>
-                              <TypeIcon className={`h-5 w-5 ${typeInfo.iconColor}`} />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <CardTitle className="text-lg">
-                                  {typeInfo.title}
-                                </CardTitle>
-                                <Badge variant="outline" className={`text-xs ${typeInfo.iconColor} border-current`}>
-                                  {typeInfo.label}
-                                </Badge>
-                              </div>
-                              {typeInfo.subtitle && (
-                                <p className="text-sm text-muted-foreground mb-1">{typeInfo.subtitle}</p>
-                              )}
-                              <CardDescription className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
-                                {formatDate(payment.createdAt)}
-                              </CardDescription>
-                            </div>
-                          </div>
-                          <Badge variant={getStatusVariant(payment.status)}>
-                            {displayPaymentStatus(payment.status)}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      
-                      <CardContent className="pt-0">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">결제금액</span>
-                              <span className="font-semibold">{formatAmount(payment.amount)}원</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">결제수단</span>
-                              <span>{payment.paymentMethod}</span>
-                            </div>
-                            {payment.reservationDate && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">이용일시</span>
-                                <span>{formatDate(payment.reservationDate)}</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">주문번호</span>
-                              <span className="font-mono text-xs">{payment.orderId}</span>
-                            </div>
-                            {payment.type === 'MATCH' && payment.facilityName && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">경기장</span>
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" />
-                                  {payment.facilityName}
-                                </span>
-                              </div>
-                            )}
-                            {payment.cancelReason && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">취소사유</span>
-                                <span className="text-red-600">{payment.cancelReason}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* 추가 액션 버튼들 */}
-                        <Separator className="my-4" />
-                        <div className="flex justify-end gap-2">
-                          {payment.status === PaymentStatus.PAID && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => openRefundModal(payment)}
-                            >
-                              환불 신청
-                            </Button>
-                          )}
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => openDetailModal(payment)}
-                          >
-                            상세보기
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* 시설 탭 */}
-          <TabsContent value="facility" className="space-y-4">
-            {getFilteredPaymentHistory().length === 0 ? (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">시설 결제내역이 없습니다</h3>
-                  <p className="text-muted-foreground mb-6">
-                    아직 시설 예약 결제 내역이 없습니다. 시설을 예약해보세요.
-                  </p>
-                  <Link href="/facilities">
-                    <Button>시설 둘러보기</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {getFilteredPaymentHistory().map((payment) => {
-                  const typeInfo = getPaymentTypeInfo(payment)
-                  const TypeIcon = typeInfo.icon
-                  
-                  return (
-                    <Card key={payment.id} className={`hover:shadow-md transition-shadow ${typeInfo.borderColor} border-l-4`}>
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${typeInfo.bgColor}`}>
-                              <TypeIcon className={`h-5 w-5 ${typeInfo.iconColor}`} />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <CardTitle className="text-lg">
-                                  {typeInfo.title}
-                                </CardTitle>
-                                <Badge variant="outline" className={`text-xs ${typeInfo.iconColor} border-current`}>
-                                  {typeInfo.label}
-                                </Badge>
-                              </div>
-                              {typeInfo.subtitle && (
-                                <p className="text-sm text-muted-foreground mb-1">{typeInfo.subtitle}</p>
-                              )}
-                              <CardDescription className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
-                                {formatDate(payment.createdAt)}
-                              </CardDescription>
-                            </div>
-                          </div>
-                          <Badge variant={getStatusVariant(payment.status)}>
-                            {displayPaymentStatus(payment.status)}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      
-                      <CardContent className="pt-0">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">결제금액</span>
-                              <span className="font-semibold">{formatAmount(payment.amount)}원</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">결제수단</span>
-                              <span>{payment.paymentMethod}</span>
-                            </div>
-                            {payment.reservationDate && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">이용일시</span>
-                                <span>{formatDate(payment.reservationDate)}</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">주문번호</span>
-                              <span className="font-mono text-xs">{payment.orderId}</span>
-                            </div>
-                            {payment.type === 'MATCH' && payment.facilityName && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">경기장</span>
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" />
-                                  {payment.facilityName}
-                                </span>
-                              </div>
-                            )}
-                            {payment.cancelReason && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">취소사유</span>
-                                <span className="text-red-600">{payment.cancelReason}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* 추가 액션 버튼들 */}
-                        <Separator className="my-4" />
-                        <div className="flex justify-end gap-2">
-                          {payment.status === PaymentStatus.PAID && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => openRefundModal(payment)}
-                            >
-                              환불 신청
-                            </Button>
-                          )}
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => openDetailModal(payment)}
-                          >
-                            상세보기
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* 더보기 버튼 (더미 데이터가 아닐 때만) */}
-          {hasMore && !useDummyData && (
-            <div className="text-center pt-6">
-              <Button 
-                variant="outline" 
-                onClick={loadMore}
-                disabled={isLoading}
-              >
-                {isLoading ? "불러오는 중..." : "더보기"}
-              </Button>
+            {/* 무한 스크롤 트리거 지점 */}
+            <div ref={observerRef} className="text-center">
+            {isLoading && <p className="text-muted-foreground">불러오는 중...</p>}
             </div>
-          )}
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -822,7 +500,7 @@ export default function PaymentsPage() {
                   </div>
                   <div className="flex justify-between">
                     <span>결제일시:</span>
-                    <span>{formatDate(selectedPayment.createdAt)}</span>
+                    <span>{formatDate(selectedPayment.paidAt)}</span>
                   </div>
                 </div>
               </div>
@@ -920,8 +598,8 @@ export default function PaymentsPage() {
                     <div>
                       <span className="text-muted-foreground">결제 상태</span>
                       <div className="mt-1">
-                        <Badge variant={getStatusVariant(selectedPayment.status)}>
-                          {displayPaymentStatus(selectedPayment.status)}
+                        <Badge variant={getStatusVariant(selectedPayment.paymentStatus)}>
+                          {displayPaymentStatus(selectedPayment.paymentStatus)}
                         </Badge>
                       </div>
                     </div>
@@ -937,15 +615,15 @@ export default function PaymentsPage() {
                     </div>
                     <div>
                       <span className="text-muted-foreground">결제 일시</span>
-                      <p className="font-medium">{formatDate(selectedPayment.createdAt)}</p>
+                      <p className="font-medium">{formatDate(selectedPayment.paidAt)}</p>
                     </div>
-                    {selectedPayment.reservationDate && (
+                    {selectedPayment.useDate && (
                       <div>
                         <span className="text-muted-foreground">이용 일시</span>
-                        <p className="font-medium">{formatDate(selectedPayment.reservationDate)}</p>
+                        <p className="font-medium">{formatDate(selectedPayment.useDate)}</p>
                       </div>
                     )}
-                    {selectedPayment.type === 'MATCH' && selectedPayment.facilityName && (
+                    {selectedPayment.paymentType === 'MATCH' && selectedPayment.facilityName && (
                       <div>
                         <span className="text-muted-foreground">경기장</span>
                         <p className="font-medium">{selectedPayment.facilityName}</p>
@@ -965,15 +643,15 @@ export default function PaymentsPage() {
                     <span>주문번호:</span>
                     <span className="font-mono">{selectedPayment.orderId}</span>
                   </div>
-                  <div className="flex justify-between">
+                  {/* <div className="flex justify-between">
                     <span>결제키:</span>
                     <span className="font-mono">{selectedPayment.paymentKey}</span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
               {/* 취소 정보 (취소된 경우에만) */}
-              {selectedPayment.status === PaymentStatus.CANCELED && selectedPayment.cancelReason && (
+              {selectedPayment.paymentStatus === PaymentStatus.CANCELED && selectedPayment.cancelReason && (
                 <>
                   <Separator />
                   <div>
