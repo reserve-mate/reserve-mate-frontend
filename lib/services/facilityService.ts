@@ -125,6 +125,13 @@ export const facilityService = {
     console.log(response);
     return response;
   },
+
+  // 시설 이름,스포츠타입 조회
+  getFacilitySportType: async (id: number) => {
+    const response = await api.get<Facility>(`/facility/name/type/${id}`)
+    console.log(response);
+    return response;
+  },
   
   // 시설 등록 (관리자 전용)
   createFacility: (data: CreateFacilityRequest) => {

@@ -42,8 +42,8 @@ import { facilityService } from "@/lib/services/facilityService"
 
 // 코트 대분류 유형
 const courtMainTypes = [
-  { value: "indoor", label: "실내" },
-  { value: "outdoor", label: "실외" },
+  { value: true, label: "실내" },
+  { value: false, label: "실외" },
 ]
 
 // 종목별 코트 소분류 유형
@@ -106,12 +106,15 @@ type Court = {
   id: string;
   name: string;
   facilityId?: string;
-  mainType: string;
-  subType: string;
+  // mainType: string;
+  // subType: string;
+  courtType : string;
+  indoor : boolean;
   width: string;
   height: string;
-  hourlyRate: string;
-  isActive: boolean;
+  // hourlyRate: string;
+  active: boolean;
+  fee: string;
 }
 
 type Facility = {
@@ -130,6 +133,7 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
   const [selectedFacility, setSelectedFacility] = useState<string>("")
   const [courts, setCourts] = useState<Court[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedSportType, setSelectedSportType] = useState<string>("OTHER")
   
   // 코트 관리 다이얼로그 상태
   const [isCourtDialogOpen, setIsCourtDialogOpen] = useState(false)
@@ -144,29 +148,41 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
     id: "",
     name: "",
     facilityId: "",
-    mainType: "",
-    subType: "",
+    courtType: "",
+    // subType: "",
     width: "",
     height: "",
-    hourlyRate: "",
-    isActive: true
+    indoor: true,
+    fee: "",
+    active: true
   })
   
   // 가상의 시설 데이터 로드 (실제로는 API 호출)
   useEffect(() => {
+    // const facilitySportType = await facilityService.getFacilitySportType(Number(selectedFacilityId))
     // const dummyFacilities = [
     //   { id: "1", name: "서울 테니스 센터", sportType: "TENNIS" },
     //   { id: "2", name: "강남 풋살장", sportType: "FUTSAL" },
     //   { id: "3", name: "종로 농구코트", sportType: "BASKETBALL" },
     // ]
     // setFacilities(dummyFacilities)
-    
     // 외부에서 선택된 시설 ID가 있으면 자동으로 선택
     if (selectedFacilityId) {
       setSelectedFacility(selectedFacilityId)
     }
   }, [selectedFacilityId])
   
+  const responseCourtDto = (dto: any): Court => ({
+    id: dto.id,
+    facilityId: selectedFacilityId,
+    name: dto.name,
+    courtType: dto.courtType,
+    width: String(dto.width),
+    height: String(dto.height),
+    indoor: dto.indoor,
+    active: dto.active,
+    fee: dto.fee ? String(dto.fee) : "0",
+  })
   // 시설 선택 시 코트 데이터 로드 (실제로는 API 호출)
   useEffect(() => {
     if (selectedFacility) {
@@ -175,7 +191,9 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
           const facilityId = Number(selectedFacility);
           const response = await facilityService.getCourts(facilityId);
           console.log(response);
-          // setCourts();
+          const courtDto = response.map(responseCourtDto);
+          setCourts(courtDto);
+
         } catch (error) {
           console.log("코트 목록 조회 실패", error);
           toast({
@@ -184,52 +202,24 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
             variant: "destructive"
           })
         }
-        
       }
-      // // 시설 ID에 따른 가상 코트 데이터
-      // const dummyCourts = [
-      //   {
-      //     id: "1",
-      //     name: "코트 A",
-      //     facilityId: "1",
-      //     mainType: "indoor",
-      //     subType: "HARD",
-      //     width: "20",
-      //     height: "40",
-      //     hourlyRate: "20000",
-      //     isActive: true
-      //   },
-      //   {
-      //     id: "2",
-      //     name: "코트 B",
-      //     facilityId: "1",
-      //     mainType: "outdoor",
-      //     subType: "CLAY_TENNIS",
-      //     width: "20",
-      //     height: "40",
-      //     hourlyRate: "15000",
-      //     isActive: true
-      //   },
-      //   {
-      //     id: "3",
-      //     name: "코트 C",
-      //     facilityId: "1",
-      //     mainType: "outdoor",
-      //     subType: "SYNTHETIC_TENNIS",
-      //     width: "20",
-      //     height: "40",
-      //     hourlyRate: "18000",
-      //     isActive: false
-      //   }
-      // ].filter(court => court.facilityId === selectedFacility)
-      
-      // setCourts(dummyCourts)
       fetchCourts()
     } else {
       setCourts([])
     }
   }, [selectedFacility])
   
+  // 시설 선택 시 해당 sportType 로드 
+  useEffect(()=> {
+    const fetchSportType = async () => {
+      if (selectedFacilityId){
+        const facility = await facilityService.getFacilitySportType(Number(selectedFacilityId))
+        setSelectedSportType(facility?.sportType || "OTHER");
+      }
+    }
+    fetchSportType();
+  },[selectedFacilityId])
+
   // 코트 필터링
   const filteredCourts = courts.filter(court =>
     court.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -260,12 +250,12 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
       id: "",
       name: "",
       facilityId: selectedFacility,
-      mainType: "",
-      subType: "",
+      courtType: "",
       width: "",
       height: "",
-      hourlyRate: "",
-      isActive: true
+      indoor: true,
+      fee: "",
+      active: true
     })
     setIsCourtDialogOpen(true)
   }
@@ -289,7 +279,7 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
     
     try {
       // 유효성 검사
-      if (!courtFormData.name || !courtFormData.mainType || !courtFormData.subType) {
+      if (!courtFormData.name || !courtFormData.indoor || !courtFormData.courtType || !courtFormData.width || !courtFormData.height || !courtFormData.fee) {
         toast({
           title: "입력 오류",
           description: "필수 필드를 모두 입력해주세요.",
@@ -372,10 +362,10 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
   }
   
   // 선택된 시설의 종목 타입 찾기
-  const getSelectedFacilitySportType = (): string => {
-    const facility = facilities.find(f => f.id === selectedFacility)
-    return facility?.sportType || "OTHER"
-  }
+  // const getSelectedFacilitySportType = (): string => {
+  //   const facility = facilities.find(f => f.id === selectedFacility)
+  //   return facility?.sportType || "OTHER"
+  // }
   
   return (
     <div className="space-y-6">
@@ -447,19 +437,19 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
                           <TableRow key={court.id}>
                             <TableCell className="font-medium">{court.name}</TableCell>
                             <TableCell>
-                              {courtMainTypes.find(t => t.value === court.mainType)?.label} / 
-                              {sportCourtTypes[getSelectedFacilitySportType() as keyof typeof sportCourtTypes]
-                                .find(t => t.value === court.subType)?.label}
+                              {courtMainTypes.find(t => t.value === court.indoor)?.label} / 
+                              {sportCourtTypes[selectedSportType as keyof typeof sportCourtTypes]
+                                .find(t => t.value === court.courtType)?.label}
                             </TableCell>
                             <TableCell>{court.width} × {court.height}</TableCell>
-                            <TableCell>{parseInt(court.hourlyRate).toLocaleString()}원</TableCell>
+                            <TableCell>{parseInt(court.fee).toLocaleString()}원</TableCell>
                             <TableCell>
                               <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                court.isActive 
+                                court.active 
                                   ? "bg-green-100 text-green-800" 
                                   : "bg-gray-100 text-gray-800"
                               }`}>
-                                {court.isActive ? "사용 가능" : "사용 불가"}
+                                {court.active ? "사용 가능" : "사용 불가"}
                               </span>
                             </TableCell>
                             <TableCell className="text-right">
@@ -522,17 +512,17 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="mainType">코트 환경 *</Label>
+                  <Label htmlFor="indoor">코트 환경 *</Label>
                   <Select
-                    value={courtFormData.mainType}
-                    onValueChange={(value) => handleCourtSelectChange("mainType", value)}
+                    value={String(courtFormData.indoor)}
+                    onValueChange={(value) => handleCourtSelectChange("indoor", value)}
                   >
-                    <SelectTrigger id="mainType">
+                    <SelectTrigger id="indoor">
                       <SelectValue placeholder="선택" />
                     </SelectTrigger>
                     <SelectContent>
                       {courtMainTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
+                        <SelectItem key={String(type.value)} value={String(type.value)}>
                           {type.label}
                         </SelectItem>
                       ))}
@@ -541,16 +531,16 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="subType">코트 바닥 *</Label>
+                  <Label htmlFor="courtType">코트 바닥 *</Label>
                   <Select
-                    value={courtFormData.subType}
-                    onValueChange={(value) => handleCourtSelectChange("subType", value)}
+                    value={courtFormData.courtType}
+                    onValueChange={(value) => handleCourtSelectChange("courtType", value)}
                   >
-                    <SelectTrigger id="subType">
+                    <SelectTrigger id="courtType">
                       <SelectValue placeholder="선택" />
                     </SelectTrigger>
                     <SelectContent>
-                      {sportCourtTypes[getSelectedFacilitySportType() as keyof typeof sportCourtTypes].map((type) => (
+                      {sportCourtTypes[selectedSportType as keyof typeof sportCourtTypes].map((type) => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}
                         </SelectItem>
@@ -587,26 +577,26 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="hourlyRate">시간당 요금(원)</Label>
+                <Label htmlFor="fee">시간당 요금(원)</Label>
                 <Input
-                  id="hourlyRate"
-                  name="hourlyRate"
+                  id="fee"
+                  name="fee"
                   type="number"
                   placeholder="예: 20000"
-                  value={courtFormData.hourlyRate}
+                  value={courtFormData.fee}
                   onChange={handleCourtInputChange}
                 />
               </div>
               
               <div className="flex items-center space-x-2 pt-2">
                 <Checkbox
-                  id="isActive"
-                  checked={courtFormData.isActive}
+                  id="active"
+                  checked={courtFormData.active}
                   onCheckedChange={(checked) => 
-                    handleCourtCheckboxChange("isActive", checked as boolean)
+                    handleCourtCheckboxChange("active", checked as boolean)
                   }
                 />
-                <Label htmlFor="isActive" className="text-sm font-normal">
+                <Label htmlFor="active" className="text-sm font-normal">
                   이 코트는 현재 사용 가능합니다
                 </Label>
               </div>
