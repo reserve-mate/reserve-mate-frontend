@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import ReservationStatus from "@/components/admin/reservation-status"
+import AdminReservationStatus from "@/components/admin/reservation-status"
 
 export default function ReservationsAdminPage() {
   return (
@@ -13,7 +13,7 @@ export default function ReservationsAdminPage() {
         모든 예약을 조회하고 상태를 관리할 수 있습니다.
       </p>
       
-      <ReservationStatus />
+      <AdminReservationStatus />
     </div>
   )
 } 

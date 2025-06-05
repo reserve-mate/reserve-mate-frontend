@@ -2,6 +2,27 @@ import { SportType } from "../enum/matchEnum";
 import { PaymentStatus } from "../enum/paymentEnum";
 import { ReservationStatus } from "../enum/reservationEnum";
 
+// 관리자 예약 상세
+export interface AdminReservationDetail {
+    reservationId: number;
+    reservationStatus: ReservationStatus;
+    reservationNumber: string
+    userName: string;
+    userEmail: string;
+    phone: string;
+    facilityName: string;
+    courtName: string;
+    reservationDate: string;
+    startTime: string;
+    endTime: string;
+    totalPrice: number;
+    createAt: string;
+    cancelReason: string;
+    cancelAt: string;
+    paymentStatus: PaymentStatus;
+    refundAmount: number;
+}
+
 // 관리자 예약 현황
 export interface AdminReservationResponse {
     reservationId: number;

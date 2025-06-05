@@ -1,9 +1,27 @@
 import { api } from "../api";
 import { ReservationStatus } from "../enum/reservationEnum";
 import { Slice } from "../types/commonTypes";
-import { AdminReservationResponse, DashboardReservation, ReservationDetail, Reservations } from "../types/reservationType";
+import { AdminReservationDetail, AdminReservationResponse, DashboardReservation, ReservationDetail, Reservations } from "../types/reservationType";
 
 export const reservationService = {
+
+    // 관리자 대시보드 총 에약 수
+    getAdminTotalReservation: (params: {facilityId: number, year: number, month: number}) => {
+        let endPoint = `/admin/reservation/getAdminTotalReservation?facilityId=${params.facilityId}&year=${params.year}&month=${params.month}`;
+        return api.get<number>(endPoint);
+    },
+
+    // 관리자 예약 상태 변경
+    chgReservationStatus: (params: {id: number, status: string}) => {
+        let endPoint = `/admin/reservation/status/${params.id}?status=${params.status}`;
+        return api.put(endPoint);
+    },
+
+    // 관리자 예약 상세
+    getAdminReservaionDetail: (param: number) => {
+        let endPoint = `/admin/reservation/${param}`;
+        return api.get<AdminReservationDetail>(endPoint);
+    },
 
     // 관리자 예약현황
     getAdminReservations: (params: {searchTerm: string, reserveStatus: string, facility: number, searchDate: string, pageNum: number}) => {
@@ -12,8 +30,8 @@ export const reservationService = {
     },
 
     // 관리자 대시보드 최근예약
-    getDashboardReservations: () => {
-        return api.get<DashboardReservation[]>(`/admin/reservation/dashboardReservations`);
+    getDashboardReservations: (params: {facilityId: number, year: number, month: number}) => {
+        return api.get<DashboardReservation[]>(`/admin/reservation/dashboardReservations?facilityId=${params.facilityId}&year=${params.year}&month=${params.month}`);
     },
 
     // 예약 취소
