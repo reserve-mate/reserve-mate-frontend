@@ -2,6 +2,33 @@ import { PaymentStatus } from "../enum/paymentEnum";
 import { MatchPaymentSuccess } from "./matchTypes";
 import { ReserveResponse } from "./reservationType";
 
+// 결제 내역 카운트
+export interface PaymentHistCntResponse {
+    matchPaymentCnt: number;
+    reservationPaymentCnt: number;
+}
+
+// 결제 내역
+export interface PaymentHistResponse {
+    paymentId: number;
+    paymentType: string;
+    orderId: string;
+    amount: number;
+    paymentMethod: string;
+    paymentStatus: PaymentStatus;
+    paidAt: string;
+    cancelReason: string;
+    refundAmount: number;
+    cancelAt: string;
+    facilityName: string;
+    courtName: string;
+    useDate: string;
+    startTime: string;
+    endTime: string;
+    refId: number;
+    refName: string;
+}
+
 export type PaymentResultResponse = MatchPaymentSuccess | CancelResponse | PaymentFail | ReserveResponse;
 
 // 매치 상태
@@ -51,11 +78,15 @@ export const displayPaymentStatus = (status: PaymentStatus) => {
             break;
         
         case PaymentStatus.CANCELED:
-            paymentStatus = "환불";
+            paymentStatus = "취소";
             break;
         
         case PaymentStatus.PARTIAL_CANCELED:
-            paymentStatus = "부분 환불";
+            paymentStatus = "부분 취소";
+            break;
+        
+        case PaymentStatus.REFUNDED: 
+            paymentStatus = "환불"
             break;
         default:
             paymentStatus = "결제 대기"
