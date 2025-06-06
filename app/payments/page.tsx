@@ -610,7 +610,7 @@ export default function PaymentsPage() {
               </div>
 
               {/* 취소 정보 (취소된 경우에만) */}
-              {selectedPayment.paymentStatus === PaymentStatus.CANCELED && selectedPayment.cancelReason && (
+              {(selectedPayment.paymentStatus === PaymentStatus.CANCELED || selectedPayment.paymentStatus === PaymentStatus.REFUNDED) && selectedPayment.cancelReason && (
                 <>
                   <Separator />
                   <div>
