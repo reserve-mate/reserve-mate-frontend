@@ -1,4 +1,6 @@
-import { PaymentStatus } from "../enum/paymentEnum";
+import { MatchStatus } from "../enum/matchEnum";
+import { PaymentStatus, ReturnPolicy } from "../enum/paymentEnum";
+import { ReservationStatus } from "../enum/reservationEnum";
 import { MatchPaymentSuccess } from "./matchTypes";
 import { ReserveResponse } from "./reservationType";
 
@@ -27,6 +29,8 @@ export interface PaymentHistResponse {
     endTime: string;
     refId: number;
     refName: string;
+    matchStatus: MatchStatus;
+    reservationStatus: ReservationStatus;
 }
 
 export type PaymentResultResponse = MatchPaymentSuccess | CancelResponse | PaymentFail | ReserveResponse;
@@ -69,6 +73,62 @@ export interface PaymentHistory {
     cancelReason?: string;
 }
 
+// 예약 환불 가격 게산 로직
+export const reservationRefundAmount = (reservation: {
+  reserveDate: string;     // 예: "2025-06-12"
+  startTime: string;       // 예: "14:00:00"
+}, amount: number): number => {
+    const now = new Date();
+    const reserveDateTime = new Date(`${reservation.reserveDate}T${reservation.startTime}`);
+
+    const diffMs = reserveDateTime.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    let refund = 0;
+
+    if (diffHours >= ReturnPolicy.TWO_DAY_AGO_BY_HOUR) {
+        // 48시간 전: 전액 환불
+        refund = amount;
+    } else if (diffHours >= ReturnPolicy.ONE_DAY_AGO_BY_HOUR) {
+        // 24~48시간 전: 50% 환불
+        refund = Math.floor(amount * ReturnPolicy.RETURN_50);
+    } else if (diffHours > 0) {
+        // 당일 취소: 환불 없음
+        refund = 0;
+    }
+
+    return refund;
+}
+
+// 매치 환불 가격 계산 로직
+export const refundAmount = (match: {
+    matchDate: string; // 'YYYY-MM-DD'
+    matchTime: string; // 24시간제 (예: 18 = 오후 6시)
+    matchPrice: number;
+}): number  => {
+    const now = new Date();
+    const matchDateTime = new Date(`${match.matchDate}T${match.matchTime}`);
+
+    const diffMs = matchDateTime.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    const diffMinutes = diffMs / (1000 * 60);
+
+    let price = match.matchPrice;
+
+    if (diffHours <= ReturnPolicy.TWO_DAY_AGO_BY_HOUR && diffHours >= ReturnPolicy.ONE_DAY_AGO_BY_HOUR) {
+    // 매치 시작 24시간 이내 취소 시 80% 환불
+    price = Math.floor(price * ReturnPolicy.RETURN_80);
+    } else if (diffMinutes < ReturnPolicy.ONE_DAY_AGO_BY_MINUTE && diffMinutes >= ReturnPolicy.ONE_HOUR_HALF_AGO) {
+    // 매치 당일 ~ 90분 전까지는 20% 환불
+    price = Math.floor(price * ReturnPolicy.RETURN_20);
+    } else if (diffMinutes < ReturnPolicy.ONE_HOUR_HALF_AGO) {
+    price = 0;
+    }
+
+    return price;
+}
+
+// 결제 상태 화면 노출
 export const displayPaymentStatus = (status: PaymentStatus) => {
     let paymentStatus = "";
     
