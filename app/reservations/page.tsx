@@ -56,7 +56,11 @@ export default function ReservationsPage() {
         type: type,
         pageNum: pageNum
       });
-      setReservationDatas((prev) => [...(prev || []), ...response.content]);
+      setReservationDatas((prev) => {
+        const merged = [...(prev || []), ...response.content];
+        const unique = [...new Map(merged.map(r => [r.reservationId, r])).values()]
+        return unique;
+      });
       setPage(response.number);
       setHasMore(!response.last);
     }catch(error : any) {
