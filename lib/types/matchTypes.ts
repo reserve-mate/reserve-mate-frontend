@@ -1,6 +1,25 @@
 import { MatchStatus, PlayerStatus, RemovalReason, SportType } from "../enum/matchEnum";
 import { PaymentResponse } from "./payment";
 
+// 매치 이용내역
+export interface MatchHistoryResponse {
+    matchId: number;
+    playerId: number;
+    matchName: string;
+    sportType: SportType;
+    playerStatus: PlayerStatus;
+    matchStatus: MatchStatus;
+    facilityName: string;
+    address: string;
+    matchDate: string;
+    matchTime: number;
+    endTime: number;
+    matchPrice: number;
+    teamCapacity: number;
+    playerCnt: number;
+    ejectReason: RemovalReason
+}
+
 export type PlayerEject = {
     ejectionReason: RemovalReason;
     facilityId: number
@@ -371,10 +390,4 @@ export interface MatchHistory {
     orderId: string;
     teamCapacity: number;
     playerCnt: number;
-}
-
-// 매치 이용내역 검색 파라미터
-export interface MatchHistorySearch {
-    status?: string; // "all", "completed", "upcoming", "canceled" 등
-    pageNumber?: number;
 }
