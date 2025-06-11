@@ -508,6 +508,7 @@ export default function RegisterFacilityForm({ onComplete }: RegisterFacilityFor
                 value={addressData.address}
                 onChange={handleAddressChange}
                 placeholder="예: 서울시 강남구 테헤란로 123"
+                readOnly
                 className="flex-1 h-12 text-base"
                 required
               />

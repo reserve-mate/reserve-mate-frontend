@@ -3,16 +3,17 @@ import { api } from '../api';
 import { SportType } from '../enum/matchEnum';
 import { CourtName, FacilityManagerName, FacilityNames } from '../types/facilityTypes';
 import { FacilityManager } from './userService';
+import { Address, OperatingHours } from '../types/facilityTypes';
 
 // 시설 타입 정의
 export interface Facility {
   id: number;
   name: string;
   sportType: string;
-  address: string;
+  address: Address;
   detailAddress?: string;
   description?: string;
-  operatingHours: string;
+  operatingHours: OperatingHours[];
   courtsCount: number;
   hasParking: boolean;
   hasShower: boolean;
@@ -34,22 +35,6 @@ export interface Court {
   indoor: boolean;
   active: boolean;
   fee: number;
-}
-
-// 주소 타입 정의
-export interface Address {
-  zipcode: string,
-  city: string,
-  district: string,
-  streetAddress: string,
-  detailAddress: string,
-}
-
-export interface operatingHours {
-  dayOfWeek: string,
-  openTime: string | null,
-  closeTime: string | null,
-  holiday: boolean
 }
 
 // 시설 등록 요청 타입
@@ -121,7 +106,7 @@ export const facilityService = {
   
   // 시설 상세 조회
   getFacility: async (id: number) => {
-    const response = await api.get<Facility>(`/admin/facilities/${id}`)
+    const response = await api.get<Facility>(`/admin/facilities/${id}`);
     console.log(response);
     return response;
   },
@@ -194,7 +179,7 @@ export const facilityService = {
   
   // 코트 추가 (관리자 전용)
   createCourt: (facilityId: number, data: Omit<Court, 'id' | 'facilityId'>) => 
-    api.post<Court>(`/admin/facilities/${facilityId}/courts`, data),
+    api.post<Court>(`/admin/facilities/${facilityId}/create/court`, data),
   
   // 코트 정보 수정 (관리자 전용)
   updateCourt: (facilityId: number, courtId: number, data: Partial<Court>) => 

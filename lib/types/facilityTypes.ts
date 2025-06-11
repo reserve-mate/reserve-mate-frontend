@@ -21,9 +21,17 @@ export interface FacilityManagerName {
     managerEmail: string;
 }
 
-export interface operatingHours {
+export interface OperatingHours {
     dayOfWeek: string;
     openTime: string | null;
     closeTime: string | null;
     holiday: boolean;
+}
+
+export interface Address {
+    zipcode: string;
+    city: string;
+    district: string;
+    streetAddress: string;
+    detailAddress: string;
 }

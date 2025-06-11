@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -89,7 +89,7 @@ const sportCourtTypes = {
   ]
 }
 
-// sportTypes 추가
+// sportTypes
 const sportTypes = [
   { value: "TENNIS", label: "테니스" },
   { value: "FUTSAL", label: "풋살" },
@@ -106,13 +106,10 @@ type Court = {
   id: string;
   name: string;
   facilityId?: string;
-  // mainType: string;
-  // subType: string;
   courtType : string;
   indoor : boolean;
   width: string;
   height: string;
-  // hourlyRate: string;
   active: boolean;
   fee: string;
 }
@@ -149,7 +146,6 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
     name: "",
     facilityId: "",
     courtType: "",
-    // subType: "",
     width: "",
     height: "",
     indoor: true,
@@ -159,13 +155,6 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
   
   // 가상의 시설 데이터 로드 (실제로는 API 호출)
   useEffect(() => {
-    // const facilitySportType = await facilityService.getFacilitySportType(Number(selectedFacilityId))
-    // const dummyFacilities = [
-    //   { id: "1", name: "서울 테니스 센터", sportType: "TENNIS" },
-    //   { id: "2", name: "강남 풋살장", sportType: "FUTSAL" },
-    //   { id: "3", name: "종로 농구코트", sportType: "BASKETBALL" },
-    // ]
-    // setFacilities(dummyFacilities)
     // 외부에서 선택된 시설 ID가 있으면 자동으로 선택
     if (selectedFacilityId) {
       setSelectedFacility(selectedFacilityId)
@@ -183,32 +172,31 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
     active: dto.active,
     fee: dto.fee ? String(dto.fee) : "0",
   })
-  // 시설 선택 시 코트 데이터 로드 (실제로는 API 호출)
-  useEffect(() => {
-    if (selectedFacility) {
-      const fetchCourts = async () => {
-        try {
-          const facilityId = Number(selectedFacility);
-          const response = await facilityService.getCourts(facilityId);
-          console.log(response);
-          const courtDto = response.map(responseCourtDto);
-          setCourts(courtDto);
 
-        } catch (error) {
-          console.log("코트 목록 조회 실패", error);
-          toast({
-            title: "코트 목록 조회 실패",
-            description: "코트 목록을 불러오는 중 실패하였습니다.",
-            variant: "destructive"
-          })
-        }
-      }
-      fetchCourts()
-    } else {
-      setCourts([])
+  // 시설 선택 시 코트 데이터 로드 (실제로는 API 호출)
+  const fetchCourts = useCallback(async () => {
+    if (!selectedFacility) return;
+    try {
+      const facilityId = Number(selectedFacility);
+      const response = await facilityService.getCourts(facilityId);
+      const courtDto = response.map(responseCourtDto);
+      setCourts(courtDto);
+    } catch (error) {
+      
+      toast({
+        title: "코트 목록 조회 실패",
+        description: "코트 목록을 불러오는 중 실패하였습니다.",
+        variant: "destructive"
+      });
     }
-  }, [selectedFacility])
+  }, [selectedFacility]);
   
+  useEffect(() => {
+    fetchCourts();
+  }, [fetchCourts]);
+
+
+
   // 시설 선택 시 해당 sportType 로드 
   useEffect(()=> {
     const fetchSportType = async () => {
@@ -274,7 +262,7 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
   }
   
   // 코트 저장 처리
-  const handleSaveCourt = () => {
+  const handleSaveCourt = async () => {
     setIsLoading(true)
     
     try {
@@ -288,38 +276,40 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
         setIsLoading(false)
         return
       }
-      
+
+      // 코트 변환 처리
+      const payload = {
+        name : courtFormData.name,
+        courtType : courtFormData.courtType,
+        indoor : courtFormData.active,
+        active : courtFormData.active,
+        width : Number(courtFormData.width),
+        height: Number(courtFormData.height),
+        fee : Number(courtFormData.fee)
+      }
+
       // 실제로는 API 호출
-      setTimeout(() => {
-        if (dialogMode === "add") {
-          // 새 코트 추가
-          const newCourt: Court = {
-            ...courtFormData,
-            id: Math.random().toString(36).substr(2, 9) // 임시 ID 생성
-          }
-          setCourts(prev => [...prev, newCourt])
-          
-          toast({
-            title: "코트 추가 완료",
-            description: `${newCourt.name} 코트가 추가되었습니다.`
-          })
-        } else {
-          // 기존 코트 수정
-          setCourts(prev => 
-            prev.map(court => 
-              court.id === courtFormData.id ? courtFormData : court
-            )
-          )
-          
-          toast({
-            title: "코트 수정 완료",
-            description: `${courtFormData.name} 코트가 수정되었습니다.`
-          })
-        }
+      if (dialogMode === "add") {
+        await facilityService.createCourt(Number(selectedFacilityId),payload)
+        fetchCourts()
+
+        toast({
+          title: "코트 추가 완료",
+          description: `${courtFormData.name}코트가 추가되었습니다.`
+        })
+      } else {
+        // 기존 코트 수정
+        await facilityService.updateCourt(Number(selectedFacilityId), Number(courtFormData.id), payload)
+        fetchCourts()
         
-        setIsCourtDialogOpen(false)
-        setIsLoading(false)
-      }, 500)
+        toast({
+          title: "코트 수정 완료",
+          description: `${courtFormData.name} 코트가 수정되었습니다.`
+        })
+      }
+      
+      setIsCourtDialogOpen(false)
+      setIsLoading(false)
     } catch (error) {
       toast({
         title: "오류 발생",
@@ -331,26 +321,24 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
   }
   
   // 코트 삭제 처리
-  const handleDeleteCourt = () => {
+  const handleDeleteCourt = async() => {
     setIsLoading(true)
     
     try {
       // 실제로는 API 호출
-      setTimeout(() => {
-        if (courtToDelete) {
-          const courtToRemove = courts.find(court => court.id === courtToDelete)
-          setCourts(prev => prev.filter(court => court.id !== courtToDelete))
-          
-          toast({
-            title: "코트 삭제 완료",
-            description: `${courtToRemove?.name} 코트가 삭제되었습니다.`
-          })
-        }
-        
-        setIsDeleteDialogOpen(false)
-        setCourtToDelete(null)
-        setIsLoading(false)
-      }, 500)
+      if (courtToDelete) {
+        await facilityService.deleteCourt(Number(selectedFacilityId), Number(courtToDelete))
+        fetchCourts()
+
+        toast({
+          title: "코트 삭제 완료",
+          description: ` 코트가 삭제되었습니다.`
+        })
+      }
+      
+      setIsDeleteDialogOpen(false)
+      setCourtToDelete(null)
+      setIsLoading(false)
     } catch (error) {
       toast({
         title: "오류 발생",
@@ -361,12 +349,6 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
     }
   }
   
-  // 선택된 시설의 종목 타입 찾기
-  // const getSelectedFacilitySportType = (): string => {
-  //   const facility = facilities.find(f => f.id === selectedFacility)
-  //   return facility?.sportType || "OTHER"
-  // }
-  
   return (
     <div className="space-y-6">
       <Card>
@@ -375,25 +357,6 @@ export default function CourtManagement({ selectedFacilityId }: CourtManagementP
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* <div>
-              <Label htmlFor="facility">시설 선택</Label>
-              <Select
-                value={selectedFacility}
-                onValueChange={(value) => setSelectedFacility(value)}
-              >
-                <SelectTrigger id="facility">
-                  <SelectValue placeholder="관리할 시설을 선택하세요" />
-                </SelectTrigger>
-                <SelectContent>
-                  {facilities.map((facility) => (
-                    <SelectItem key={facility.id} value={facility.id}>
-                      {facility.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div> */}
-            
             {selectedFacility && (
               <>
                 <div className="flex items-center justify-between">
