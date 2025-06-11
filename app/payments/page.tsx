@@ -13,16 +13,21 @@ import { Input } from "@/components/ui/input"
 import { ArrowLeft, Calendar, CreditCard, MapPin, Users, AlertCircle, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { paymentService, RefundRequest } from "@/lib/services/paymentService"
-import { PaymentHistCntResponse, PaymentHistResponse, PaymentHistory, displayPaymentStatus } from "@/lib/types/payment"
+import { PaymentHistCntResponse, PaymentHistResponse, PaymentHistory, displayPaymentStatus, refundAmount, reservationRefundAmount } from "@/lib/types/payment"
 import { PaymentStatus } from "@/lib/enum/paymentEnum"
 import { toast } from "@/hooks/use-toast"
 import { Slice } from "@/lib/types/commonTypes"
+import { useRouter } from "next/navigation"
+import { ReservationStatus } from "@/lib/enum/reservationEnum"
+import { MatchStatus } from "@/lib/enum/matchEnum"
 
 export default function PaymentsPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [currentPage, setCurrentPage] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
-  
+
+  const router = useRouter();
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 탭
   const [activeTab, setActiveTab] = useState('match');
 
   // 결제 내역 카운트
@@ -66,6 +71,7 @@ export default function PaymentsPage() {
     getPaymentHistCnt();
   }, []);
 
+  // 결제 내역 조회 api
   const getPaymentHist = async (type: string, pageNum: number) => {
     if(isLoading) return;
       setIsLoading(true);
@@ -121,16 +127,6 @@ export default function PaymentsPage() {
 
   }, [page, hasMore, isLoading])
 
-  // 탭별 개수 계산
-  const getTabCounts = () => {
-    const matchCount = paymentHist.filter(payment => payment.paymentType === 'MATCH').length
-    const facilityCount = paymentHist.filter(payment => payment.paymentType === 'RESERVATION').length
-    return {
-      match: matchCount,
-      facility: facilityCount
-    }
-  }
-
   // 환불 신청 모달 열기
   const openRefundModal = (payment: PaymentHistResponse) => {
     setSelectedPayment(payment)
@@ -145,77 +141,24 @@ export default function PaymentsPage() {
   const openDetailModal = async (payment: PaymentHistResponse) => {
     setSelectedPayment(payment)
     setShowDetailModal(true)
-    
-    // 실제 환경에서는 상세 정보를 다시 불러올 수 있음
-    // if (!useDummyData) {
-    //   try {
-    //     const detailResponse = await paymentService.getPaymentDetail(payment.id)
-    //     setSelectedPayment(detailResponse)
-    //   } catch (error) {
-    //     console.error("상세 정보 조회 실패:", error)
-    //   }
-    // }
   }
 
   // 환불 신청 처리
   const handleRefundSubmit = async () => {
     if (!selectedPayment) return
     
-    if (!refundForm.reason.trim()) {
-      toast({
-        title: "환불 사유 필수",
-        description: "환불 사유를 입력해주세요.",
-        variant: "destructive",
-      })
-      return
-    }
-
     setIsRefunding(true)
-    
-    try {
-      const refundRequest: RefundRequest = {
-        paymentId: selectedPayment.paymentId,
-        reason: refundForm.reason,
-        refundAmount: refundForm.refundAmount
-      }
 
-      if (paymentHist) {
-        // 더미 데이터 환경에서는 시뮬레이션
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        // 로컬 상태 업데이트
-        // setPaymentHistory(prev => 
-        //   prev.map(p => 
-        //     p.id === selectedPayment.paymentId 
-        //       ? { ...p, status: PaymentStatus.CANCELED, cancelReason: refundForm.reason }
-        //       : p
-        //   )
-        // )
-      } else {
-        await paymentService.requestRefund(refundRequest)
-        
-        // 성공 시 데이터 새로고침
-        //loadPaymentHistory(0)
+    if(selectedPayment.paymentType === 'MATCH') {
+      router.push(`/matches/cancel/${selectedPayment.refId}?orderId=${selectedPayment.orderId}`)
+    }else {
+      if(selectedPayment.reservationStatus === ReservationStatus.CONFIRMED) {
+        router.push(`/reservations/cancel/${selectedPayment.refId}?status=${selectedPayment.reservationStatus}`);
       }
-
-      toast({
-        title: "환불 신청 완료",
-        description: "환불 신청이 성공적으로 접수되었습니다. 처리까지 2-3일 정도 소요됩니다.",
-      })
-      
-      setShowRefundModal(false)
-      setSelectedPayment(null)
-      
-    } catch (error) {
-      console.error("환불 신청 실패:", error)
-      toast({
-        title: "환불 신청 실패",
-        description: "환불 신청 중 오류가 발생했습니다. 다시 시도해주세요.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsRefunding(false)
     }
+
+    setShowRefundModal(false)
+    setSelectedPayment(null)
   }
 
   // 금액 포맷팅
@@ -393,7 +336,7 @@ export default function PaymentsPage() {
                             {payment.useDate && (
                               <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">이용일시</span>
-                                <span>{formatDate(payment.useDate)}</span>
+                                <span>{formatDate(`${payment.useDate} ${payment.startTime}`)}</span>
                               </div>
                             )}
                           </div>
@@ -424,7 +367,14 @@ export default function PaymentsPage() {
                         {/* 추가 액션 버튼들 */}
                         <Separator className="my-4" />
                         <div className="flex justify-end gap-2">
-                          {payment.paymentStatus === PaymentStatus.PAID && (
+                          {(payment.paymentStatus === PaymentStatus.PAID &&
+                            (
+                              payment.reservationStatus === ReservationStatus.CONFIRMED ||
+                              payment.matchStatus === MatchStatus.APPLICABLE ||
+                              payment.matchStatus === MatchStatus.CLOSE_TO_DEADLINE ||
+                              payment.matchStatus === MatchStatus.FINISH
+                            ))
+                          && (
                             <Button 
                               variant="outline" 
                               size="sm"
@@ -511,25 +461,17 @@ export default function PaymentsPage() {
                 <Input
                   id="refund-amount"
                   type="number"
-                  value={refundForm.refundAmount}
-                  onChange={(e) => setRefundForm(prev => ({ ...prev, refundAmount: Number(e.target.value) }))}
-                  max={selectedPayment.amount}
-                  min={0}
-                />
-                <p className="text-xs text-muted-foreground">
-                  최대 {formatAmount(selectedPayment.amount)}원까지 환불 가능합니다.
-                </p>
-              </div>
-
-              {/* 환불 사유 */}
-              <div className="space-y-2">
-                <Label htmlFor="refund-reason">환불 사유 *</Label>
-                <Textarea
-                  id="refund-reason"
-                  placeholder="환불 사유를 상세히 입력해주세요."
-                  value={refundForm.reason}
-                  onChange={(e) => setRefundForm(prev => ({ ...prev, reason: e.target.value }))}
-                  rows={4}
+                  value={
+                    (selectedPayment.paymentType === 'MATCH') ?
+                    refundAmount({
+                    matchDate: selectedPayment.useDate,
+                    matchTime: selectedPayment.startTime,
+                    matchPrice: refundForm.refundAmount}) 
+                    : 
+                  reservationRefundAmount({
+                    reserveDate: selectedPayment.useDate,
+                    startTime: selectedPayment.startTime
+                  }, selectedPayment.amount)}
                 />
               </div>
 
@@ -539,7 +481,20 @@ export default function PaymentsPage() {
                 <ul className="text-xs text-amber-700 space-y-1">
                   <li>• 환불 처리는 영업일 기준 2-3일 소요됩니다.</li>
                   <li>• 카드 결제의 경우 카드사 정책에 따라 추가 시간이 소요될 수 있습니다.</li>
-                  <li>• 부분 환불도 가능하며, 환불 후 취소할 수 없습니다.</li>
+                  {(selectedPayment.paymentType === 'MATCH') ? 
+                    (
+                      <>
+                        <li>• 매치 시작 시간 24시간 이내 취소 시 80% 환불됩니다.</li>
+                        <li>• 매치 당일 ~ 90분 전까지는 20% 환불됩니다.</li>
+                      </>
+                    ) : 
+                    (
+                      <>
+                        <li>• 예약 시작 24시간 전까지 취소 시 전액 환불됩니다.</li>
+                        <li>• 예약 시작 12시간 전까지 취소 시 50% 환불됩니다.</li>
+                      </>
+                    )}
+                  <li>• 환불 후 취소할 수 없습니다.</li>
                 </ul>
               </div>
             </div>
@@ -551,7 +506,7 @@ export default function PaymentsPage() {
             </Button>
             <Button 
               onClick={handleRefundSubmit}
-              disabled={isRefunding || !refundForm.reason.trim()}
+              disabled={isRefunding}
             >
               {isRefunding ? "처리 중..." : "환불 신청"}
             </Button>
@@ -561,7 +516,7 @@ export default function PaymentsPage() {
 
       {/* 상세보기 모달 */}
       <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-500" />
@@ -573,9 +528,13 @@ export default function PaymentsPage() {
             <div className="grid gap-6 py-4">
               {/* 기본 정보 */}
               <div>
-                <h4 className="font-semibold mb-3 text-lg">기본 정보</h4>
+                <h4 className="font-semibold mb-3 text-lg">결제 정보</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="space-y-3">
+                    <div>
+                      <span className="text-muted-foreground">주문번호</span>
+                      <p className="font-mono">{selectedPayment.orderId}</p>
+                    </div>
                     <div>
                       <span className="text-muted-foreground">결제 타입</span>
                       <div className="flex items-center gap-2 mt-1">
@@ -603,10 +562,6 @@ export default function PaymentsPage() {
                         </Badge>
                       </div>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">결제 수단</span>
-                      <p className="font-medium">{selectedPayment.paymentMethod}</p>
-                    </div>
                   </div>
                   <div className="space-y-3">
                     <div>
@@ -617,18 +572,11 @@ export default function PaymentsPage() {
                       <span className="text-muted-foreground">결제 일시</span>
                       <p className="font-medium">{formatDate(selectedPayment.paidAt)}</p>
                     </div>
-                    {selectedPayment.useDate && (
-                      <div>
-                        <span className="text-muted-foreground">이용 일시</span>
-                        <p className="font-medium">{formatDate(selectedPayment.useDate)}</p>
-                      </div>
-                    )}
-                    {selectedPayment.paymentType === 'MATCH' && selectedPayment.facilityName && (
-                      <div>
-                        <span className="text-muted-foreground">경기장</span>
-                        <p className="font-medium">{selectedPayment.facilityName}</p>
-                      </div>
-                    )}
+
+                    <div>
+                      <span className="text-muted-foreground">결제 수단</span>
+                      <p className="font-medium">{selectedPayment.paymentMethod}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -637,29 +585,50 @@ export default function PaymentsPage() {
 
               {/* 결제 정보 */}
               <div>
-                <h4 className="font-semibold mb-3">결제 정보</h4>
-                <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm">
+                <h4 className="font-semibold mb-3">
+                  {(selectedPayment.paymentType === 'MATCH') ? "매치 정보" : "예약 정보"}
+                </h4>
+                <div className="bg-gray-50 py-4 rounded-lg space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span>주문번호:</span>
-                    <span className="font-mono">{selectedPayment.orderId}</span>
+                    <span>경기장:</span>
+                    <p className="font-medium">{`${selectedPayment.facilityName} / ${selectedPayment.courtName}`}</p>
                   </div>
-                  {/* <div className="flex justify-between">
-                    <span>결제키:</span>
-                    <span className="font-mono">{selectedPayment.paymentKey}</span>
-                  </div> */}
+                  {selectedPayment.useDate && (
+                    <>
+                      <div className="flex justify-between">
+                        <span>이용 일시</span>
+                        <p className="font-medium">{formatDate(`${selectedPayment.useDate} ${selectedPayment.startTime}`)}</p>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span>종료 일시</span>
+                        <p className="font-medium">{formatDate(`${selectedPayment.useDate} ${selectedPayment.endTime}`)}</p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
               {/* 취소 정보 (취소된 경우에만) */}
-              {selectedPayment.paymentStatus === PaymentStatus.CANCELED && selectedPayment.cancelReason && (
+              {(selectedPayment.paymentStatus === PaymentStatus.CANCELED || selectedPayment.paymentStatus === PaymentStatus.REFUNDED) && selectedPayment.cancelReason && (
                 <>
                   <Separator />
                   <div>
                     <h4 className="font-semibold mb-3">취소 정보</h4>
                     <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">취소 사유:</span>
-                        <p className="mt-1 text-red-700">{selectedPayment.cancelReason}</p>
+                      <div className="text-sm space-y-2">
+                        {(selectedPayment.refundAmount) && 
+                          (
+                            <div>
+                              <span className="text-muted-foreground">취소 금액:</span>
+                              <p className="mt-1 text-red-700">{selectedPayment.refundAmount.toLocaleString()}원</p>
+                            </div>
+                          )
+                        }
+                        <div>
+                          <span className="text-muted-foreground">취소 사유:</span>
+                          <p className="mt-1 text-red-700">{selectedPayment.cancelReason}</p>
+                        </div>
                       </div>
                     </div>
                   </div>

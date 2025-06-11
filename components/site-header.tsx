@@ -143,6 +143,9 @@ export function SiteHeader() {
                 <DropdownMenuItem asChild>
                   <Link href="/payments">결제 내역</Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/matches/history">매치 이용내역</Link>
+                </DropdownMenuItem>
                 {isAdmin && (
                   <>
                     <DropdownMenuSeparator />
@@ -189,6 +192,10 @@ export function SiteHeader() {
                       <Link href="/payments" className="flex items-center gap-3 text-base font-medium text-gray-700 hover:text-indigo-600">
                         <CreditCard className="w-5 h-5 text-gray-400" />
                         <span>결제 내역</span>
+                      </Link>
+                      <Link href="/matches/history" className="flex items-center gap-3 text-base font-medium text-gray-700 hover:text-indigo-600">
+                        <Trophy className="w-5 h-5 text-gray-400" />
+                        <span>매치 이용내역</span>
                       </Link>
                       {isAdmin && (
                         <Link href="/admin/dashboard" className="flex items-center gap-3 text-base font-medium text-indigo-600 hover:text-indigo-800">

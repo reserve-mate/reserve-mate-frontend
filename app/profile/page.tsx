@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Image from "next/image"
 import { userService } from "@/lib/services/userService"
 import Link from "next/link"
+import { Calendar, CreditCard, Trophy } from "lucide-react"
 
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -435,6 +436,45 @@ export default function ProfilePage() {
               </div>
             </div>
           </Tabs>
+        </div>
+      </div>
+
+      {/* 빠른 액세스 링크 */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold mb-6">빠른 액세스</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6 text-center">
+              <Calendar className="h-8 w-8 text-indigo-600 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold mb-2">예약 내역</h3>
+              <p className="text-gray-600 text-sm mb-4">시설 예약 현황을 확인하세요</p>
+              <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Link href="/reservations">예약 내역 보기</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6 text-center">
+              <Trophy className="h-8 w-8 text-indigo-600 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold mb-2">매치 이용내역</h3>
+              <p className="text-gray-600 text-sm mb-4">참여한 매치 내역을 확인하세요</p>
+              <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Link href="/matches/history">매치 내역 보기</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6 text-center">
+              <CreditCard className="h-8 w-8 text-indigo-600 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold mb-2">결제 내역</h3>
+              <p className="text-gray-600 text-sm mb-4">결제 및 환불 내역을 확인하세요</p>
+              <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Link href="/payments">결제 내역 보기</Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
       

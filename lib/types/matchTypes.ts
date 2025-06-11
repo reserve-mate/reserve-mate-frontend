@@ -352,3 +352,29 @@ export const displayEjectReason = (reason: RemovalReason) => {
 
     return statusName;
 }
+
+// 매치 이용내역 타입 정의
+export interface MatchHistory {
+    playerId: number;
+    matchId: number;
+    matchName: string;
+    facilityName: string;
+    address: string;
+    sportType: SportType;
+    matchDate: string;
+    matchTime: number;
+    matchEndTime: number;
+    matchPrice: number;
+    playerStatus: PlayerStatus;
+    ejectReason?: RemovalReason;
+    joinDate: string;
+    orderId: string;
+    teamCapacity: number;
+    playerCnt: number;
+}
+
+// 매치 이용내역 검색 파라미터
+export interface MatchHistorySearch {
+    status?: string; // "all", "completed", "upcoming", "canceled" 등
+    pageNumber?: number;
+}

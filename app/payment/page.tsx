@@ -108,6 +108,9 @@ function PaymentContent() {
     fetchPayment();
   }, [clientKey, customerKey]);
 
+  const noDashPhone = (phone: string) => {
+    return phone.replace(/-/g, '');
+  }
 
   // 결제 기능
   const handlePayment = async () => {
@@ -140,7 +143,7 @@ function PaymentContent() {
         failUrl: window.location.origin + "/payment/failed", // 결제 요청이 실패하면 리다이렉트되는 URL
         customerEmail: (reservation.userEmail) ? reservation.userEmail : "",
         customerName: reservation.bookedName,
-        customerMobilePhone: (reservation.userPhone) ? reservation.userPhone : "",
+        customerMobilePhone: (reservation.userPhone) ? noDashPhone(reservation.userPhone) : "",
         // 카드 결제에 필요한 정보
         card: {
           useEscrow: false,
