@@ -9,30 +9,35 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { toast } from "@/hooks/use-toast"
 import { PlusCircle, UserPlus, Trash2 } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { facilityService } from "@/lib/services/facilityService"
+import { AssignFacilityManagerRequest } from "@/lib/types/facilityTypes"
 
 // 관리자 타입 정의
 type FacilityManager = {
   id: number;
-  username: string;
+  userName: string;
   email: string;
   facilityId: number;
+  managerRole?: string;
 }
+
 
 // 더미 데이터
 const dummyManagers: { [key: string]: FacilityManager[] } = {
   "1": [
-    { id: 101, username: "김테니스", email: "tennis1@example.com", facilityId: 1 },
-    { id: 102, username: "이테니스", email: "tennis2@example.com", facilityId: 1 }
+    { id: 101, userName: "김테니스", email: "tennis1@example.com", facilityId: 1 },
+    { id: 102, userName: "이테니스", email: "tennis2@example.com", facilityId: 1 }
   ],
   "2": [
-    { id: 103, username: "박풋살", email: "futsal1@example.com", facilityId: 2 },
+    { id: 103, userName: "박풋살", email: "futsal1@example.com", facilityId: 2 },
   ],
   "3": [
-    { id: 104, username: "최농구", email: "basketball@example.com", facilityId: 3 },
-    { id: 105, username: "정농구", email: "basketball2@example.com", facilityId: 3 }
+    { id: 104, userName: "최농구", email: "basketball@example.com", facilityId: 3 },
+    { id: 105, userName: "정농구", email: "basketball2@example.com", facilityId: 3 }
   ],
   "4": [
-    { id: 106, username: "강배드민턴", email: "badminton@example.com", facilityId: 4 }
+    { id: 106, userName: "강배드민턴", email: "badminton@example.com", facilityId: 4 }
   ]
 };
 
@@ -41,19 +46,27 @@ type FacilityManagersProps = {
   facilityName: string;
 }
 
+// ManagerRole 추가
+const managerRole = [
+  { value: "MANAGER", label: "총괄 매니저"},
+  { value: "STAFF", label: "직원"},
+]
+
 export default function FacilityManagers({ facilityId, facilityName }: FacilityManagersProps) {
   const [managers, setManagers] = useState<FacilityManager[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [newManager, setNewManager] = useState({
-    username: "",
+    userName: "",
     email: "",
     password: "",
+    managerRole: "",
   })
 
   // 시설 관리자 목록 조회
   const fetchManagers = async () => {
     setIsLoading(true)
+
     try {
       // 실제로는 API에서 데이터를 가져옴
       // 여기서는 더미 데이터 사용
@@ -81,21 +94,38 @@ export default function FacilityManagers({ facilityId, facilityName }: FacilityM
     }))
   }
 
+  // 관리자 역할 선택 처리
+  const handleSelectChange = (field: string, value: string) => {
+    setNewManager(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
   // 관리자 생성 처리
   const handleCreateManager = async () => {
     try {
-      if (!newManager.username || !newManager.email || !newManager.password) {
+      if (!newManager.userName || !newManager.email || !newManager.managerRole) {
         throw new Error("모든 필수 정보를 입력해주세요.")
       }
 
       setIsLoading(true)
       
+      // const requestData:AssignFacilityManagerRequest = {
+      //   userName,
+      //   email,
+      //   managerRole,
+      // }
+
       // 실제로는 API 호출
+      await facilityService.assignManager(Number(facilityId), newManager);
+
+      /*
       // 여기서는 더미 데이터 업데이트
       const newManagerId = Math.floor(Math.random() * 1000) + 200;
       const createdManager = {
         id: newManagerId,
-        username: newManager.username,
+        userName: newManager.userName,
         email: newManager.email,
         facilityId: facilityId
       };
@@ -106,7 +136,7 @@ export default function FacilityManagers({ facilityId, facilityName }: FacilityM
         dummyManagers[facilityIdStr] = [];
       }
       dummyManagers[facilityIdStr].push(createdManager);
-      
+      */
       toast({
         title: "관리자 생성 완료",
         description: "시설 관리자가 성공적으로 생성되었습니다."
@@ -114,11 +144,12 @@ export default function FacilityManagers({ facilityId, facilityName }: FacilityM
       
       // 목록 갱신 및 폼 초기화
       await fetchManagers()
-      setNewManager({
-        username: "",
-        email: "",
-        password: "",
-      })
+      // setNewManager({
+      //   userName: "",
+      //   email: "",
+      //   password: "",
+      //   managerRole: "",
+      // })
       setIsCreateDialogOpen(false)
     } catch (error) {
       toast({
@@ -156,10 +187,12 @@ export default function FacilityManagers({ facilityId, facilityName }: FacilityM
       
       // 목록 갱신
       await fetchManagers()
-    } catch (error) {
+    } catch (error: any) {
+      
+      const errorMessage = error?.response?.data?.message || (error instanceof Error ? error.message : "관리자 생성 중 오류가 발생했습니다.");
       toast({
         title: "관리자 삭제 실패",
-        description: "관리자 삭제 중 오류가 발생했습니다.",
+        description: errorMessage,
         variant: "destructive"
       })
     } finally {
@@ -189,12 +222,12 @@ export default function FacilityManagers({ facilityId, facilityName }: FacilityM
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="username">사용자 이름</Label>
+                <Label htmlFor="userName">사용자 이름</Label>
                 <Input
-                  id="username"
-                  name="username"
+                  id="userName"
+                  name="userName"
                   placeholder="사용자 이름"
-                  value={newManager.username}
+                  value={newManager.userName}
                   onChange={handleInputChange}
                 />
               </div>
@@ -210,15 +243,30 @@ export default function FacilityManagers({ facilityId, facilityName }: FacilityM
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="password">비밀번호</Label>
-                <Input
+                <Label htmlFor="managerRole">역할</Label>
+                {/* <Input
                   id="password"
                   name="password"
                   type="password"
                   placeholder="비밀번호"
                   value={newManager.password}
                   onChange={handleInputChange}
-                />
+                /> */}
+                <Select 
+                    value={newManager.managerRole} 
+                    onValueChange={(value) => handleSelectChange('managerRole', value)}
+                  >
+                  <SelectTrigger id="managerRole" className="h-12 text-base">
+                    <SelectValue placeholder="역할을 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {managerRole.map((role) => (
+                      <SelectItem key={role.value} value={role.value} className="text-base py-2">
+                        {role.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -250,7 +298,7 @@ export default function FacilityManagers({ facilityId, facilityName }: FacilityM
               <TableBody>
                 {managers.map((manager) => (
                   <TableRow key={manager.id}>
-                    <TableCell className="font-medium text-xs sm:text-sm py-2 sm:py-4">{manager.username}</TableCell>
+                    <TableCell className="font-medium text-xs sm:text-sm py-2 sm:py-4">{manager.userName}</TableCell>
                     <TableCell className="text-xs sm:text-sm py-2 sm:py-4 break-all">{manager.email}</TableCell>
                     <TableCell className="py-2 sm:py-4">
                       <Button

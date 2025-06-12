@@ -34,6 +34,18 @@ const sportTypeIcons: Record<string, React.ReactNode> = {
   "배드민턴": <CircleDot className="h-4 w-4" />,
 }
 
+// sportTypes 추가
+const sportTypes = [
+  { value: "TENNIS", label: "테니스" },
+  { value: "FUTSAL", label: "풋살" },
+  { value: "BASKETBALL", label: "농구" },
+  { value: "VOLLEYBALL", label: "배구" },
+  { value: "BADMINTON", label: "배드민턴" },
+  { value: "BASEBALL", label: "야구" },
+  { value: "SOCCER", label: "축구"},
+  { value: "OTHER", label: "기타" },
+]
+
 export default function AdminFacilitiesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [facilities, setFacilities] = useState<FacilityList[]>([])
@@ -119,8 +131,30 @@ export default function AdminFacilitiesPage() {
   }, [ loadFacilities, hasMore, loading])
 
   // 삭제 처리
-  const handleDelete = (id: string) => {
-    setFacilities(prev => prev.filter(facility => facility.facilityId !== id))
+  const handleDelete = async (id: string) => {
+    if (!confirm("정말로 이 시설을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+      return
+    }
+    try {
+      await facilityService.deleteFacility(Number(id));
+      toast({
+        title: "시설 삭제 완료",
+        description: "시설이 성공적으로 삭제되었습니다."
+      })
+      router.push("/admin/facilities")
+    } catch (error) {
+      toast({
+        title: "시설 삭제 실패",
+        description: "시설 삭제 중 오류가 발생했습니다.",
+        variant: "destructive"
+      })
+    }
+
+    setFacilities([])
+    setLastId(null)
+    setHasMore(true)
+    await loadFacilities()
+    // setFacilities(prev => prev.filter(facility => facility.facilityId !== id))
   }
   
   // 활성/비활성 토글
@@ -149,6 +183,7 @@ export default function AdminFacilitiesPage() {
       }
     }
     */
+    console.log(showRegisterForm);
     setShowRegisterForm(!showRegisterForm)
   }
   
@@ -219,7 +254,9 @@ export default function AdminFacilitiesPage() {
               >
                 <TableCell className="font-medium">{facility.facilityName}</TableCell>
                 <TableCell>
-                  <span className="whitespace-nowrap">{facility.sportType}</span>
+                  <span className="whitespace-nowrap">
+                    {sportTypes.find((type)=> type.value === facility.sportType)?.label || facility.sportType}
+                  </span>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center">
@@ -233,14 +270,6 @@ export default function AdminFacilitiesPage() {
                     <Calendar className="mr-2 h-4 w-4 text-gray-400" />
                     {facility.reservationCount}
                   </div>
-                </TableCell>
-                <TableCell>
-                  <Badge 
-                    className={facility.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
-                    variant="outline"
-                  >
-                    {facility.active ? "활성" : "비활성"}
-                  </Badge>
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap relative">
                   <div className="flex justify-end space-x-1">
