@@ -367,13 +367,13 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                     재모집
                   </Button>
                 )}
-                  <Button 
+                  {/* <Button 
                     variant="outline"
                     className="border-blue-200 text-blue-600 hover:bg-blue-50"
                     onClick={() => handleStatusChange(MatchStatus.ONGOING)}
                   >
                     진행 상태로 변경
-                  </Button>
+                  </Button> */}
                 </>
               )}
               

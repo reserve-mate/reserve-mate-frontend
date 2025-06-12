@@ -150,8 +150,6 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
 
       geocoder.addressSearch(matchAddress, function (result: any, status: any){
         if (status === window.kakao.maps.services.Status.OK) {
-          console.log(result[0].y)
-          console.log(result[0].x)
 
           const coords: Location = {
             latitude: result[0].y,
@@ -583,49 +581,6 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
             </CardContent>
           </Card>
 
-          {/* <Card className="border-0 shadow-lg rounded-xl">
-            <CardHeader className="px-4 sm:px-6 pt-5 pb-0">
-              <CardTitle className="text-lg sm:text-xl font-semibold">문의 및 댓글</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 sm:px-6 pt-4">
-              <form onSubmit={handleSubmitComment} className="mb-4 sm:mb-6">
-                <Textarea
-                  placeholder="댓글을 입력하세요..."
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  className="mb-3 resize-none text-sm sm:text-base"
-                  rows={3}
-                />
-                <Button type="submit" disabled={!comment.trim()}>
-                  댓글 등록
-                </Button>
-              </form>
-
-              <div className="space-y-3 sm:space-y-4">
-                {match.comments.length === 0 ? (
-                  <p className="text-center text-gray-500 py-4 text-sm sm:text-base">아직 댓글이 없습니다.</p>
-                ) : (
-                  match.comments.map((comment) => (
-                    <div key={comment.id} className="p-3 sm:p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center">
-                          <Avatar className="h-7 w-7 sm:h-8 sm:w-8 mr-2">
-                            <AvatarImage
-                              src={`/placeholder.svg?height=32&width=32&text=${comment.userName.charAt(0)}`}
-                            />
-                            <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <p className="font-medium text-sm sm:text-base">{comment.userName}</p>
-                        </div>
-                        <p className="text-xs sm:text-sm text-gray-500">{comment.createdAt}</p>
-                      </div>
-                      <p className="text-gray-700 text-sm sm:text-base">{comment.content}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card> */}
         </div>
 
         {/* 참가 신청 (데스크톱 화면에서만 표시) */}

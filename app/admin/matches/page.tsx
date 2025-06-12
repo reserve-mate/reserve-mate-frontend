@@ -40,6 +40,8 @@ import { AdminMatches, AdminMatchSearch, displayMatchStatus, displaySportName } 
 import { matchService } from "@/lib/services/matchService"
 import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
 import { useRouter } from "next/navigation"
+import { MiniModal } from "@/components/ui/mini-modal"
+import { toast } from "@/hooks/use-toast"
 
 // 스포츠 종류 목록
 const sportTypes: SportType[] = [
@@ -85,6 +87,9 @@ export default function AdminMatchesPage() {
   const [selectedSport, setSelectedSport] = useState<SportType>(SportType.ALL)
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectMatchId, setSelectMatchId] = useState<number | null>(null);
 
   const router = useRouter();
 
@@ -178,6 +183,9 @@ export default function AdminMatchesPage() {
   
   // 삭제 처리
   const handleDelete = (id: number) => {
+    console.log(id);
+    setIsDeleteDialogOpen(true);
+    setSelectMatchId(id);
     //setMatches(prev => prev.filter(match => adminMatches.id !== id))
   }
 
@@ -204,6 +212,32 @@ export default function AdminMatchesPage() {
     setHasMore(false);
 
     fetchGetAdinMatches(0);
+  }
+
+  // 매치 삭제
+  const asyncDelete = async() => {
+    if (selectMatchId === null) return;
+    try {
+      // 실제로는 API 호출
+      await matchService.deleteMatch(selectMatchId);
+
+      toast({
+        title: "매치 삭제 완료",
+        description: "매치가 성공적으로 삭제되었습니다."
+      });
+      setAdminMatches((adminMatch) => adminMatch.map((adminMatch) => 
+        adminMatch.matchId === selectMatchId // 특정 match만 업데이트
+        ? {...adminMatch, matchStatus: MatchStatus.CANCELLED} : adminMatch
+      ))
+      setIsDeleteDialogOpen(false);
+      setSelectMatchId(null);
+    } catch (error) {
+      toast({
+        title: "매치 삭제 실패",
+        description: "매치 삭제 중 오류가 발생했습니다.",
+        variant: "destructive"
+      })
+    }
   }
 
   // 매치 관리 목록 UI
@@ -443,7 +477,39 @@ export default function AdminMatchesPage() {
             </TableBody>
         </Table>
       </CardContent>
+
+      {/* 매치 삭제 확인 다이얼로그 */}
+      <MiniModal
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false);
+          setSelectMatchId(null);
+        }}
+        title="매치 취소"
+        description="매치를 정말 취소하시겠습니까? 취소 시, 모든 참가자에게 참가비가 환불됩니다."
+        footerContent={
+          <>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsDeleteDialogOpen(false);
+                setSelectMatchId(null);
+              }}
+              className="h-8 text-sm"
+            >
+              돌아가기
+            </Button>
+            <Button 
+              onClick={asyncDelete} 
+              className="bg-red-600 hover:bg-red-700 h-8 text-sm"
+            >
+              매치 취소
+            </Button>
+          </>
+        }
+      />
     </Card>
+    
   )
 
   return (

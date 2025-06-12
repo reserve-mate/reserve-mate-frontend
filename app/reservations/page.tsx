@@ -199,10 +199,10 @@ export default function ReservationsPage() {
                               <h3 className="text-lg font-semibold">{reservation.facilityName}</h3>
                               <Badge
                                 className={`
-                                  ${reservation.reservationStatus === ReservationStatus.PENDING ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
-                                  ${reservation.reservationStatus === ReservationStatus.CONFIRMED ? "bg-green-100 text-green-800 border-green-200" : ""}
-                                  ${reservation.reservationStatus === ReservationStatus.COMPLETED ? "bg-indigo-100 text-indigo-800 border-indigo-200" : ""}
-                                  ${reservation.reservationStatus === ReservationStatus.CANCELED ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
+                                  ${reservation.reservationStatus === ReservationStatus.PENDING ? "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 hover:text-amber-700 hover:border-amber-300" : ""}
+                                  ${reservation.reservationStatus === ReservationStatus.CONFIRMED ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-100 hover:text-green-700 hover:border-green-300" : ""}
+                                  ${reservation.reservationStatus === ReservationStatus.COMPLETED ? "bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-100 hover:text-indigo-700 hover:border-indigo-300" : ""}
+                                  ${reservation.reservationStatus === ReservationStatus.CANCELED ? "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-700 hover:border-gray-300" : ""}
                                   `}
                               >
                                 {displayReservationStatus(reservation.reservationStatus)}

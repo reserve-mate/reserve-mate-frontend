@@ -21,7 +21,6 @@ export const matchService = {
 
   // 매치 상태 변경(관리자 전용)
   updateMatchStat: (params: {matchId: number, matchStatus: MatchStatusPost}) => {
-    console.log(params.matchStatus);
     let endPoint = `/admin/match/status/${params.matchId}`;
     return api.post(endPoint, params.matchStatus);
   },
