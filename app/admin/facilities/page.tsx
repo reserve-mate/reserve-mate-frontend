@@ -131,8 +131,30 @@ export default function AdminFacilitiesPage() {
   }, [ loadFacilities, hasMore, loading])
 
   // 삭제 처리
-  const handleDelete = (id: string) => {
-    setFacilities(prev => prev.filter(facility => facility.facilityId !== id))
+  const handleDelete = async (id: string) => {
+    if (!confirm("정말로 이 시설을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+      return
+    }
+    try {
+      await facilityService.deleteFacility(Number(id));
+      toast({
+        title: "시설 삭제 완료",
+        description: "시설이 성공적으로 삭제되었습니다."
+      })
+      router.push("/admin/facilities")
+    } catch (error) {
+      toast({
+        title: "시설 삭제 실패",
+        description: "시설 삭제 중 오류가 발생했습니다.",
+        variant: "destructive"
+      })
+    }
+
+    setFacilities([])
+    setLastId(null)
+    setHasMore(true)
+    await loadFacilities()
+    // setFacilities(prev => prev.filter(facility => facility.facilityId !== id))
   }
   
   // 활성/비활성 토글

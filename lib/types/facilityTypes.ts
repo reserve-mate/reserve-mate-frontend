@@ -35,3 +35,9 @@ export interface Address {
     streetAddress: string;
     detailAddress: string;
 }
+
+export interface AssignFacilityManagerRequest {
+    userName: string;
+    email: string;
+    managerRole: string;
+}
