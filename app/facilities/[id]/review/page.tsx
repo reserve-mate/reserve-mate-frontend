@@ -60,11 +60,17 @@ export default function ReviewPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-  // 리뷰 데이터
-  const [reviewData, setReviewData] = useState({
+  // 리뷰 데이터: 사용자가 입력하는 리뷰의 상태를 관리
+  const [reviewData, setReviewData] = useState<{
+    rating: number
+    title: string
+    content: string
+    photos?: File[]
+  }>({
     rating: 0,
     title: "",
     content: "",
+    photos: [],
   })
 
   // 로그인 상태 확인
@@ -318,6 +324,56 @@ export default function ReviewPage() {
                   onChange={handleInputChange}
                   className="resize-none border-indigo-200 focus:border-indigo-300 focus:ring-indigo-300"
                 />
+              </div>
+                <div className="space-y-2">
+                <Label htmlFor="photo" className="text-sm font-medium">
+                  사진 등록 (선택)
+                </Label>
+                
+                <Input
+                  id="photo"
+                  name="photo"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                  const files = e.target.files
+                  if (!files) return
+                  const fileArray = Array.from(files)
+                  setReviewData((prev) => ({
+                    ...prev,
+                    photos: fileArray,
+                  }))
+                  }}
+                  className="border-indigo-200 focus:border-indigo-300 focus:ring-indigo-300"
+                />
+                {/* 미리보기 및 삭제 버튼 */}
+                {reviewData.photos && reviewData.photos.length > 0 && (
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                  {reviewData.photos.map((file: File, idx: number) => (
+                    <div key={idx} className="relative group">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`preview-${idx}`}
+                      className="w-20 h-20 object-cover rounded border"
+                    />
+                    <button
+                      type="button"
+                      className="absolute top-1 right-1 bg-white bg-opacity-80 rounded-full p-1 text-xs text-red-500 border border-red-200 opacity-0 group-hover:opacity-100 transition"
+                      onClick={() => {
+                      setReviewData((prev) => ({
+                        ...prev,
+                        photos: prev.photos?.filter((_, i) => i !== idx) || [],
+                      }))
+                      }}
+                      aria-label="사진 삭제"
+                    >
+                      ×
+                    </button>
+                    </div>
+                  ))}
+                  </div>
+                )}
               </div>
             </div>
 
