@@ -25,10 +25,6 @@ export type PlayerEject = {
     facilityId: number
 }
 
-export type MatchStatusPost = {
-    matchStatus: MatchStatus;
-}
-
 export interface AdminMatchDetail {
     matchId: number;
     matchTitle: string;

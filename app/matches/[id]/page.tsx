@@ -11,15 +11,13 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/hooks/use-toast"
-import { MapPin, Calendar, Clock, Users, DollarSign, Share2, ChevronLeft, ChevronUp, ChevronDown } from "lucide-react"
+import { MapPin, Calendar, Clock, Users, DollarSign, ChevronLeft, ChevronUp, ChevronDown } from "lucide-react"
 import { matchService } from "@/lib/services/matchService"
 import { displayMatchStatus, displaySportName, MatchDetailRespone, MatchPayment } from "@/lib/types/matchTypes"
 import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
-import { loadTossPayments, ANONYMOUS, TossPaymentsWidgets, TossPaymentsPayment } from "@tosspayments/tosspayments-sdk";
+import { loadTossPayments, TossPaymentsPayment } from "@tosspayments/tosspayments-sdk";
 import { matchPlayerService } from "@/lib/services/matchplayerService"
-import Script from "next/script"
 import { Map, MapMarker } from 'react-kakao-maps-sdk';
 import { Location } from "@/lib/types/commonTypes"
 
@@ -27,40 +25,6 @@ declare global {              // Property 'kakao' does not exist on type 'Window
   interface Window {          // kakao 라는 객체가 window에 존재하고 있다고 인식
     kakao: any;
   }
-}
-
-// 매치 데이터 타입
-type Match = {
-  id: string
-  courtName: string
-  facilityName: string
-  address: string
-  sportType: string
-  matchDate: string
-  matchTime: string
-  teamCapacity: number
-  currentTeams: number
-  matchPrice: string
-  status: "모집중" | "모집완료" | "진행중" | "종료"
-  description: string
-  hostName: string
-  hostLevel: string
-  participants: Participant[]
-  comments: Comment[]
-}
-
-type Participant = {
-  id: string
-  name: string
-  level: string
-  joinedAt: string
-}
-
-type Comment = {
-  id: string
-  userName: string
-  content: string
-  createdAt: string
 }
 
 const clientKey = process.env.NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY || '';
@@ -77,9 +41,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   const numberFormat = /\B(?=(\d{3})+(?!\d))/g; // 천원단위 숫자 포맷
 
   const router = useRouter()
-  const [match, setMatch] = useState<Match | null>(null)
   const [loading, setLoading] = useState(true)
-  const [comment, setComment] = useState("")
   const [isJoining, setIsJoining] = useState(false)
   const [showMobileJoinPanel, setShowMobileJoinPanel] = useState(false)
 
@@ -88,11 +50,6 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
 
   // 토스 결제
   const [payment, setPayment] = useState<TossPaymentsPayment | null>(null);
-  const [amount, setAmount] = useState({
-    currency: "KRW",
-    value: 50000,
-  });
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
 
   // 매치 상세조회 데이터
   const [matchDetail, setMatchDetail] = useState<MatchDetailRespone | null>(null);
@@ -101,10 +58,6 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   const ref = useRef(false);
-
-  function selectPaymentMethod(method: any) {
-    setSelectedPaymentMethod(method);
-  }
 
   const noDashPhone = (phone: string) => {
     return phone.replace(/-/g, '');
@@ -249,29 +202,6 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
     getMatchDetail(params.id);
   }, [params.id, isLoggedIn])
 
-  const handleSubmitComment = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!match || !comment.trim()) return
-
-    // 실제 구현에서는 API를 통해 댓글을 저장합니다
-    const newComment = {
-      id: `c${match.comments.length + 1}`,
-      userName: "홍길동", // 로그인한 사용자 이름
-      content: comment,
-      createdAt: new Date().toISOString().split("T")[0],
-    }
-
-    const updatedMatch = { ...match }
-    updatedMatch.comments.push(newComment)
-    setMatch(updatedMatch)
-    setComment("")
-
-    toast({
-      title: "댓글 등록 완료",
-      description: "댓글이 등록되었습니다.",
-    })
-  }
-
   // 날짜 포맷 함수
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -411,7 +341,6 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                   ))}
                   {
                     matchDetail.playerDtos.length > 0 ? 
-
                     matchDetail.playerDtos.length > 4 && (
                       <div className="p-2 bg-white rounded-lg shadow-sm flex items-center justify-center">
                         <p className="text-xs text-gray-500">+{matchDetail.playerDtos.length - 4}명 더 보기</p>
@@ -447,10 +376,10 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                 <Badge
                   className={`
                     px-3 py-1.5 text-sm font-medium
-                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.APPLICABLE ? "bg-green-500 text-white" : ""}
-                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.FINISH ? "bg-blue-500 text-white" : ""}
-                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.CLOSE_TO_DEADLINE ? "bg-yellow-500 text-white" : ""}
-                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.END ? "bg-gray-500 text-white" : ""}
+                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.APPLICABLE ? "bg-green-500 text-white hover:bg-green-600" : ""}
+                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.FINISH ? "bg-blue-500 text-white hover:bg-blue-600" : ""}
+                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.CLOSE_TO_DEADLINE ? "bg-yellow-500 text-white hover:bg-yellow-600" : ""}
+                    ${matchDetail.matchDataDto.matchStatus === MatchStatus.END ? "bg-gray-500 text-white hover:bg-gray-600" : ""}
                   `}
                 >
                   {displayMatchStatus(matchDetail.matchDataDto.matchStatus)}
@@ -634,7 +563,13 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
               {isMatchApplyBtn()} {/**매치 시청 및 취소 버튼 */}
 
               {!canJoin && (
-                <p className="text-center text-red-500 text-sm">모집이 마감되었습니다.</p>
+                matchDetail.matchDataDto.matchStatus === MatchStatus.END ? (
+                  <p className="text-center text-red-500 text-sm">종료된 매치입니다.</p>
+                ) : matchDetail.matchDataDto.matchStatus === MatchStatus.CANCELLED ? (
+                  <p className="text-center text-red-500 text-sm">취소된 매치입니다.</p>
+                ) : (
+                  <p className="text-center text-red-500 text-sm">모집이 마감되었습니다.</p>
+                )
               )}
 
               <div className="text-xs text-gray-500 space-y-1">
@@ -649,9 +584,4 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
       </div>
     </div>
   )
-}
-
-function formatMoney(price: number): string{
-  
-  return "";
 }
