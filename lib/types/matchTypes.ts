@@ -60,6 +60,7 @@ export interface AdminPlayer {
 interface AdminMatchSearchRequest {
     searchValue: string;
     sportType: SportType;
+    matchStatus: MatchStatus;
     startDate: string;
     endDate: string;
     pageNumber: number;
@@ -111,6 +112,7 @@ export interface MatchPaymentSuccess extends PaymentResponse {
 export interface MatchSearchRequest {
     searchValue: string;
     sportType: SportType;
+    matchStatus: MatchStatus;
     matchDate: string;
     pageNumber: number;  // 선택적 프로퍼티
 }

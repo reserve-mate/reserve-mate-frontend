@@ -84,7 +84,8 @@ export default function AdminMatchesPage() {
   const [isError, setIsError] = useState(false);
 
   // 검색 세팅
-  const [selectedSport, setSelectedSport] = useState<SportType>(SportType.ALL)
+  const [selectedSport, setSelectedSport] = useState<SportType | null>(null);
+  const [matchStatus, setMatchStatus] = useState<MatchStatus | null>(null);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
 
@@ -110,7 +111,8 @@ export default function AdminMatchesPage() {
       pageNumber: pageNumber,
       startDate: startDateStr,
       endDate: endDateStr,
-      sportType: selectedSport
+      sportType: selectedSport ?? undefined,
+      matchStatus: matchStatus ?? undefined
     }
     
     try {
@@ -119,7 +121,6 @@ export default function AdminMatchesPage() {
       setPage(adminMatches.number);
       setHasMore(!adminMatches.last);
     } catch (error: any) {
-      console.log(error);
       if(!error || error.errorCode === "FORBIDDEN") {
         router.push("/login");
         return;
@@ -176,14 +177,13 @@ export default function AdminMatchesPage() {
   // 필터 초기화
   const resetFilters = () => {
     setSearchTerm("");
-    setSelectedSport(SportType.ALL);
+    setSelectedSport(null);
     setStartDate(undefined);
     setEndDate(undefined);
   };
   
   // 삭제 처리
   const handleDelete = (id: number) => {
-    console.log(id);
     setIsDeleteDialogOpen(true);
     setSelectMatchId(id);
     //setMatches(prev => prev.filter(match => adminMatches.id !== id))
@@ -261,17 +261,37 @@ export default function AdminMatchesPage() {
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             </div>
             
-            <Select value={selectedSport} onValueChange={(value) => setSelectedSport(value as SportType)}>
+            <Select
+                value={selectedSport ?? 'null'}
+                onValueChange={(value) =>
+                  setSelectedSport(value === 'null' ? null : (value as SportType))
+                }
+              >
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="모든 종목" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="null">전체 종목</SelectItem>
+                  <SelectItem value={SportType.TENNIS}>테니스</SelectItem>
+                  <SelectItem value={SportType.SOCCER}>축구</SelectItem>
+                  <SelectItem value={SportType.FUTSAL}>풋살</SelectItem>
+                  <SelectItem value={SportType.BASEBALL}>농구</SelectItem>
+                  <SelectItem value={SportType.BADMINTON}>배드민턴</SelectItem>
+                </SelectContent>
+              </Select>
+
+            <Select value={matchStatus ?? 'null'} onValueChange={(value) => setMatchStatus(value === 'null' ? null : (value as MatchStatus))}>
               <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="모든 종목" />
+                <SelectValue placeholder="매치 상태" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={SportType.ALL}>전체 종목</SelectItem>
-                <SelectItem value={SportType.TENNIS}>테니스</SelectItem>
-                <SelectItem value={SportType.SOCCER}>축구</SelectItem>
-                <SelectItem value={SportType.FUTSAL}>풋살</SelectItem>
-                <SelectItem value={SportType.BASEBALL}>농구</SelectItem>
-                <SelectItem value={SportType.BADMINTON}>배드민턴</SelectItem>
+                <SelectItem value={'null'}>전체 상태</SelectItem>
+                <SelectItem value={MatchStatus.APPLICABLE}>모집중</SelectItem>
+                <SelectItem value={MatchStatus.CLOSE_TO_DEADLINE}>마감임박</SelectItem>
+                <SelectItem value={MatchStatus.FINISH}>마감</SelectItem>
+                <SelectItem value={MatchStatus.END}>종료</SelectItem>
+                <SelectItem value={MatchStatus.ONGOING}>진행중</SelectItem>
+                <SelectItem value={MatchStatus.CANCELLED}>취소</SelectItem>
               </SelectContent>
             </Select>
           </div>

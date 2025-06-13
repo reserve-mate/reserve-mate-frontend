@@ -181,12 +181,12 @@ export default function MatchHistoryPage() {
                               </Badge>
                               <Badge
                                 className={`
-                                  ${match.playerStatus === PlayerStatus.READY ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
-                                  ${match.playerStatus === PlayerStatus.ONGOING ? "bg-blue-100 text-blue-800 border-blue-200" : ""}
-                                  ${match.playerStatus === PlayerStatus.COMPLETED ? "bg-green-100 text-green-800 border-green-200" : ""}
-                                  ${match.playerStatus === PlayerStatus.CANCEL ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
-                                  ${match.playerStatus === PlayerStatus.KICKED ? "bg-red-100 text-red-800 border-red-200" : ""}
-                                  ${match.playerStatus === PlayerStatus.MATCH_CANCELLED ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
+                                  ${match.playerStatus === PlayerStatus.READY ? "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-200 hover:text-amber-900 hover:border-amber-300 transition-colors" : ""}
+                                  ${match.playerStatus === PlayerStatus.ONGOING ? "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 hover:text-blue-900 hover:border-blue-300 transition-colors" : ""}
+                                  ${match.playerStatus === PlayerStatus.COMPLETED ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200 hover:text-green-900 hover:border-green-300 transition-colors" : ""}
+                                  ${match.playerStatus === PlayerStatus.CANCEL ? "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200 hover:text-gray-900 hover:border-gray-300 transition-colors" : ""}
+                                  ${match.playerStatus === PlayerStatus.KICKED ? "bg-red-100 text-red-800 border-red-200 hover:bg-red-200 hover:text-red-900 hover:border-red-300 transition-colors" : ""}
+                                  ${match.playerStatus === PlayerStatus.MATCH_CANCELLED ? "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200 hover:text-gray-900 hover:border-gray-300 transition-colors" : ""}
                                 `}
                               >
                                 {displayPlayerStatus(match.playerStatus)}
@@ -214,11 +214,16 @@ export default function MatchHistoryPage() {
                               <span className="text-sm">{timeFormat(match.matchTime)} - {timeFormat(match.endTime)}</span>
                             </div>
                             
-                            <div className="flex items-center text-gray-600">
-                              <Users className="h-4 w-4 mr-1" />
-                              <span className="text-sm">참가비: {match.matchPrice.toLocaleString()}원</span>
-                              <span className="text-sm ml-4">참가자: {match.playerCnt}/{match.teamCapacity}명</span>
-                            </div>
+                            {(match.playerStatus !== PlayerStatus.CANCEL && match.playerStatus !== PlayerStatus.MATCH_CANCELLED) && 
+                              (
+                                <>
+                                  <div className="flex items-center text-gray-600">
+                                    <Users className="h-4 w-4 mr-1" />
+                                    <span className="text-sm">참가자: {match.playerCnt}/{match.teamCapacity}명</span>
+                                  </div>
+                                </>
+                              )
+                            }
                           </div>
 
                           <div className="flex flex-col gap-2 md:min-w-[120px]">

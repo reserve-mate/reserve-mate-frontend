@@ -229,15 +229,19 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
 
       return (<Button
           variant="destructive"
-          className="w-full py-6 text-lg font-bold"
+          className={`w-full py-6 text-lg font-bold ${disabled ? 'hidden' : ''}`}
           disabled={disabled}
           onClick={() => router.push(`/matches/cancel/${params.id}?orderId=${matchDetail.userDataDto?.orderId}`)}
         >
           매치 취소하기
         </Button>)
     }else{
+      const disabled = (matchDetail.matchDataDto.matchStatus === MatchStatus.ONGOING 
+        || matchDetail.matchDataDto.matchStatus === MatchStatus.END 
+        || matchDetail.matchDataDto.matchStatus === MatchStatus.CANCELLED);
+      
       return (<Button
-        className="w-full py-6 text-lg font-bold"
+        className={`w-full py-6 text-lg font-bold ${disabled ? 'hidden' : ''}`}
         disabled={!canJoin || isJoining}
         onClick={requestPayment}
       >
