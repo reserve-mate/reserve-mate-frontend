@@ -39,7 +39,7 @@ export default function PaymentFailedPage() {
     if(paymentFail.type === 'match'){
       returnPath = `/matches/${paymentFail.id}`;
     }else{
-      returnPath = ``;
+      returnPath = `/reservations/${paymentFail.id}`;
     }
 
     return returnPath;
@@ -68,18 +68,6 @@ export default function PaymentFailedPage() {
               <span className="text-red-500">•</span>
               <span>{paymentFail.message}</span>
             </li>
-            {/* <li className="text-sm flex items-start gap-2">
-              <span className="text-red-500">•</span>
-              <span>결제 정보가 올바르지 않음</span>
-            </li>
-            <li className="text-sm flex items-start gap-2">
-              <span className="text-red-500">•</span>
-              <span>결제 시간 초과</span>
-            </li>
-            <li className="text-sm flex items-start gap-2">
-              <span className="text-red-500">•</span>
-              <span>네트워크 연결 문제</span>
-            </li> */}
           </ul>
         </CardContent>
         <CardFooter className="flex flex-col gap-2 pb-6">

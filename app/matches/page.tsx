@@ -7,14 +7,12 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar } from "@/components/ui/calendar"
-import { MapPin, CalendarIcon, Clock, Users, Search, Filter, ChevronLeft, ChevronRight, PlusCircle, Plus } from "lucide-react"
-import { format, addDays, subDays, isSameDay, parseISO, isToday, isTomorrow, startOfDay } from "date-fns"
+import { MapPin, CalendarIcon, Clock, Users, Search, Filter, ChevronLeft, ChevronRight } from "lucide-react"
+import { format, addDays, subDays, isSameDay, parseISO, isTomorrow, startOfDay } from "date-fns"
 import { ko } from "date-fns/locale"
 import { matchService } from "@/lib/services/matchService" 
 import { displayMatchStatus, displaySportName, MatchList, MatchSearch, MathDateCount } from "@/lib/types/matchTypes"
-import { SportType } from "@/lib/enum/matchEnum"
+import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
 
 // 시간별로 그룹화된 매치 타입
 type GroupedMatches = {
@@ -24,7 +22,8 @@ type GroupedMatches = {
 export default function MatchesPage() {
   // 검색 세팅
   const [searchTerm, setSearchTerm] = useState<string>("")
-  const [sportType, setSportType] = useState<SportType>(SportType.ALL);
+  const [sportType, setSportType] = useState<SportType | null>(null);
+  const [matchStatus, setMatchStatus] = useState<MatchStatus | null>(null);
 
   // 매치 조회 및 검색 필터링
   const [matches, setMatches] = useState<MatchList[]>([])
@@ -58,7 +57,8 @@ export default function MatchesPage() {
     const listParams: MatchSearch = {
       matchDate: format(date, 'yyyy-MM-dd', { locale: ko }), // YYYY-MM-DD
       searchValue: searchTerm,
-      sportType: sportType,
+      matchStatus: matchStatus ?? undefined,
+      sportType: sportType ?? undefined,
       pageNumber: pageNumber
     };
 
@@ -90,7 +90,8 @@ export default function MatchesPage() {
     const dateParams: MatchSearch = {
       matchDate: format(startDate, 'yyyy-MM-dd', { locale: ko }), // YYYY-MM-DD
       searchValue: searchTerm,
-      sportType: sportType
+      sportType: sportType ?? undefined,
+      matchStatus: matchStatus ?? undefined
     };
     
     const fetchMatchDates = async () => {
@@ -176,8 +177,6 @@ export default function MatchesPage() {
       return match
     })
     
-    // 변경된 매치 데이터 설정
-    //setMatches(updatedMatches)
   }, [])
 
   // 검색 및 필터링 처리
@@ -196,8 +195,12 @@ export default function MatchesPage() {
       || match.fullAddress.toLowerCase().includes(searchTerm.toLowerCase()))
     }
 
-    if(sportType && sportType !== SportType.ALL) {
+    if(sportType) {
       filtered = filtered.filter((match) => match.sportType === sportType);
+    }
+
+    if(matchStatus) {
+      filtered = filtered.filter((match) => match.matchStatus === matchStatus);
     }
 
     setMatches([]);
@@ -205,8 +208,6 @@ export default function MatchesPage() {
     setHasMore(true);
     getMatchDateCnt();
     getMatchDatesScroll(selectedDate, 0);
-
-    //setFilteredMatches(filtered);
   }
 
   // 날짜별 매치 그룹화 (날짜 뱃지용)
@@ -259,12 +260,6 @@ export default function MatchesPage() {
       // 분으로 비교
       return timeA[1] - timeB[1]
     })
-  }
-
-  // 날짜 포맷 함수
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return format(date, "yyyy년 MM월 dd일 (eee)", { locale: ko })
   }
 
   // 날짜 탭 클릭 처리
@@ -406,7 +401,7 @@ export default function MatchesPage() {
       {/* 검색 필터 */}
       <Card className="styled-card mb-8">
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div className="relative">
               <Input
                 placeholder="시설명 또는 위치 검색"
@@ -417,17 +412,30 @@ export default function MatchesPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             </div>
 
-            <Select value={sportType} onValueChange={(value) => setSportType(value as SportType)}>
+            <Select value={sportType ?? 'null'} onValueChange={(value) => setSportType(value === 'null' ? null : value as SportType)}>
               <SelectTrigger>
                 <SelectValue placeholder="스포츠 종류" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={SportType.ALL}>전체 종목</SelectItem>
+                <SelectItem value={'null'}>전체 종목</SelectItem>
                 <SelectItem value={SportType.TENNIS}>테니스</SelectItem>
                 <SelectItem value={SportType.SOCCER}>축구</SelectItem>
                 <SelectItem value={SportType.FUTSAL}>풋살</SelectItem>
                 <SelectItem value={SportType.BASEBALL}>농구</SelectItem>
                 <SelectItem value={SportType.BADMINTON}>배드민턴</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={matchStatus ?? 'null'} onValueChange={(value) => setMatchStatus(value === 'null' ? null : (value as MatchStatus))}>
+              <SelectTrigger>
+                <SelectValue placeholder="매치 상태" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={'null'}>전체 상태</SelectItem>
+                <SelectItem value={MatchStatus.APPLICABLE}>모집중</SelectItem>
+                <SelectItem value={MatchStatus.CLOSE_TO_DEADLINE}>마감임박</SelectItem>
+                <SelectItem value={MatchStatus.FINISH}>마감</SelectItem>
+                <SelectItem value={MatchStatus.END}>종료</SelectItem>
               </SelectContent>
             </Select>
 
@@ -481,12 +489,12 @@ function MatchCard({ match, compact = false }: { match: MatchList; compact?: boo
           <h3 className={`${compact ? "text-base" : "text-lg"} font-semibold ${isEnded ? 'text-gray-500' : ''}`}>{match.facilityName}</h3>
           <Badge
             className={`
-              ${match.matchStatus === "APPLICABLE" ? "status-badge status-badge-recruiting" : ""}
-              ${match.matchStatus === "FINISH" ? "status-badge status-badge-completed" : ""}
-              ${match.matchStatus === "CLOSE_TO_DEADLINE" ? "status-badge status-badge-in-progress" : ""}
-              ${match.matchStatus === "END" ? "status-badge status-badge-ended" : ""}
-              ${match.matchStatus === "ONGOING" ? "status-badge status-badge-ended" : ""}
-              ${match.matchStatus === "CANCELLED" ? "status-badge status-badge-ended" : ""}
+              ${match.matchStatus === "APPLICABLE" ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200 hover:text-green-900 hover:border-green-300 transition-colors" : ""}
+              ${match.matchStatus === "FINISH" ? "bg-red-100 text-red-800 border-red-200 hover:bg-red-200 hover:text-red-900 hover:border-red-300 transition-colors" : ""}
+              ${match.matchStatus === "CLOSE_TO_DEADLINE" ? "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 hover:text-blue-900 hover:border-blue-300 transition-colors" : ""}
+              ${match.matchStatus === "END" ? "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200 hover:text-gray-900 hover:border-gray-300 transition-colors" : ""}
+              ${match.matchStatus === "ONGOING" ? "bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200 hover:text-orange-900 hover:border-orange-300 transition-colors" : ""}
+              ${match.matchStatus === "CANCELLED" ? "bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200 hover:text-purple-900 hover:border-purple-300 transition-colors" : ""}
             `} // CLOSE_TO_DEADLINE -> 모집 마감
           >
             {displayMatchStatus(match.matchStatus)}
@@ -525,7 +533,7 @@ function MatchCard({ match, compact = false }: { match: MatchList; compact?: boo
             asChild
             className="w-full primary-button"
             variant={match.matchStatus === "FINISH" ? "secondary" : "default"}
-            disabled={match.matchStatus === "FINISH" || match.matchStatus === "END"}
+            disabled={match.matchStatus === "FINISH" || match.matchStatus === "END" || match.matchStatus === "ONGOING"}
           >
             <Link href={`/matches/${match.matchId}`}>{match.matchStatus === "APPLICABLE" || match.matchStatus === "CLOSE_TO_DEADLINE" ? "참가 신청하기" : "상세 보기"}</Link>
           </Button>

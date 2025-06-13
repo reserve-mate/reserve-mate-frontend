@@ -61,7 +61,7 @@ export default function PaymentProcessingPage({ params }: { params: { id: number
       }
 
     } catch (error: any) {
-      error.type = "match"
+      error.type = "reservation"
       error.id = params.id;
       localStorage.setItem("paymentFail", JSON.stringify(error));
       router.push("/payment/failed");

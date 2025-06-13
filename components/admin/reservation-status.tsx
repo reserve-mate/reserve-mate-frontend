@@ -238,7 +238,7 @@ export default function AdminReservationStatus() {
       }
       toast({
           title: "조회 실패",
-          description: error.message,
+          description: errormsg,
           variant: "destructive"
         })
     }
