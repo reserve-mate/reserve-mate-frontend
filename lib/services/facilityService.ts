@@ -3,7 +3,7 @@ import { api } from '../api';
 import { SportType } from '../enum/matchEnum';
 import { CourtName, FacilityManagerName, FacilityNames } from '../types/facilityTypes';
 import { FacilityManager } from './userService';
-import { Address, OperatingHours, AssignFacilityManagerRequest } from '../types/facilityTypes';
+import { Address, OperatingHours, AssignFacilityManagerRequest, FacilityManagerListResponse } from '../types/facilityTypes';
 
 // 시설 타입 정의
 export interface Facility {
@@ -196,4 +196,8 @@ export const facilityService = {
   // 시설에서 관리자 제거 (관리자 전용)
   removeManager: (facilityId: number, managerId: number) =>
     api.delete(`/admin/facilities/${facilityId}/managers/${managerId}`),
+
+  // 해당 시설 매니저 목록
+  getFacilityManagerList: (facilityId: number) =>
+    api.get<FacilityManagerListResponse[]>(`/admin/facilities/${facilityId}/get/managerList`),
 }; 

@@ -22,25 +22,6 @@ type FacilityManager = {
   managerRole?: string;
 }
 
-
-// 더미 데이터
-const dummyManagers: { [key: string]: FacilityManager[] } = {
-  "1": [
-    { id: 101, userName: "김테니스", email: "tennis1@example.com", facilityId: 1 },
-    { id: 102, userName: "이테니스", email: "tennis2@example.com", facilityId: 1 }
-  ],
-  "2": [
-    { id: 103, userName: "박풋살", email: "futsal1@example.com", facilityId: 2 },
-  ],
-  "3": [
-    { id: 104, userName: "최농구", email: "basketball@example.com", facilityId: 3 },
-    { id: 105, userName: "정농구", email: "basketball2@example.com", facilityId: 3 }
-  ],
-  "4": [
-    { id: 106, userName: "강배드민턴", email: "badminton@example.com", facilityId: 4 }
-  ]
-};
-
 type FacilityManagersProps = {
   facilityId: number;
   facilityName: string;
@@ -69,12 +50,10 @@ export default function FacilityManagers({ facilityId, facilityName }: FacilityM
 
     try {
       // 실제로는 API에서 데이터를 가져옴
-      // 여기서는 더미 데이터 사용
-      setTimeout(() => {
-        const facilityIdStr = facilityId.toString();
-        setManagers(dummyManagers[facilityIdStr] || []);
-        setIsLoading(false);
-      }, 500);
+      const response = await facilityService.getFacilityManagerList(Number(facilityId))
+      setManagers(response);
+      setIsLoading(false);
+
     } catch (error) {
       toast({
         title: "관리자 목록 조회 실패",
@@ -110,33 +89,9 @@ export default function FacilityManagers({ facilityId, facilityName }: FacilityM
       }
 
       setIsLoading(true)
-      
-      // const requestData:AssignFacilityManagerRequest = {
-      //   userName,
-      //   email,
-      //   managerRole,
-      // }
 
       // 실제로는 API 호출
       await facilityService.assignManager(Number(facilityId), newManager);
-
-      /*
-      // 여기서는 더미 데이터 업데이트
-      const newManagerId = Math.floor(Math.random() * 1000) + 200;
-      const createdManager = {
-        id: newManagerId,
-        userName: newManager.userName,
-        email: newManager.email,
-        facilityId: facilityId
-      };
-      
-      // 더미 데이터에 추가 (실제로는 API에서 처리)
-      const facilityIdStr = facilityId.toString();
-      if (!dummyManagers[facilityIdStr]) {
-        dummyManagers[facilityIdStr] = [];
-      }
-      dummyManagers[facilityIdStr].push(createdManager);
-      */
       toast({
         title: "관리자 생성 완료",
         description: "시설 관리자가 성공적으로 생성되었습니다."
@@ -144,12 +99,7 @@ export default function FacilityManagers({ facilityId, facilityName }: FacilityM
       
       // 목록 갱신 및 폼 초기화
       await fetchManagers()
-      // setNewManager({
-      //   userName: "",
-      //   email: "",
-      //   password: "",
-      //   managerRole: "",
-      // })
+
       setIsCreateDialogOpen(false)
     } catch (error) {
       toast({
@@ -170,15 +120,8 @@ export default function FacilityManagers({ facilityId, facilityName }: FacilityM
 
     try {
       setIsLoading(true)
-      
-      // 실제로는 API 호출
-      // 여기서는 더미 데이터 업데이트
-      const facilityIdStr = facilityId.toString();
-      if (dummyManagers[facilityIdStr]) {
-        dummyManagers[facilityIdStr] = dummyManagers[facilityIdStr].filter(
-          manager => manager.id !== managerId
-        );
-      }
+
+      await facilityService.removeManager(facilityId, managerId);
       
       toast({
         title: "관리자 삭제 완료",
@@ -244,14 +187,6 @@ export default function FacilityManagers({ facilityId, facilityName }: FacilityM
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="managerRole">역할</Label>
-                {/* <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="비밀번호"
-                  value={newManager.password}
-                  onChange={handleInputChange}
-                /> */}
                 <Select 
                     value={newManager.managerRole} 
                     onValueChange={(value) => handleSelectChange('managerRole', value)}
