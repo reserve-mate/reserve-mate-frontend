@@ -44,7 +44,7 @@ import { MiniModal } from "@/components/ui/mini-modal"
 import { matchService } from "@/lib/services/matchService"
 import { AdminMatchDetail, AdminPlayer, displayEjectReason, displayMatchStatus, displayPlayerStatus, displaySportName } from "@/lib/types/matchTypes"
 
-import { MatchStatus, PlayerStatus, SportType, RemovalReason } from "@/lib/enum/matchEnum"
+import { MatchStatus, PlayerStatus, RemovalReason } from "@/lib/enum/matchEnum"
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
@@ -52,12 +52,12 @@ import { matchPlayerService } from "@/lib/services/matchplayerService"
 
 // 상태별 배지 색상
 const statusColors: Record<MatchStatus, string> = {
-  "APPLICABLE": "bg-green-100 text-green-800 border-green-200",
-  "FINISH": "bg-red-100 text-red-800 border-red-200",
-  "CLOSE_TO_DEADLINE": "bg-blue-100 text-blue-800 border-blue-200",
-  "END": "bg-gray-100 text-gray-800 border-gray-200",
-  "ONGOING" : "bg-orange-100 text-orange-800 border-orange-200",
-  "CANCELLED" : "bg-purple-100 text-purple-800 border-purple-200"
+  "APPLICABLE": "bg-green-100 text-green-800 border-green-200 hover:bg-green-200 hover:text-green-900 hover:border-green-300",
+  "FINISH": "bg-red-100 text-red-800 border-red-200 hover:bg-red-200 hover:text-red-900 hover:border-red-300",
+  "CLOSE_TO_DEADLINE": "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 hover:text-blue-900 hover:border-blue-300",
+  "END": "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200 hover:text-gray-900 hover:border-gray-300",
+  "ONGOING" : "bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200 hover:text-orange-900 hover:border-orange-300",
+  "CANCELLED" : "bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200 hover:text-purple-900 hover:border-purple-300"
 }
 
 // 퇴장 사유 표시 함수
