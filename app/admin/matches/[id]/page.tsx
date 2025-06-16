@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/dialog"
 import { MiniModal } from "@/components/ui/mini-modal"
 import { matchService } from "@/lib/services/matchService"
-import { AdminMatchDetail, AdminPlayer, displayEjectReason, displayMatchStatus, displayPlayerStatus, displaySportName, MatchStatusPost } from "@/lib/types/matchTypes"
+import { AdminMatchDetail, AdminPlayer, displayEjectReason, displayMatchStatus, displayPlayerStatus, displaySportName } from "@/lib/types/matchTypes"
 
 import { MatchStatus, PlayerStatus, SportType, RemovalReason } from "@/lib/enum/matchEnum"
 
@@ -118,15 +118,11 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
   const handleStatusChange = async (newStatus: MatchStatus) => {
     if (!match) return
 
-    const matchStatus: MatchStatusPost = {
-      matchStatus: newStatus
-    }
-
     try {
       // 실제로는 API 호출
       await matchService.updateMatchStat({
         matchId: params.id,
-        matchStatus: matchStatus
+        matchStatus: newStatus
       });
       setMatch({
         ...match,
@@ -367,13 +363,6 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                     재모집
                   </Button>
                 )}
-                  <Button 
-                    variant="outline"
-                    className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                    onClick={() => handleStatusChange(MatchStatus.ONGOING)}
-                  >
-                    진행 상태로 변경
-                  </Button>
                 </>
               )}
               

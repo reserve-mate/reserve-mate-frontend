@@ -188,10 +188,10 @@ export default function ReservationDetailPage() {
                 <CardTitle className="text-2xl font-bold">예약 상세 정보</CardTitle>
                 <Badge
                   className={`
-                    ${reservationDetail.reservationStatus === ReservationStatus.CONFIRMED ? "bg-green-100 text-green-800 border-green-200" : ""}
-                    ${reservationDetail.reservationStatus === ReservationStatus.PENDING ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
-                    ${reservationDetail.reservationStatus === ReservationStatus.COMPLETED ? "bg-indigo-100 text-indigo-800 border-indigo-200" : ""}
-                    ${reservationDetail.reservationStatus === ReservationStatus.CANCELED ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
+                    ${reservationDetail.reservationStatus === ReservationStatus.CONFIRMED ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-100 hover:text-green-700 hover:border-green-300" : ""}
+                    ${reservationDetail.reservationStatus === ReservationStatus.PENDING ? "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 hover:text-amber-700 hover:border-amber-300" : ""}
+                    ${reservationDetail.reservationStatus === ReservationStatus.COMPLETED ? "bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-100 hover:text-indigo-700 hover:border-indigo-300" : ""}
+                    ${reservationDetail.reservationStatus === ReservationStatus.CANCELED ? "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-700 hover:border-gray-300" : ""}
                   `}
                 >
                   {displayReservationStatus(reservationDetail.reservationStatus)}
@@ -278,9 +278,9 @@ export default function ReservationDetailPage() {
                     <div className="flex items-center">
                       <Badge
                         className={`
-                          ${reservationDetail.paymentStatus === PaymentStatus.PAID ? "bg-green-100 text-green-800 border-green-200" : ""}
-                          ${(reservationDetail.reservationStatus === ReservationStatus.PENDING) ? "bg-amber-50 text-amber-600 border-amber-200" : ""}
-                          ${(reservationDetail.reservationStatus === ReservationStatus.CANCELED || reservationDetail.paymentStatus === PaymentStatus.PARTIAL_CANCELED) ? "bg-gray-100 text-gray-600 border-gray-200" : ""}
+                          ${reservationDetail.paymentStatus === PaymentStatus.PAID ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-100 hover:text-green-700 hover:border-green-300" : ""}
+                          ${(reservationDetail.reservationStatus === ReservationStatus.PENDING) ? "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 hover:text-amber-700 hover:border-amber-300" : ""}
+                          ${(reservationDetail.reservationStatus === ReservationStatus.CANCELED || reservationDetail.paymentStatus === PaymentStatus.PARTIAL_CANCELED) ? "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-700 hover:border-gray-300" : ""}
                         `}
                       >
                         { (reservationDetail.reservationStatus === ReservationStatus.CANCELED) ? 
