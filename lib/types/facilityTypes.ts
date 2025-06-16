@@ -41,3 +41,14 @@ export interface AssignFacilityManagerRequest {
     email: string;
     managerRole: string;
 }
+
+export interface FacilityManagerListResponse {
+    id: number;
+    assignedAt: string;
+    facilityId: number;
+    userId: number;
+    managerRole: string;
+    userName: string;
+    email: string;
+    phone: string;
+}

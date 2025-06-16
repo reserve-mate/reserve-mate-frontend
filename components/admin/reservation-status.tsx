@@ -78,7 +78,10 @@ type Reservation = {
   createdAt: string
 }
 
-export default function AdminReservationStatus() {
+interface ReservationStatusProps {
+  selectedFacilityId?: string;
+}
+export default function AdminReservationStatus({ selectedFacilityId }: ReservationStatusProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [reservations, setReservations] = useState<Reservation[]>([])
   

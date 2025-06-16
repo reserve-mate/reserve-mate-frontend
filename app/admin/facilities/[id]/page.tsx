@@ -352,7 +352,7 @@ function FacilityReservations({ facilityId, facilityName }: { facilityId: string
       </div>
       
       {/* 특정 시설에 대한 예약 현황을 위해 facilityId 전달 */}
-      {/* <ReservationStatus selectedFacilityId={facilityId} /> */}
+      <ReservationStatus selectedFacilityId={facilityId} />
     </div>
   )
 } 
