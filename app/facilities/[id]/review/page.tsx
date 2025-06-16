@@ -1,64 +1,30 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Star, ArrowLeft, Building, LogIn } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
-
-// 시설 정보 타입
-type Facility = {
-  id: string
-  name: string
-  type: string
-  reservationId: string
-  reservationDate: string
-}
-
-// 더미 시설 정보
-const dummyFacilities: Record<string, Facility> = {
-  "1": {
-    id: "1",
-    name: "서울 테니스 센터",
-    type: "테니스",
-    reservationId: "T-20250328-001",
-    reservationDate: "2025년 3월 28일",
-  },
-  "2": {
-    id: "2",
-    name: "강남 풋살장",
-    type: "풋살",
-    reservationId: "F-20250329-002",
-    reservationDate: "2025년 3월 29일",
-  },
-  "3": {
-    id: "3",
-    name: "종로 농구코트",
-    type: "농구",
-    reservationId: "B-20250315-003",
-    reservationDate: "2025년 3월 15일",
-  },
-  "4": {
-    id: "4",
-    name: "한강 배드민턴장",
-    type: "배드민턴",
-    reservationId: "BD-20250310-004",
-    reservationDate: "2025년 3월 10일",
-  },
-}
+import { ReviewReservation } from "@/lib/types/reservationType"
+import { reservationService } from "@/lib/services/reservationService"
+import { displaySportName } from "@/lib/types/matchTypes"
 
 export default function ReviewPage() {
-  const { id } = useParams<{ id: string }>()
+  const { id } = useParams<{ id: string }>();
+  const queryParam = useSearchParams();
+
   const router = useRouter()
-  const [facility, setFacility] = useState<Facility | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  // 리뷰 예약 정보
+  const [reviewReservation, setReviewReservation] = useState<ReviewReservation | null>(null);
 
   // 리뷰 데이터
   const [reviewData, setReviewData] = useState({
@@ -66,6 +32,8 @@ export default function ReviewPage() {
     title: "",
     content: "",
   })
+
+  const reviewType = queryParam.get("reviewType");
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -82,22 +50,23 @@ export default function ReviewPage() {
 
   useEffect(() => {
     // 실제 구현에서는 API 호출을 통해 시설 정보를 가져옴
-    const fetchFacility = () => {
+    const fetchFacility = async () => {
       if (!isLoggedIn) return // 로그인 상태가 아니면 API 호출 하지 않음
       
       setIsLoading(true)
       try {
         // API 호출 시뮬레이션
-        setTimeout(() => {
-          const foundFacility = dummyFacilities[id as string]
-          if (foundFacility) {
-            setFacility(foundFacility)
-          }
-          setIsLoading(false)
-        }, 500)
+        const response = await reservationService.getReviewReservationInfo(parseInt(id));
+        setReviewReservation(response);
       } catch (error) {
-        console.error("Error fetching facility:", error)
-        setIsLoading(false)
+        toast({
+          title: "리뷰 정보 조회 실패",
+          description: error instanceof Error ? error.message : "리뷰 정보를 찾지 못하였습니다.",
+          variant: "destructive",
+        });
+        router.push("/reservations")
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -216,7 +185,7 @@ export default function ReviewPage() {
     )
   }
 
-  if (!facility) {
+  if (!reviewReservation) {
     return (
       <div className="container py-8">
         <div className="flex items-center space-x-2 mb-6">
@@ -251,10 +220,10 @@ export default function ReviewPage() {
           <div className="mb-6">
             <div className="flex items-center mb-2">
               <Building className="h-5 w-5 text-indigo-500 mr-2" />
-              <h3 className="text-lg font-semibold">{facility.name}</h3>
+              <h3 className="text-lg font-semibold">{reviewReservation.facilityName}</h3>
             </div>
             <p className="text-gray-600 text-sm">
-              {facility.type} | 예약번호: {facility.reservationId} | 이용일: {facility.reservationDate}
+              {displaySportName(reviewReservation.sportType)} | 예약번호: {reviewReservation.reservationNumber} | 이용일: {reviewReservation.useDateDate}
             </p>
           </div>
 
