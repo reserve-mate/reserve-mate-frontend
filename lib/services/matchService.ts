@@ -15,7 +15,7 @@ export const matchService = {
 
   // 매치 등록(관리자 전용)
   registMatch: (params: MatchRegist) => {
-    let endPoint = `/match/registMatch`
+    let endPoint = `/admin/match/registMatch`
     return api.post(endPoint, params);
   },
 
@@ -104,10 +104,6 @@ export const matchService = {
   updateMatchStatus: (id: number, status: MatchStatus) => 
     api.patch<Match>(`/admin/matches/${id}/status`, { status }),
   
-  // 매치 삭제 (관리자 전용)
-  // deleteMatch: (id: number) => 
-  //   api.delete(`/admin/matches/${id}`),
-    
   // 시설의 매니저 목록 조회
   getFacilityManagers: (facilityId: number) => 
     api.get<FacilityManager[]>(`/admin/facilities/${facilityId}/managers`),

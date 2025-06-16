@@ -64,10 +64,6 @@ export default function EditMatchPage({ params }: { params: { id: number } }) {
           </Button>
           <h1 className="text-2xl font-bold">매치 수정</h1>
         </div>
-        
-        <Link href={`/admin/matches/${params.id}`}>
-          <Button variant="outline">취소</Button>
-        </Link>
       </div>
 
       {/* 매치 수정 폼 */}
