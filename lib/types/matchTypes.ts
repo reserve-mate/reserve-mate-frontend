@@ -113,6 +113,7 @@ export interface MatchSearchRequest {
     searchValue: string;
     sportType: SportType;
     matchStatus: MatchStatus;
+    region: string;
     matchDate: string;
     pageNumber: number;  // 선택적 프로퍼티
 }

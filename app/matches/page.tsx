@@ -24,6 +24,7 @@ export default function MatchesPage() {
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [sportType, setSportType] = useState<SportType | null>(null);
   const [matchStatus, setMatchStatus] = useState<MatchStatus | null>(null);
+  const [region, setRegion] = useState<string>("서울");
 
   // 매치 조회 및 검색 필터링
   const [matches, setMatches] = useState<MatchList[]>([])
@@ -59,6 +60,7 @@ export default function MatchesPage() {
       searchValue: searchTerm,
       matchStatus: matchStatus ?? undefined,
       sportType: sportType ?? undefined,
+      region: region,
       pageNumber: pageNumber
     };
 
@@ -91,6 +93,7 @@ export default function MatchesPage() {
       matchDate: format(startDate, 'yyyy-MM-dd', { locale: ko }), // YYYY-MM-DD
       searchValue: searchTerm,
       sportType: sportType ?? undefined,
+      region: region,
       matchStatus: matchStatus ?? undefined
     };
     
@@ -401,7 +404,32 @@ export default function MatchesPage() {
       {/* 검색 필터 */}
       <Card className="styled-card mb-8">
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+
+            <Select value={region} onValueChange={(value) => setRegion(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="지역" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="서울">서울</SelectItem>
+                <SelectItem value="경기">경기</SelectItem>
+                <SelectItem value="인천">인천</SelectItem>
+                <SelectItem value="강원">강원</SelectItem>
+                <SelectItem value="대전/세종">대전/세종</SelectItem>
+                <SelectItem value="충남">충남</SelectItem>
+                <SelectItem value="충북">충북</SelectItem>
+                <SelectItem value="대구">대구</SelectItem>
+                <SelectItem value="경북">경북</SelectItem>
+                <SelectItem value="부산">부산</SelectItem>
+                <SelectItem value="울산">울산</SelectItem>
+                <SelectItem value="경남">경남</SelectItem>
+                <SelectItem value="광주">광주</SelectItem>
+                <SelectItem value="전남">전남</SelectItem>
+                <SelectItem value="전북">전북</SelectItem>
+                <SelectItem value="제주">제주</SelectItem>
+              </SelectContent>
+            </Select>
+
             <div className="relative">
               <Input
                 placeholder="시설명 또는 위치 검색"
