@@ -13,6 +13,7 @@ import { toast } from "@/hooks/use-toast"
 import { ReviewReservation } from "@/lib/types/reservationType"
 import { reservationService } from "@/lib/services/reservationService"
 import { displaySportName } from "@/lib/types/matchTypes"
+import Image from "next/image"
 
 export default function ReviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -32,6 +33,10 @@ export default function ReviewPage() {
     title: "",
     content: "",
   })
+
+  // 이미지 업로드 상태
+  const [images, setImages] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
 
   const reviewType = queryParam.get("reviewType");
 
@@ -86,6 +91,34 @@ export default function ReviewPage() {
     setReviewData((prev) => ({ ...prev, rating }))
   }
 
+  // 이미지 선택 핸들러
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    let selectedFiles = Array.from(files);
+    // 최대 3개로 제한
+    if (selectedFiles.length + images.length > 3) {
+      toast({
+        title: "이미지는 최대 3개까지 업로드할 수 있습니다.",
+        variant: "destructive",
+      });
+      selectedFiles = selectedFiles.slice(0, 3 - images.length);
+    }
+    const newImages = [...images, ...selectedFiles].slice(0, 3);
+    setImages(newImages);
+    // 미리보기 URL 생성
+    const newPreviews = newImages.map((file) => URL.createObjectURL(file));
+    setImagePreviews(newPreviews);
+  };
+
+  // 이미지 삭제 핸들러
+  const handleRemoveImage = (idx: number) => {
+    const newImages = images.filter((_, i) => i !== idx);
+    setImages(newImages);
+    const newPreviews = newImages.map((file) => URL.createObjectURL(file));
+    setImagePreviews(newPreviews);
+  };
+
   // 리뷰 제출 처리
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -120,8 +153,16 @@ export default function ReviewPage() {
     setIsSubmitting(true)
 
     try {
+      // FormData 생성
+      const formData = new FormData();
+      formData.append("rating", String(reviewData.rating));
+      formData.append("title", reviewData.title);
+      formData.append("content", reviewData.content);
+      images.forEach((img, idx) => {
+        formData.append("images", img);
+      });
       // 실제 구현에서는 API 호출을 통해 리뷰를 저장
-      // 여기서는 제출 성공 시뮬레이션
+      // 예시: await fetch('/api/review', { method: 'POST', body: formData });
       setTimeout(() => {
         toast({
           title: "리뷰가 등록되었습니다",
@@ -287,6 +328,32 @@ export default function ReviewPage() {
                   onChange={handleInputChange}
                   className="resize-none border-indigo-200 focus:border-indigo-300 focus:ring-indigo-300"
                 />
+              </div>
+
+              <div className="mb-4">
+                <Label htmlFor="images">이미지 업로드 (최대 3장)</Label>
+                <Input
+                  id="images"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageChange}
+                  disabled={images.length >= 3}
+                />
+                <div className="flex gap-2 mt-2">
+                  {imagePreviews.map((src, idx) => (
+                    <div key={idx} className="relative w-24 h-24">
+                      <Image src={src} alt={`preview-${idx}`} fill className="object-cover rounded" />
+                      <button
+                        type="button"
+                        className="absolute top-0 right-0 bg-white bg-opacity-80 rounded-full p-1 text-xs"
+                        onClick={() => handleRemoveImage(idx)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
