@@ -75,9 +75,10 @@ export default function MatchesPage() {
         setPage(matches.number);
         setHasMore(!matches.last);  // 마지막 페이지가 아니면 true
       }catch(err){
-        console.log(err);
         setIsError(true);
-        window.location.reload();
+        setPage(0);
+        setHasMore(false);
+        setMatches([]);
       }
       finally{
         setLoading(false); // 
@@ -102,7 +103,7 @@ export default function MatchesPage() {
         const matchDates: MathDateCount[] = await matchService.getMatchDates(dateParams);
         setMatchDate(matchDates);
       } catch (error) {
-        console.log(`매치 날짜 조회 실패: ${error}`)
+        setMatchDate([]);
       }
     }
     fetchMatchDates();
