@@ -2,6 +2,15 @@ import { SportType } from "../enum/matchEnum";
 import { PaymentStatus } from "../enum/paymentEnum";
 import { ReservationStatus } from "../enum/reservationEnum";
 
+// 리뷰 예약 사전 정보
+export interface ReviewReservation {
+    courtId: number;
+    reservationNumber: string;
+    sportType: SportType;
+    facilityName: string;
+    useDateDate: string;
+}
+
 // 관리자 예약 상세
 export interface AdminReservationDetail {
     reservationId: number;

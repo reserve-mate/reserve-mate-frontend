@@ -342,7 +342,7 @@ export default function ReservationDetailPage() {
                   asChild 
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
                 >
-                  <Link href={`/facilities/${reservationDetail.reservationId}/review`}>리뷰 작성</Link>
+                  <Link href={`/facilities/${reservationDetail.reservationId}/review?reviewType=RESERVATION`}>리뷰 작성</Link>
                 </Button>
               )}
             </CardContent>

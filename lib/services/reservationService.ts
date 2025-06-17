@@ -1,7 +1,7 @@
 import { api } from "../api";
 import { ReservationStatus } from "../enum/reservationEnum";
 import { Slice } from "../types/commonTypes";
-import { AdminReservationDetail, AdminReservationResponse, DashboardReservation, ReservationDetail, Reservations } from "../types/reservationType";
+import { AdminReservationDetail, AdminReservationResponse, DashboardReservation, ReservationDetail, Reservations, ReviewReservation } from "../types/reservationType";
 
 export const reservationService = {
 
@@ -32,6 +32,12 @@ export const reservationService = {
     // 관리자 대시보드 최근예약
     getDashboardReservations: (params: {facilityId: number, year: number, month: number}) => {
         return api.get<DashboardReservation[]>(`/admin/reservation/dashboardReservations?facilityId=${params.facilityId}&year=${params.year}&month=${params.month}`);
+    },
+
+    // 리뷰 예약 정보 가져오기
+    getReviewReservationInfo: (param: number) => {
+        let endPoint = `/reserve/review/${param}`;
+        return api.get<ReviewReservation>(endPoint);
     },
 
     // 예약 취소
