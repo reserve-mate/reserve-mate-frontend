@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Star, MessageSquarePlus, User } from "lucide-react"
+import { ReviewListResponse } from "@/lib/types/reviewTypes"
+import { reviewService } from "@/lib/services/reviewService"
+import { toast } from "@/hooks/use-toast"
 
 // 리뷰 데이터 타입
 type Review = {
@@ -75,17 +78,27 @@ const dummyReviews: Review[] = [
   }
 ]
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sportmate.site/';
+
 export default function ReviewsPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false);
   const [facility, setFacility] = useState<FacilityInfo | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
+
+  // 리뷰 목록 데이터
+  const [reviewDatas, setReviewDatas] = useState<ReviewListResponse[]>([]);
+
+  // 무한 스크롤 데이터
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     // 실제 구현에서는 API 호출
     const fetchData = async () => {
-      setIsLoading(true)
+      //setIsLoading(true)
       try {
         // API 호출 시뮬레이션
         await new Promise(resolve => setTimeout(resolve, 500))
@@ -101,6 +114,33 @@ export default function ReviewsPage() {
     fetchData()
   }, [id])
 
+  // 리뷰 목록 조회
+  const getFacilityReviews = async (pageNum: number) => {
+    if(isLoading) return;
+    setIsLoading(true);
+
+    try {
+      const response = await reviewService.getFacilityReviews({
+        facilityId: parseInt(id),
+        pageNum: pageNum
+      });
+      setReviewDatas(response.content);
+    } catch (error) {
+      toast({
+        title: "리뷰 조회 실패",
+        description: (error instanceof Error) ? (error.message) : "결제 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // 리뷰 조회
+  useEffect(() => {
+    getFacilityReviews(page);
+  }, [id])
+
   const renderStars = (rating: number) => {
     return [1, 2, 3, 4, 5].map((star) => (
       <Star
@@ -110,6 +150,16 @@ export default function ReviewsPage() {
         }`}
       />
     ))
+  }
+
+  // 날짜 포맷 함수
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(date)
   }
 
   if (isLoading) {
@@ -184,8 +234,8 @@ export default function ReviewsPage() {
 
       {/* 리뷰 목록 */}
       <div className="space-y-6">
-        {reviews.map((review) => (
-          <Card key={review.id} className="overflow-hidden">
+        {reviewDatas.map((review) => (
+          <Card key={review.reviewId} className="overflow-hidden">
             <CardContent className="p-6">
               {/* 리뷰 헤더 */}
               <div className="flex items-start justify-between mb-4">
@@ -199,7 +249,7 @@ export default function ReviewsPage() {
                       <div className="flex mr-2">
                         {renderStars(review.rating)}
                       </div>
-                      <span className="text-sm text-gray-500">{review.createdAt}</span>
+                      <span className="text-sm text-gray-500">{formatDate(review.reviewDate)}</span>
                     </div>
                   </div>
                 </div>
@@ -209,20 +259,20 @@ export default function ReviewsPage() {
               </div>
 
               {/* 리뷰 제목 */}
-              <h5 className="font-semibold text-lg mb-2">{review.title}</h5>
+              <h5 className="font-semibold text-lg mb-2">{review.reviewTitle}</h5>
 
               {/* 리뷰 내용 */}
-              <p className="text-gray-700 mb-4 leading-relaxed">{review.content}</p>
+              <p className="text-gray-700 mb-4 leading-relaxed">{review.reviewContent}</p>
 
               {/* 리뷰 이미지 */}
-              {review.images.length > 0 && (
+              {review.reviewImages.length > 0 && (
                 <div className="mt-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {review.images.map((image, index) => (
+                    {review.reviewImages.map((image, index) => (
                       <div key={index} className="relative aspect-square overflow-hidden rounded-lg">
                         <Image
-                          src={image}
-                          alt={`리뷰 이미지 ${index + 1}`}
+                          src={API_BASE_URL.substring(0, API_BASE_URL.length - 1) + image.imageUrl}
+                          alt={`리뷰 이미지 ${image.imageOrder}`}
                           fill
                           className="object-cover hover:scale-105 transition-transform duration-200 cursor-pointer"
                         />

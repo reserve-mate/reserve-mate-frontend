@@ -98,6 +98,7 @@ export interface ReservationDetail {
 export interface Reservations {
     reservationId: number;
     reservationStatus: ReservationStatus;
+    facilityId: number;
     facilityName: string;
     courtName: string;
     sportType: SportType;

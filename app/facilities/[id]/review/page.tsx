@@ -14,10 +14,11 @@ import { ReviewReservation } from "@/lib/types/reservationType"
 import { reservationService } from "@/lib/services/reservationService"
 import { displaySportName } from "@/lib/types/matchTypes"
 import Image from "next/image"
+import { ReviewFacility } from "@/lib/types/facilityTypes"
+import { facilityService } from "@/lib/services/facilityService"
 
 export default function ReviewPage() {
   const { id } = useParams<{ id: string }>();
-  const queryParam = useSearchParams();
 
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
@@ -26,6 +27,9 @@ export default function ReviewPage() {
 
   // 리뷰 예약 정보
   const [reviewReservation, setReviewReservation] = useState<ReviewReservation | null>(null);
+
+  // 리뷰 시설 정보
+  const [reviewFacility, setReviewFacility] = useState<ReviewFacility | null>(null);
 
   // 리뷰 데이터
   const [reviewData, setReviewData] = useState({
@@ -37,8 +41,6 @@ export default function ReviewPage() {
   // 이미지 업로드 상태
   const [images, setImages] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
-
-  const reviewType = queryParam.get("reviewType");
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -61,8 +63,8 @@ export default function ReviewPage() {
       setIsLoading(true)
       try {
         // API 호출 시뮬레이션
-        const response = await reservationService.getReviewReservationInfo(parseInt(id));
-        setReviewReservation(response);
+        const response = await facilityService.getReviewFacility(parseInt(id));
+        setReviewFacility(response);
       } catch (error) {
         toast({
           title: "리뷰 정보 조회 실패",
@@ -226,7 +228,7 @@ export default function ReviewPage() {
     )
   }
 
-  if (!reviewReservation) {
+  if (!reviewFacility) {
     return (
       <div className="container py-8">
         <div className="flex items-center space-x-2 mb-6">
@@ -261,10 +263,10 @@ export default function ReviewPage() {
           <div className="mb-6">
             <div className="flex items-center mb-2">
               <Building className="h-5 w-5 text-indigo-500 mr-2" />
-              <h3 className="text-lg font-semibold">{reviewReservation.facilityName}</h3>
+              <h3 className="text-lg font-semibold">{reviewFacility.facilityName}</h3>
             </div>
             <p className="text-gray-600 text-sm">
-              {displaySportName(reviewReservation.sportType)} | 예약번호: {reviewReservation.reservationNumber} | 이용일: {reviewReservation.useDateDate}
+              {displaySportName(reviewFacility.sportType)}
             </p>
           </div>
 
