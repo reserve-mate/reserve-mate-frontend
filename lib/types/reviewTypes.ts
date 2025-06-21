@@ -15,6 +15,7 @@ export interface ReviewListResponse {
     reviewDate: string;
     reviewTitle: string;
     reviewContent: string;
+    write: boolean;
     reviewImages: ReviewImageResponse[];
 }
 

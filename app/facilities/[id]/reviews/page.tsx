@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { ReviewCountResponse, ReviewListResponse } from "@/lib/types/reviewTypes"
 import { reviewService } from "@/lib/services/reviewService"
 import { toast } from "@/hooks/use-toast"
-import { ArrowLeft, MessageSquarePlus, Star, User } from "lucide-react"
+import { ArrowLeft, Edit, MessageSquarePlus, Star, Trash, User } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 import { Button } from "@/components/ui/button"
@@ -166,6 +166,16 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
     )
   }
 
+  // 리뷰 수정 버튼
+  function onEdit(reviewId: number): void {
+    throw new Error("Function not implemented.")
+  }
+
+  // 리뷰 삭제 버튼
+  function onDelete(reviewId: number): void {
+    throw new Error("Function not implemented.")
+  }
+
   return (
     <div className="container py-8 max-w-4xl mx-auto">
       {/* 헤더 */}
@@ -219,6 +229,40 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
                     </div>
                 </div>
             </div>
+
+            {/* 수정/삭제 버튼 */}
+            {review.write && (
+              <div className="flex gap-2">
+                <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              router.push(`/`);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
+                          </Button>
+                <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              //handleDelete(match.matchId);
+                            }}
+                          >
+                            <Trash className="h-4 w-4" />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+              </div>
+            )}
           </div>
 
           {/* 리뷰 제목 */}
