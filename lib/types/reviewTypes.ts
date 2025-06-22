@@ -1,4 +1,13 @@
 
+// 리뷰 상세
+export interface ReviewDetail {
+    reviewId: number;
+    rating: number;
+    reviewTitle: string;
+    reviewContent: string;
+    images: ReviewImageResponse[];
+}
+
 // 리뷰 작성
 export interface ReviewRequestDto {
     facilityId: number;

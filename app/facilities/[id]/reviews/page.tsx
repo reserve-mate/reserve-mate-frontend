@@ -130,11 +130,6 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
         }).format(date)
     }
 
-  // 리뷰 수정 버튼
-  function onEdit(reviewId: number): void {
-    throw new Error("Function not implemented.")
-  }
-
   // 리뷰 삭제 버튼
   const onDelete = async (reviewId: number) => {
     try {
@@ -255,7 +250,7 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
                             onClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
-                              router.push(`/`);
+                              router.push(`/facilities/${params.id}/review/edit?reviewId=${review.reviewId}`);
                             }}
                           >
                             <Edit className="h-4 w-4" />
