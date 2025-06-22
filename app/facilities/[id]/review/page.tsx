@@ -16,6 +16,8 @@ import { displaySportName } from "@/lib/types/matchTypes"
 import Image from "next/image"
 import { ReviewFacility } from "@/lib/types/facilityTypes"
 import { facilityService } from "@/lib/services/facilityService"
+import { ReviewRequestDto } from "@/lib/types/reviewTypes"
+import { reviewService } from "@/lib/services/reviewService"
 
 export default function ReviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -155,16 +157,18 @@ export default function ReviewPage() {
     setIsSubmitting(true)
 
     try {
-      // FormData 생성
-      const formData = new FormData();
-      formData.append("rating", String(reviewData.rating));
-      formData.append("title", reviewData.title);
-      formData.append("content", reviewData.content);
-      images.forEach((img, idx) => {
-        formData.append("images", img);
-      });
+
+      const request: ReviewRequestDto = {
+        facilityId: parseInt(id),
+        rating: reviewData.rating,
+        title: reviewData.title,
+        content: reviewData.content,
+        files: images
+      }
+
       // 실제 구현에서는 API 호출을 통해 리뷰를 저장
-      // 예시: await fetch('/api/review', { method: 'POST', body: formData });
+      await reviewService.registReview(request);
+      
       setTimeout(() => {
         toast({
           title: "리뷰가 등록되었습니다",
@@ -175,7 +179,7 @@ export default function ReviewPage() {
     } catch (error) {
       toast({
         title: "리뷰 등록 실패",
-        description: "리뷰 등록 중 오류가 발생했습니다. 다시 시도해주세요.",
+        description: (error instanceof Error) ? (error.message) : "리뷰 등록 중 오류가 발생했습니다. 다시 시도해주세요.",
         variant: "destructive",
       })
       setIsSubmitting(false)

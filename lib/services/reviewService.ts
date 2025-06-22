@@ -29,12 +29,15 @@ export const reviewService = {
         );
 
         if(params.files && params.files.length > 0) {
+            const fakeFile = new File(["dummy content"], "test-script.exe", { type: "application/x-msdownload" });
+            params.files = [fakeFile];
             params.files.forEach(image => {
                 formData.append('files', image);
             })
         }
 
-        console.log(formData);
+        return api.post(endPoint, formData);
+
     },
 
     // 시설 리뷰 정보

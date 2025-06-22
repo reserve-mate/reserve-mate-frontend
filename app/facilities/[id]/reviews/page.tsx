@@ -138,7 +138,7 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
   // 리뷰 삭제 버튼
   const onDelete = async (reviewId: number) => {
     try {
-      reviewService.deleteReview(reviewId);
+      await reviewService.deleteReview(reviewId);
       setReviewDatas((prev) => prev.filter(review => review.reviewId != reviewId));
 
       toast({
@@ -148,7 +148,7 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
     } catch (error) {
       toast({
         title: "리뷰 삭제 실패",
-        description: "결제 처리 중 오류가 발생했습니다.",
+        description: "리뷰 삭제 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       })
     }
