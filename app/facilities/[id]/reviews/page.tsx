@@ -72,7 +72,7 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
     }catch(error) {
       toast({
         title: "리뷰 조회 실패",
-        description: "결제 처리 중 오류가 발생했습니다.",
+        description: "리뷰 조회 중 오류가 발생했습니다.",
         variant: "destructive",
       })
       setIsError(true);
@@ -130,6 +130,30 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
         }).format(date)
     }
 
+  // 리뷰 수정 버튼
+  function onEdit(reviewId: number): void {
+    throw new Error("Function not implemented.")
+  }
+
+  // 리뷰 삭제 버튼
+  const onDelete = async (reviewId: number) => {
+    try {
+      reviewService.deleteReview(reviewId);
+      setReviewDatas((prev) => prev.filter(review => review.reviewId != reviewId));
+
+      toast({
+        title: "리뷰 삭제 성공",
+        description: "리뷰가 성공적으로 삭제되었습니다.",
+      })
+    } catch (error) {
+      toast({
+        title: "리뷰 삭제 실패",
+        description: "결제 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      })
+    }
+  }
+
   // if (isLoading) {
   //   return (
   //     <div className="container py-8">
@@ -166,16 +190,6 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
     )
   }
 
-  // 리뷰 수정 버튼
-  function onEdit(reviewId: number): void {
-    throw new Error("Function not implemented.")
-  }
-
-  // 리뷰 삭제 버튼
-  function onDelete(reviewId: number): void {
-    throw new Error("Function not implemented.")
-  }
-
   return (
     <div className="container py-8 max-w-4xl mx-auto">
       {/* 헤더 */}
@@ -200,12 +214,12 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
                 <span className="text-gray-500">({facilityReview.reviewCnt}개 리뷰)</span>
               </div>
             </div>
-            <Link href={`/facilities/${params.id}/review`}>
+            {/* <Link href={`/facilities/${params.id}/review`}>
               <Button className="bg-indigo-600 hover:bg-indigo-700">
                 <MessageSquarePlus className="h-4 w-4 mr-2" />
                 리뷰 작성
               </Button>
-            </Link>
+            </Link> */}
           </div>
         </CardHeader>
       </Card>
@@ -255,7 +269,7 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
                             onClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
-                              //handleDelete(match.matchId);
+                              onDelete(review.reviewId)
                             }}
                           >
                             <Trash className="h-4 w-4" />

@@ -1,9 +1,41 @@
 import { api } from "../api";
 import { Slice } from "../types/commonTypes";
-import { ReviewCountResponse, ReviewListResponse } from "../types/reviewTypes";
+import { ReviewCountResponse, ReviewListResponse, ReviewRequestDto } from "../types/reviewTypes";
 
 // 리뷰 서비스
 export const reviewService = {
+
+    // 리뷰 삭제
+    deleteReview: (param: number) => {
+        let endPoint = `/review/delete/${param}`;
+        return api.delete(endPoint);
+    },
+
+    // 리뷰 작성
+    registReview: (params: ReviewRequestDto) => {
+        let endPoint = `/review/registReview`;
+
+        const formData = new FormData();
+
+        const reviewData = {
+            facilityId: params.facilityId,
+            rating: params.rating,
+            title: params.title,
+            content: params.content
+        }
+
+        formData.append(
+            'reviewRequest', new Blob([JSON.stringify(reviewData)], {type: 'application/json'})
+        );
+
+        if(params.files && params.files.length > 0) {
+            params.files.forEach(image => {
+                formData.append('files', image);
+            })
+        }
+
+        console.log(formData);
+    },
 
     // 시설 리뷰 정보
     getReviewInfo: (param: number) => {

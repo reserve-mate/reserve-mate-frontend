@@ -1,4 +1,13 @@
 
+// 리뷰 작성
+export interface ReviewRequestDto {
+    facilityId: number;
+    rating: number;
+    title: string;
+    content: string;
+    files?: File[];
+}
+
 // 시설 리뷰 정보
 export interface ReviewCountResponse {
     facilityName: string;
