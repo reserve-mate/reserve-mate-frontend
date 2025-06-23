@@ -1,9 +1,35 @@
 import { api } from "../api";
 import { Slice } from "../types/commonTypes";
-import { ReviewCountResponse, ReviewDetail, ReviewListResponse, ReviewRequestDto } from "../types/reviewTypes";
+import { ReviewCountResponse, ReviewDetail, ReviewListResponse, ReviewModifyRequest, ReviewRequestDto } from "../types/reviewTypes";
 
 // 리뷰 서비스
 export const reviewService = {
+
+    // 리뷰 수정
+    modifyReview: (params: ReviewModifyRequest) => {
+        let endPoint = `/review/modify/${params.reviewId}`;
+
+        const formData = new FormData();
+
+        const request = {
+            rating: params.rating,
+            title: params.title,
+            content: params.content,
+            delOrderIds: params.delOrderIds
+        }
+
+        formData.append(
+            'modifyRequest', new Blob([JSON.stringify(request)], {type: 'application/json'})
+        );
+
+        if(params.files && params.files.length > 0) {
+            params.files.forEach((file) => {
+                formData.append('files', file)
+            });
+        }
+
+        return api.put(endPoint, formData);
+    },
 
     // 리뷰 상세
     getReviewDetail: (param: number) => {
@@ -35,8 +61,6 @@ export const reviewService = {
         );
 
         if(params.files && params.files.length > 0) {
-            const fakeFile = new File(["dummy content"], "test-script.exe", { type: "application/x-msdownload" });
-            params.files = [fakeFile];
             params.files.forEach(image => {
                 formData.append('files', image);
             })

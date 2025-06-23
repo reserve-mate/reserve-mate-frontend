@@ -16,7 +16,7 @@ import { displaySportName } from "@/lib/types/matchTypes"
 import Image from "next/image"
 import { ReviewFacility } from "@/lib/types/facilityTypes"
 import { facilityService } from "@/lib/services/facilityService"
-import { ReviewDetail, ReviewRequestDto } from "@/lib/types/reviewTypes"
+import { ReviewDetail, ReviewImageResponse, ReviewModifyRequest, ReviewRequestDto } from "@/lib/types/reviewTypes"
 import { reviewService } from "@/lib/services/reviewService"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sportmate.site/';
@@ -45,9 +45,6 @@ export default function ReviewPage() {
     images: []
   });
 
-  // 교체할 이미지 목록
-  const [delOrderIds, setDelOrderIds] = useState<number[]>([]);
-
   // 리뷰 시설 정보
   const [reviewFacility, setReviewFacility] = useState<ReviewFacility | null>(null);
 
@@ -57,6 +54,12 @@ export default function ReviewPage() {
     title: "",
     content: "",
   })
+
+  // 교체할 이미지 목록
+  const [delOrderIds, setDelOrderIds] = useState<number[]>([]);
+
+  // 이미 존재하는 이미지
+  const [existImg, setExistImg] = useState<ReviewImageResponse[]>([]);
 
   // 이미지 업로드 상태
   const [images, setImages] = useState<File[]>([])
@@ -130,9 +133,13 @@ export default function ReviewPage() {
   // 리뷰 이미지 상태 초기화
   useEffect(() => {
     if(review?.images) {
-      const initialPreviews = review.images
-      .sort((a, b) => a.imageOrder - b.imageOrder)
-      .map(image => API_BASE_URL.slice(0, -1) + image.imageUrl);
+      const sortedImages = review.images
+      .sort((a, b) => a.imageOrder - b.imageOrder);
+      setExistImg(sortedImages);
+
+      const initialPreviews = sortedImages.map(
+        (image) => API_BASE_URL.slice(0, -1) + image.imageUrl
+      );
     
       setImagePreviews(initialPreviews);
     }
@@ -143,7 +150,7 @@ export default function ReviewPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target
-    setReviewData((prev) => ({ ...prev, [name]: value }))
+    setReview((prev) => ({ ...prev, [name]: value }))
   }
 
   // 별점 변경 처리
@@ -156,34 +163,69 @@ export default function ReviewPage() {
     const files = e.target.files;
     if (!files) return;
     let selectedFiles = Array.from(files);
+
+    const totalCnt = existImg.length + images.length;
+
     // 최대 3개로 제한
-    if (selectedFiles.length + images.length > 3) {
+    if (selectedFiles.length + totalCnt > 3) {
       toast({
         title: "이미지는 최대 3개까지 업로드할 수 있습니다.",
         variant: "destructive",
       });
-      selectedFiles = selectedFiles.slice(0, 3 - images.length);
+      selectedFiles = selectedFiles.slice(0, 3 - totalCnt);
     }
-    const newImages = [...images, ...selectedFiles].slice(0, 3);
+    const newImages = [...images, ...selectedFiles];
     setImages(newImages);
+    
     // 미리보기 URL 생성
-    const newPreviews = newImages.map((file) => URL.createObjectURL(file));
+    const newPreviews = [ 
+      ...existImg.map((file) => API_BASE_URL.slice(0, -1) + file.imageUrl)
+      , ...newImages.map((file) => URL.createObjectURL(file))
+    ];
     setImagePreviews(newPreviews);
   };
 
   // 이미지 삭제 핸들러
   const handleRemoveImage = (idx: number) => {
-    const newImages = images.filter((_, i) => i !== idx);
-    setImages(newImages);
-    const newPreviews = newImages.map((file) => URL.createObjectURL(file));
-    setImagePreviews(newPreviews);
+    const totalExisting = existImg.length;
+
+    if(idx < totalExisting) { // 기존 이미지 지우기
+      const removed = existImg[idx];
+      setDelOrderIds((prev) => [...prev, removed.imageOrder]);
+
+      const newExisting = existImg.filter((_, i) => i !== idx);
+      setExistImg(newExisting);
+
+      const previews = [ 
+        ...newExisting.map((file) => API_BASE_URL.slice(0, -1) + file.imageUrl)
+        , ...images.map((file) => URL.createObjectURL(file))
+      ];
+      setImagePreviews(previews);
+    }else { // 새 업로드 이미지 삭제
+      const fileIdx = idx - totalExisting;
+      const newImages = images.filter((_, i) => i !== fileIdx);
+      setImages(newImages);
+
+      const previews = [
+        ...existImg.map((file) => API_BASE_URL.slice(0, -1) + file.imageUrl)
+        , ...newImages.map((file) => URL.createObjectURL(file))
+      ]
+      setImagePreviews(previews);
+    }
+
+    // setDelOrderIds((prev) => [...prev, idx]);
+
+    // const newImages = images.filter((_, i) => i !== idx);
+    // setImages(newImages);
+    // const newPreviews = newImages.map((file) => URL.createObjectURL(file));
+    // setImagePreviews(newPreviews);
   };
 
   // 리뷰 제출 처리
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (reviewData.rating === 0) {
+    if (review.rating === 0) {
       toast({
         title: "별점을 선택해주세요",
         description: "리뷰를 작성하기 위해서는 별점이 필요합니다.",
@@ -192,7 +234,7 @@ export default function ReviewPage() {
       return
     }
 
-    if (!reviewData.title.trim()) {
+    if (!review.reviewTitle.trim()) {
       toast({
         title: "제목을 입력해주세요",
         description: "리뷰 제목을 입력해주세요.",
@@ -201,7 +243,7 @@ export default function ReviewPage() {
       return
     }
 
-    if (!reviewData.content.trim()) {
+    if (!review.reviewContent.trim()) {
       toast({
         title: "내용을 입력해주세요",
         description: "리뷰 내용을 입력해주세요.",
@@ -214,23 +256,24 @@ export default function ReviewPage() {
 
     try {
 
-      const request: ReviewRequestDto = {
-        facilityId: parseInt(id),
-        rating: reviewData.rating,
-        title: reviewData.title,
-        content: reviewData.content,
+      const request: ReviewModifyRequest = {
+        reviewId: review.reviewId,
+        rating: review.rating,
+        title: review.reviewTitle,
+        content: review.reviewContent,
+        delOrderIds: delOrderIds,
         files: images
       }
 
       // 실제 구현에서는 API 호출을 통해 리뷰를 저장
-      await reviewService.registReview(request);
+      await reviewService.modifyReview(request);
       
       setTimeout(() => {
         toast({
           title: "리뷰가 등록되었습니다",
           description: "소중한 의견을 공유해주셔서 감사합니다.",
         })
-        router.push("/reservations")
+        location.reload();
       }, 1000)
     } catch (error) {
       toast({
@@ -370,7 +413,7 @@ export default function ReviewPage() {
                   </Label>
                   <Input
                     id="title"
-                    name="title"
+                    name="reviewTitle"
                     placeholder="리뷰 제목을 입력해주세요"
                     value={review.reviewTitle}
                     onChange={handleInputChange}
@@ -384,7 +427,7 @@ export default function ReviewPage() {
                   </Label>
                   <Textarea
                     id="content"
-                    name="content"
+                    name="reviewContent"
                     placeholder="시설 이용 경험을 자세히 공유해주세요"
                     rows={6}
                     value={review.reviewContent}
@@ -401,7 +444,7 @@ export default function ReviewPage() {
                     accept="image/*"
                     multiple
                     onChange={handleImageChange}
-                    disabled={images.length >= 3}
+                    disabled={(existImg.length + images.length) >= 3}
                   />
                   <div className="flex gap-2 mt-2">
                     {imagePreviews.map((src, idx) => (

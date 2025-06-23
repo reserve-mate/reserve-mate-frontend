@@ -1,4 +1,14 @@
 
+// 리뷰 수정
+export interface ReviewModifyRequest {
+    reviewId: number;
+    rating: number;
+    title: string;
+    content: string;
+    delOrderIds: number[];
+    files?: File[];
+}
+
 // 리뷰 상세
 export interface ReviewDetail {
     reviewId: number;
@@ -38,7 +48,7 @@ export interface ReviewListResponse {
 }
 
 // 리뷰 이미지 데이터
-interface ReviewImageResponse {
+export interface ReviewImageResponse {
     imageUrl: string;
     imageOrder: number;
 }
