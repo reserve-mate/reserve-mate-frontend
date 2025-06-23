@@ -16,11 +16,12 @@ import { displaySportName } from "@/lib/types/matchTypes"
 import Image from "next/image"
 import { ReviewFacility } from "@/lib/types/facilityTypes"
 import { facilityService } from "@/lib/services/facilityService"
-import { ReviewRequestDto } from "@/lib/types/reviewTypes"
+import { ReviewRequestDto, ReviewType } from "@/lib/types/reviewTypes"
 import { reviewService } from "@/lib/services/reviewService"
 
 export default function ReviewPage() {
   const { id } = useParams<{ id: string }>();
+  const query = useSearchParams();
 
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
@@ -29,9 +30,6 @@ export default function ReviewPage() {
 
   // 리뷰 예약 정보
   const [reviewReservation, setReviewReservation] = useState<ReviewReservation | null>(null);
-
-  // 리뷰 시설 정보
-  const [reviewFacility, setReviewFacility] = useState<ReviewFacility | null>(null);
 
   // 리뷰 데이터
   const [reviewData, setReviewData] = useState({
@@ -43,6 +41,12 @@ export default function ReviewPage() {
   // 이미지 업로드 상태
   const [images, setImages] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
+
+  const reviewType = query.get("reviewType");
+  if(!reviewType) {
+    router.back();
+    return;
+  }
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -57,6 +61,17 @@ export default function ReviewPage() {
     router.refresh()
   }
 
+  // 날짜 포맷 함수
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "long",
+    }).format(date)
+  }
+
   useEffect(() => {
     // 실제 구현에서는 API 호출을 통해 시설 정보를 가져옴
     const fetchFacility = async () => {
@@ -65,8 +80,8 @@ export default function ReviewPage() {
       setIsLoading(true)
       try {
         // API 호출 시뮬레이션
-        const response = await facilityService.getReviewFacility(parseInt(id));
-        setReviewFacility(response);
+        const response = await reservationService.getReviewReservationInfo(parseInt(id));
+        setReviewReservation(response);
       } catch (error) {
         toast({
           title: "리뷰 정보 조회 실패",
@@ -123,69 +138,6 @@ export default function ReviewPage() {
     setImagePreviews(newPreviews);
   };
 
-  // 리뷰 제출 처리
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (reviewData.rating === 0) {
-      toast({
-        title: "별점을 선택해주세요",
-        description: "리뷰를 작성하기 위해서는 별점이 필요합니다.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!reviewData.title.trim()) {
-      toast({
-        title: "제목을 입력해주세요",
-        description: "리뷰 제목을 입력해주세요.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!reviewData.content.trim()) {
-      toast({
-        title: "내용을 입력해주세요",
-        description: "리뷰 내용을 입력해주세요.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsSubmitting(true)
-
-    try {
-
-      const request: ReviewRequestDto = {
-        facilityId: parseInt(id),
-        rating: reviewData.rating,
-        title: reviewData.title,
-        content: reviewData.content,
-        files: images
-      }
-
-      // 실제 구현에서는 API 호출을 통해 리뷰를 저장
-      await reviewService.registReview(request);
-      
-      setTimeout(() => {
-        toast({
-          title: "리뷰가 등록되었습니다",
-          description: "소중한 의견을 공유해주셔서 감사합니다.",
-        })
-        router.push("/reservations")
-      }, 1000)
-    } catch (error) {
-      toast({
-        title: "리뷰 등록 실패",
-        description: (error instanceof Error) ? (error.message) : "리뷰 등록 중 오류가 발생했습니다. 다시 시도해주세요.",
-        variant: "destructive",
-      })
-      setIsSubmitting(false)
-    }
-  }
-
   // 로그인이 필요한 경우 안내 메시지 표시
   if (!isLoggedIn) {
     return (
@@ -232,7 +184,7 @@ export default function ReviewPage() {
     )
   }
 
-  if (!reviewFacility) {
+  if (!reviewReservation) {
     return (
       <div className="container py-8">
         <div className="flex items-center space-x-2 mb-6">
@@ -248,6 +200,71 @@ export default function ReviewPage() {
         </Card>
       </div>
     )
+  }
+
+  // 리뷰 제출 처리
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (reviewData.rating === 0) {
+      toast({
+        title: "별점을 선택해주세요",
+        description: "리뷰를 작성하기 위해서는 별점이 필요합니다.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!reviewData.title.trim()) {
+      toast({
+        title: "제목을 입력해주세요",
+        description: "리뷰 제목을 입력해주세요.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!reviewData.content.trim()) {
+      toast({
+        title: "내용을 입력해주세요",
+        description: "리뷰 내용을 입력해주세요.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+
+      const request: ReviewRequestDto = {
+        courtId: reviewReservation.courtId,
+        rating: reviewData.rating,
+        title: reviewData.title,
+        content: reviewData.content,
+        reservationId: parseInt(id),
+        reviewType: reviewType as ReviewType,
+        files: images
+      }
+
+      // 실제 구현에서는 API 호출을 통해 리뷰를 저장
+      await reviewService.registReview(request);
+      
+      setTimeout(() => {
+        toast({
+          title: "리뷰가 등록되었습니다",
+          description: "소중한 의견을 공유해주셔서 감사합니다.",
+        })
+        router.push("/reservations")
+      }, 1000)
+    } catch (error) {
+      toast({
+        title: "리뷰 등록 실패",
+        description: (error instanceof Error) ? (error.message) : "리뷰 등록 중 오류가 발생했습니다. 다시 시도해주세요.",
+        variant: "destructive",
+      })
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -267,10 +284,10 @@ export default function ReviewPage() {
           <div className="mb-6">
             <div className="flex items-center mb-2">
               <Building className="h-5 w-5 text-indigo-500 mr-2" />
-              <h3 className="text-lg font-semibold">{reviewFacility.facilityName}</h3>
+              <h3 className="text-lg font-semibold">{reviewReservation.facilityName}</h3>
             </div>
             <p className="text-gray-600 text-sm">
-              {displaySportName(reviewFacility.sportType)}
+              {displaySportName(reviewReservation.sportType)} / {reviewReservation.courtName} / {formatDate(reviewReservation.useDateDate)}
             </p>
           </div>
 

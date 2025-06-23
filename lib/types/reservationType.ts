@@ -5,7 +5,8 @@ import { ReservationStatus } from "../enum/reservationEnum";
 // 리뷰 예약 사전 정보
 export interface ReviewReservation {
     courtId: number;
-    reservationNumber: string;
+    //reservationNumber: string;
+    courtName: string;
     sportType: SportType;
     facilityName: string;
     useDateDate: string;

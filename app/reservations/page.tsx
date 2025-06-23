@@ -246,7 +246,7 @@ export default function ReservationsPage() {
 
                             {reservation.reservationStatus === ReservationStatus.COMPLETED && (
                               <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                                <Link href={`/facilities/${reservation.facilityId}/review?reviewType=RESERVATION`}>리뷰 작성</Link>
+                                <Link href={`/facilities/${reservation.reservationId}/review?reviewType=RESERVATION`}>리뷰 작성</Link>
                               </Button>
                             )}
                           </div>

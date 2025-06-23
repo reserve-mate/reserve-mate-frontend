@@ -36,7 +36,7 @@ export const reservationService = {
 
     // 리뷰 예약 정보 가져오기
     getReviewReservationInfo: (param: number) => {
-        let endPoint = `/reserve/review/${param}`;
+        let endPoint = `/reserve/reviewInfo/${param}`;
         return api.get<ReviewReservation>(endPoint);
     },
 

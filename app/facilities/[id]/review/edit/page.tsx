@@ -115,7 +115,6 @@ export default function ReviewPage() {
       try {
         const response = await reviewService.getReviewDetail(parseInt(reviewId));
         setReview(response);
-        //setImagePreviews(response.images);
       } catch (error) {
         toast({
           title: "리뷰 정보 조회 실패",
@@ -213,12 +212,6 @@ export default function ReviewPage() {
       setImagePreviews(previews);
     }
 
-    // setDelOrderIds((prev) => [...prev, idx]);
-
-    // const newImages = images.filter((_, i) => i !== idx);
-    // setImages(newImages);
-    // const newPreviews = newImages.map((file) => URL.createObjectURL(file));
-    // setImagePreviews(newPreviews);
   };
 
   // 리뷰 제출 처리

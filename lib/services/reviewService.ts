@@ -50,10 +50,12 @@ export const reviewService = {
         const formData = new FormData();
 
         const reviewData = {
-            facilityId: params.facilityId,
+            courtId: params.courtId,
             rating: params.rating,
             title: params.title,
-            content: params.content
+            content: params.content,
+            reservationId: params.reservationId,
+            reviewType: params.reviewType
         }
 
         formData.append(

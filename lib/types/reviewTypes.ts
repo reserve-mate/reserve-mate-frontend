@@ -1,4 +1,9 @@
 
+export enum ReviewType {
+    MATCH = "MATCH",
+    RESERVATION = "RESERVATION"
+}
+
 // 리뷰 수정
 export interface ReviewModifyRequest {
     reviewId: number;
@@ -20,10 +25,12 @@ export interface ReviewDetail {
 
 // 리뷰 작성
 export interface ReviewRequestDto {
-    facilityId: number;
+    courtId: number;
     rating: number;
     title: string;
     content: string;
+    reservationId: number;
+    reviewType: ReviewType;
     files?: File[];
 }
 
