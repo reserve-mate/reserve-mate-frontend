@@ -1,3 +1,4 @@
+import { SportType } from "../enum/matchEnum";
 
 export enum ReviewType {
     MATCH = "MATCH",
@@ -17,9 +18,13 @@ export interface ReviewModifyRequest {
 // 리뷰 상세
 export interface ReviewDetail {
     reviewId: number;
+    facilityName: string;
     rating: number;
     reviewTitle: string;
     reviewContent: string;
+    sportType: SportType;
+    courtName: string;
+    useDate: string
     images: ReviewImageResponse[];
 }
 
@@ -51,6 +56,7 @@ export interface ReviewListResponse {
     reviewTitle: string;
     reviewContent: string;
     write: boolean;
+    reviewType: ReviewType;
     reviewImages: ReviewImageResponse[];
 }
 

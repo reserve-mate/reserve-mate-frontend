@@ -205,16 +205,10 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
                 <div className="flex mr-2">
                   {renderStars(Math.floor(facilityReview.rating))}
                 </div>
-                <span className="font-medium mr-2">{facilityReview.rating}</span>
+                <span className="font-medium mr-2">{parseFloat(facilityReview.rating.toFixed(1))}</span>
                 <span className="text-gray-500">({facilityReview.reviewCnt}개 리뷰)</span>
               </div>
             </div>
-            {/* <Link href={`/facilities/${params.id}/review`}>
-              <Button className="bg-indigo-600 hover:bg-indigo-700">
-                <MessageSquarePlus className="h-4 w-4 mr-2" />
-                리뷰 작성
-              </Button>
-            </Link> */}
           </div>
         </CardHeader>
       </Card>
@@ -250,7 +244,7 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
                             onClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
-                              router.push(`/facilities/${params.id}/review/edit?reviewId=${review.reviewId}`);
+                              router.push(`/facilities/${params.id}/review/edit?reviewId=${review.reviewId}&reviewType=${review.reviewType}`);
                             }}
                           >
                             <Edit className="h-4 w-4" />

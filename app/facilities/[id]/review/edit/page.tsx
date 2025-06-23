@@ -16,10 +16,18 @@ import { displaySportName } from "@/lib/types/matchTypes"
 import Image from "next/image"
 import { ReviewFacility } from "@/lib/types/facilityTypes"
 import { facilityService } from "@/lib/services/facilityService"
-import { ReviewDetail, ReviewImageResponse, ReviewModifyRequest, ReviewRequestDto } from "@/lib/types/reviewTypes"
+import { ReviewDetail, ReviewImageResponse, ReviewModifyRequest, ReviewRequestDto, ReviewType } from "@/lib/types/reviewTypes"
 import { reviewService } from "@/lib/services/reviewService"
+import { SportType } from "@/lib/enum/matchEnum"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sportmate.site/';
+
+type ReviewInfo = {
+  facilityname: string,
+  sportType: SportType,
+  courtName: string,
+  useDate: string
+}
 
 export default function ReviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +35,7 @@ export default function ReviewPage() {
   const query = useSearchParams();
 
   const reviewId = query.get("reviewId");
+  const reviewType = query.get("reviewType");
 
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
@@ -34,26 +43,28 @@ export default function ReviewPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   // 리뷰 예약 정보
-  const [reviewReservation, setReviewReservation] = useState<ReviewReservation | null>(null);
+  const [reviewInfo, setReviewInfo] = useState<ReviewInfo>({
+    facilityname: "",
+    sportType: SportType.BADMINTON,
+    courtName: "",
+    useDate: ""
+  });
 
   // 리뷰 데이터
   const [review, setReview] = useState<ReviewDetail>({
     reviewId: 0,
+    facilityName: "",
     rating: 0,
     reviewTitle: '',
     reviewContent: '',
+    sportType: SportType.BADMINTON,
+    courtName: "",
+    useDate: "",
     images: []
   });
 
   // 리뷰 시설 정보
   const [reviewFacility, setReviewFacility] = useState<ReviewFacility | null>(null);
-
-  // 리뷰 데이터
-  const [reviewData, setReviewData] = useState({
-    rating: 0,
-    title: "",
-    content: "",
-  })
 
   // 교체할 이미지 목록
   const [delOrderIds, setDelOrderIds] = useState<number[]>([]);
@@ -65,7 +76,7 @@ export default function ReviewPage() {
   const [images, setImages] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
 
-  if(!reviewId) {
+  if(!reviewId || !reviewType) {
     router.back();
     return;
   }
@@ -83,37 +94,41 @@ export default function ReviewPage() {
     router.refresh()
   }
 
-  useEffect(() => {
-    // 실제 구현에서는 API 호출을 통해 시설 정보를 가져옴
-    const fetchFacility = async () => {
-      if (!isLoggedIn) return // 로그인 상태가 아니면 API 호출 하지 않음
+  // useEffect(() => {
+  //   // 실제 구현에서는 API 호출을 통해 시설 정보를 가져옴
+  //   const fetchFacility = async () => {
+  //     if (!isLoggedIn) return // 로그인 상태가 아니면 API 호출 하지 않음
       
-      setIsLoading(true)
-      try {
-        // API 호출 시뮬레이션
-        const response = await facilityService.getReviewFacility(parseInt(id));
-        setReviewFacility(response);
-      } catch (error) {
-        toast({
-          title: "리뷰 정보 조회 실패",
-          description: error instanceof Error ? error.message : "리뷰 정보를 찾지 못하였습니다.",
-          variant: "destructive",
-        });
-        router.push("/reservations")
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  //     setIsLoading(true)
+  //     try {
+  //       // API 호출 시뮬레이션
+  //       const response = await reservationService.getReviewReservationInfo(parseInt(reviewId));
+  //       setReviewReservation(response);
+  //     } catch (error) {
+  //       toast({
+  //         title: "리뷰 정보 조회 실패",
+  //         description: error instanceof Error ? error.message : "리뷰 정보를 찾지 못하였습니다.",
+  //         variant: "destructive",
+  //       });
+  //       router.push("/reservations")
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   }
 
-    fetchFacility()
-  }, [id, isLoggedIn])
+  //   fetchFacility()
+  // }, [id, isLoggedIn])
 
   // 리뷰 데이터 가져오기
   useEffect(() => {
 
     const reviewResponse = async () => {
+      setIsLoading(true);
       try {
-        const response = await reviewService.getReviewDetail(parseInt(reviewId));
+        const response = await reviewService.getReviewDetail({
+          reviewId: parseInt(reviewId)
+          , reviewType: reviewType as ReviewType
+        });
         setReview(response);
       } catch (error) {
         toast({
@@ -122,12 +137,26 @@ export default function ReviewPage() {
           variant: "destructive",
         });
         router.back();
+      } finally {
+        setIsLoading(false);
       }
     }
 
     reviewResponse();
 
   }, []);
+
+  // 리뷰 정보 가져오기
+  useEffect(() => {
+    if(review) {
+      setReviewInfo({
+        facilityname: review.facilityName,
+        sportType: review.sportType,
+        courtName: review.courtName,
+        useDate: review.useDate
+      });
+    }
+  }, [review])
 
   // 리뷰 이미지 상태 초기화
   useEffect(() => {
@@ -278,6 +307,16 @@ export default function ReviewPage() {
     }
   }
 
+  const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1; // 0-based
+  const day = date.getDate();
+  const weekday = date.toLocaleDateString("ko-KR", { weekday: "long" });
+
+  return `${year}년 ${month}월 ${day}일 ${weekday}`;
+};
+
   // 로그인이 필요한 경우 안내 메시지 표시
   if (!isLoggedIn) {
     return (
@@ -324,7 +363,7 @@ export default function ReviewPage() {
     )
   }
 
-  if (!reviewFacility) {
+  if (!reviewInfo) {
     return (
       <div className="container py-8">
         <div className="flex items-center space-x-2 mb-6">
@@ -360,10 +399,10 @@ export default function ReviewPage() {
             <div className="mb-6">
               <div className="flex items-center mb-2">
                 <Building className="h-5 w-5 text-indigo-500 mr-2" />
-                <h3 className="text-lg font-semibold">{reviewFacility.facilityName}</h3>
+                <h3 className="text-lg font-semibold">{reviewInfo.facilityname}</h3>
               </div>
               <p className="text-gray-600 text-sm">
-                {displaySportName(reviewFacility.sportType)}
+                {displaySportName(reviewInfo.sportType)} / {reviewInfo.courtName} / {formatDate(reviewInfo.useDate)}
               </p>
             </div>
 

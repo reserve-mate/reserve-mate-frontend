@@ -1,6 +1,6 @@
 import { api } from "../api";
 import { Slice } from "../types/commonTypes";
-import { ReviewCountResponse, ReviewDetail, ReviewListResponse, ReviewModifyRequest, ReviewRequestDto } from "../types/reviewTypes";
+import { ReviewCountResponse, ReviewDetail, ReviewListResponse, ReviewModifyRequest, ReviewRequestDto, ReviewType } from "../types/reviewTypes";
 
 // 리뷰 서비스
 export const reviewService = {
@@ -32,8 +32,8 @@ export const reviewService = {
     },
 
     // 리뷰 상세
-    getReviewDetail: (param: number) => {
-        let endPoint = `/review/${param}`;
+    getReviewDetail: (params: {reviewId: number, reviewType: ReviewType}) => {
+        let endPoint = `/review/${params.reviewId}?reviewType=${params.reviewType}`;
         return api.get<ReviewDetail>(endPoint);
     },
 
