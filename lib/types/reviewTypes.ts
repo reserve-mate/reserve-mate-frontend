@@ -55,7 +55,7 @@ export interface ReviewRequestDto {
     rating: number;
     title: string;
     content: string;
-    reservationId: number;
+    rentId: number;
     reviewType: ReviewType;
     files?: File[];
 }

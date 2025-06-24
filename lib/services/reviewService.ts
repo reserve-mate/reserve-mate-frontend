@@ -1,9 +1,16 @@
 import { api } from "../api";
 import { Slice } from "../types/commonTypes";
+import { ReviewReservation } from "../types/reservationType";
 import { MyReviewCntResponse, MyReviewListResponse, ReviewCountResponse, ReviewDetail, ReviewListResponse, ReviewModifyRequest, ReviewRequestDto, ReviewType } from "../types/reviewTypes";
 
 // 리뷰 서비스
 export const reviewService = {
+
+    // 리뷰 정보
+    getFacilityRentInfo: (params: {rentId: number, reviewType: ReviewType}) => {
+        let endPoint = `/review/rentInfo/${params.rentId}?reviewType=${params.reviewType}`
+        return api.get<ReviewReservation>(endPoint);
+    },
 
     // 내가 쓴 리뷰 목록
     getMyReviews: (param: number) => {
@@ -66,7 +73,7 @@ export const reviewService = {
             rating: params.rating,
             title: params.title,
             content: params.content,
-            reservationId: params.reservationId,
+            rentId: params.rentId,
             reviewType: params.reviewType
         }
 

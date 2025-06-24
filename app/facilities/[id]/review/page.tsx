@@ -80,7 +80,10 @@ export default function ReviewPage() {
       setIsLoading(true)
       try {
         // API 호출 시뮬레이션
-        const response = await reservationService.getReviewReservationInfo(parseInt(id));
+        const response = await reviewService.getFacilityRentInfo({
+          rentId: parseInt(id)
+          , reviewType: reviewType as ReviewType
+        });
         setReviewReservation(response);
       } catch (error) {
         toast({
@@ -242,7 +245,7 @@ export default function ReviewPage() {
         rating: reviewData.rating,
         title: reviewData.title,
         content: reviewData.content,
-        reservationId: parseInt(id),
+        rentId: parseInt(id),
         reviewType: reviewType as ReviewType,
         files: images
       }
