@@ -1,9 +1,21 @@
 import { api } from "../api";
 import { Slice } from "../types/commonTypes";
-import { ReviewCountResponse, ReviewDetail, ReviewListResponse, ReviewModifyRequest, ReviewRequestDto, ReviewType } from "../types/reviewTypes";
+import { MyReviewCntResponse, MyReviewListResponse, ReviewCountResponse, ReviewDetail, ReviewListResponse, ReviewModifyRequest, ReviewRequestDto, ReviewType } from "../types/reviewTypes";
 
 // 리뷰 서비스
 export const reviewService = {
+
+    // 내가 쓴 리뷰 목록
+    getMyReviews: (param: number) => {
+        let endPoint = `/review/myReviews?pageNum=${param}`;
+        return api.get<Slice<MyReviewListResponse>>(endPoint);
+    },
+
+    // 내가 쓴 리뷰 카운트
+    getMyReviewCnt: () => {
+        let endPoint = `/review/myReviewCnt`;
+        return api.get<MyReviewCntResponse[]>(endPoint);
+    },
 
     // 리뷰 수정
     modifyReview: (params: ReviewModifyRequest) => {

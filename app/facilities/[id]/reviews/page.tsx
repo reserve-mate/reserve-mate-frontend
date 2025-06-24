@@ -134,7 +134,7 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
   const onDelete = async (reviewId: number) => {
     try {
       await reviewService.deleteReview(reviewId);
-      setReviewDatas((prev) => prev.filter(review => review.reviewId != reviewId));
+      setReviewDatas((prev) => prev.filter(review => review.reviewId !== reviewId));
 
       toast({
         title: "리뷰 삭제 성공",
@@ -148,24 +148,6 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
       })
     }
   }
-
-  // if (isLoading) {
-  //   return (
-  //     <div className="container py-8">
-  //       <div className="flex items-center space-x-2 mb-6">
-  //         <ArrowLeft className="h-5 w-5" />
-  //         <Link href={`/facilities/${params.id}`} className="text-indigo-600 hover:text-indigo-800 font-medium">
-  //           시설 상세로 돌아가기
-  //         </Link>
-  //       </div>
-  //       <Card className="mb-6">
-  //         <CardContent className="p-8 flex justify-center items-center">
-  //           <p className="text-gray-500">리뷰를 불러오는 중...</p>
-  //         </CardContent>
-  //       </Card>
-  //     </div>
-  //   )
-  // }
 
   if (!facilityReview) {
     return (
@@ -272,7 +254,7 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
           <h5 className="font-semibold text-lg mb-2">{review.reviewTitle}</h5>
 
           {/* 리뷰 내용 */}
-          <p className="text-gray-700 mb-4 leading-relaxed">{review.reviewContent}</p>
+          <p className="text-gray-700 mb-4 leading-relaxed whitespace-pre-line">{review.reviewContent}</p>
 
           {/* 리뷰 이미지 */}
           {review.reviewImages.length > 0 && (

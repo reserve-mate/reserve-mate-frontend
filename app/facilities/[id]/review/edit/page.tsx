@@ -94,31 +94,6 @@ export default function ReviewPage() {
     router.refresh()
   }
 
-  // useEffect(() => {
-  //   // 실제 구현에서는 API 호출을 통해 시설 정보를 가져옴
-  //   const fetchFacility = async () => {
-  //     if (!isLoggedIn) return // 로그인 상태가 아니면 API 호출 하지 않음
-      
-  //     setIsLoading(true)
-  //     try {
-  //       // API 호출 시뮬레이션
-  //       const response = await reservationService.getReviewReservationInfo(parseInt(reviewId));
-  //       setReviewReservation(response);
-  //     } catch (error) {
-  //       toast({
-  //         title: "리뷰 정보 조회 실패",
-  //         description: error instanceof Error ? error.message : "리뷰 정보를 찾지 못하였습니다.",
-  //         variant: "destructive",
-  //       });
-  //       router.push("/reservations")
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   }
-
-  //   fetchFacility()
-  // }, [id, isLoggedIn])
-
   // 리뷰 데이터 가져오기
   useEffect(() => {
 

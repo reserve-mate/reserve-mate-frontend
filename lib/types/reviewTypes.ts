@@ -1,8 +1,29 @@
 import { SportType } from "../enum/matchEnum";
 
+// 리뷰 타입
 export enum ReviewType {
     MATCH = "MATCH",
     RESERVATION = "RESERVATION"
+}
+
+// 내가 쓴 리뷰 목록
+export interface MyReviewListResponse {
+    reviewId: number;
+    facilityId: number;
+    facilityName: string;
+    rating: number;
+    createdAt: string;
+    updatedAt: string;
+    reviewTitle: string;
+    reviewContent: string;
+    reviewType: ReviewType;
+    images: ReviewImageResponse[];
+}
+
+// 내가 쓴 리뷰 카운트
+export interface MyReviewCntResponse {
+    facilityId: number;
+    facilityCnt: number;
 }
 
 // 리뷰 수정
