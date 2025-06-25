@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { MapPin, Calendar, Clock, Users, LogIn, Trophy } from "lucide-react"
 import { matchService } from "@/lib/services/matchService"
 import { displaySportName, displayPlayerStatus, displayEjectReason, MatchHistoryResponse } from "@/lib/types/matchTypes"
-import { PlayerStatus } from "@/lib/enum/matchEnum"
+import { MatchStatus, PlayerStatus } from "@/lib/enum/matchEnum"
 
 export default function MatchHistoryPage() {
   const [matchHistory, setMatchHistory] = useState<MatchHistoryResponse[]>([]);
@@ -44,7 +44,7 @@ export default function MatchHistoryPage() {
       
       setMatchHistory((prev) => { // id 중복 방지
         const merged = [...prev, ...response.content];
-        const unique = [...new Map(merged.map(match => [match.matchId, match])).values()];
+        const unique = [...new Map(merged.map(matchPlayer => [matchPlayer.playerId, matchPlayer])).values()];
         return unique;
       })
       setPage(pageNum);
@@ -105,6 +105,7 @@ export default function MatchHistoryPage() {
     setLoading(false);
     setTabValue(status as "all" | "upcoming" | "completed" | "canceled");
     asyncMatchHistory(status, 0)
+    console.log(matchHistory.length);
   }
 
   // 시간 포맷
@@ -231,9 +232,15 @@ export default function MatchHistoryPage() {
                               <Link href={`/matches/${match.matchId}`}>매치 상세</Link>
                             </Button>
                             
-                            {match.playerStatus === PlayerStatus.COMPLETED && (
+                            {(match.playerStatus === PlayerStatus.COMPLETED && match.matchStatus === MatchStatus.END) && !match.reviewId && (
                               <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
                                 <Link href={`/facilities/${match.matchId}/review?reviewType=MATCH`}>리뷰 작성</Link>
+                              </Button>
+                            )}
+
+                            {(match.playerStatus === PlayerStatus.COMPLETED && match.matchStatus === MatchStatus.END) && match.reviewId && (
+                              <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                                <Link href={`/facilities/${match.facilityId}/review/edit?reviewId=${match.reviewId}&reviewType=MATCH`}>리뷰 재작성</Link>
                               </Button>
                             )}
                           </div>

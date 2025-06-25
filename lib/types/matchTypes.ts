@@ -9,6 +9,7 @@ export interface MatchHistoryResponse {
     sportType: SportType;
     playerStatus: PlayerStatus;
     matchStatus: MatchStatus;
+    facilityId: number;
     facilityName: string;
     address: string;
     matchDate: string;
@@ -17,6 +18,7 @@ export interface MatchHistoryResponse {
     matchPrice: number;
     teamCapacity: number;
     playerCnt: number;
+    reviewId: number;
     ejectReason: RemovalReason
 }
 
