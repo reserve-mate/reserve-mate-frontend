@@ -227,13 +227,6 @@ export default function ReservationsPage() {
                               <Clock className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
                               <span className="text-sm text-gray-500">{`${timeFormat(reservation.startTime)}-${timeFormat(reservation.endTime)}`}</span>
                             </div>
-
-                            {/* <div className="flex items-start">
-                              <CreditCard className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
-                              <span className="text-sm text-gray-500">
-                                {reservation.totalPrice} | {reservation.paymentStatus}
-                              </span>
-                            </div> */}
                           </div>
 
                           <div className="flex flex-col gap-2 md:min-w-[120px]">
@@ -251,9 +244,15 @@ export default function ReservationsPage() {
                               </Button>
                             )}
 
-                            {reservation.reservationStatus === ReservationStatus.COMPLETED && (
+                            {(reservation.reservationStatus === ReservationStatus.COMPLETED && !reservation.reviewId) && (
                               <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
                                 <Link href={`/facilities/${reservation.reservationId}/review?reviewType=RESERVATION`}>리뷰 작성</Link>
+                              </Button>
+                            )}
+
+                            {(reservation.reservationStatus === ReservationStatus.COMPLETED && reservation.reviewId) && (
+                              <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                                <Link href={`/facilities/${reservation.facilityId}/review/edit?reviewId=${reservation.reviewId}&reviewType=RESERVATION`}>리뷰 재작성</Link>
                               </Button>
                             )}
                           </div>

@@ -34,12 +34,6 @@ export const reservationService = {
         return api.get<DashboardReservation[]>(`/admin/reservation/dashboardReservations?facilityId=${params.facilityId}&year=${params.year}&month=${params.month}`);
     },
 
-    // 리뷰 예약 정보 가져오기
-    getReviewReservationInfo: (param: number) => {
-        let endPoint = `/reserve/review/${param}`;
-        return api.get<ReviewReservation>(endPoint);
-    },
-
     // 예약 취소
     cancelReservation: (params: {id: number, cancelReason: string}) => {
         let endPoint = `/reserve/cancel/${params.id}?cancelReason=${params.cancelReason}`;

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useLayoutEffect} from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
@@ -10,70 +10,33 @@ import { Badge } from "@/components/ui/badge"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { ArrowLeft, Star, Edit, Trash2, Building, Calendar, MessageSquare } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { MyReviewCntResponse, MyReviewListResponse, ReviewType } from "@/lib/types/reviewTypes"
+import { reviewService } from "@/lib/services/reviewService"
 
-// 내 리뷰 데이터 타입
-type MyReview = {
-  id: string
-  facilityId: string
-  facilityName: string
-  rating: number
-  title: string
-  content: string
-  images: string[]
-  createdAt: string
-  updatedAt?: string
-}
-
-// 더미 데이터
-const dummyMyReviews: MyReview[] = [
-  {
-    id: "1",
-    facilityId: "1",
-    facilityName: "서울 테니스 센터",
-    rating: 4,
-    title: "좋은 시설이에요",
-    content: "코트 상태가 좋고 직원분들이 친절해요. 다음에 또 이용할 예정입니다. 시설이 깨끗하고 샤워실도 잘 되어있어서 만족스러웠습니다.",
-    images: ["/placeholder.jpg", "/placeholder.jpg"],
-    createdAt: "2024-01-15",
-    updatedAt: "2024-01-16"
-  },
-  {
-    id: "2",
-    facilityId: "2",
-    facilityName: "강남 스포츠 클럽",
-    rating: 5,
-    title: "최고의 테니스장!",
-    content: "시설이 깨끗하고 위치도 좋아요. 주차 공간도 넉넉해서 편리했습니다. 코트 바닥 상태도 좋고 조명도 밝아서 야간 경기하기에도 좋습니다.",
-    images: ["/placeholder.jpg", "/placeholder.jpg", "/placeholder.jpg"],
-    createdAt: "2024-01-10"
-  },
-  {
-    id: "3",
-    facilityId: "3",
-    facilityName: "올림픽 공원 배드민턴장",
-    rating: 3,
-    title: "평범한 시설",
-    content: "가격 대비 괜찮은 편이지만 아쉬운 부분들이 있어요. 전체적으로는 만족스럽습니다.",
-    images: [],
-    createdAt: "2024-01-05"
-  },
-  {
-    id: "4",
-    facilityId: "1",
-    facilityName: "서울 테니스 센터",
-    rating: 5,
-    title: "두 번째 이용 후기",
-    content: "이번에도 역시 좋았습니다. 예약 시스템이 편리하고 시설 관리도 잘 되어있어요.",
-    images: ["/placeholder.jpg"],
-    createdAt: "2024-01-01"
-  }
-]
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sportmate.site/';
 
 export default function MyReviewsPage() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [reviews, setReviews] = useState<MyReview[]>([])
+
+  // 리뷰 카운트
+  const [reviewCnt, setReviewCnt] = useState<MyReviewCntResponse[]>([]);
+
+  // 리뷰 목록
+  const [reviewDatas, setReviewDatas] = useState<MyReviewListResponse[]>([]);
+
+  // 무한 스크롤
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isError, setIsError] = useState(false);
+
+  const observerRef = useRef(null);
+
+  // 스크롤 초기화
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -81,30 +44,84 @@ export default function MyReviewsPage() {
     setIsLoggedIn(loggedInStatus === 'true')
   }, [])
 
+  // 내가 작성한 리뷰 카운트
   useEffect(() => {
-    if (!isLoggedIn) return
+    
+    // api 호출
+    const getMyReviewCnt = async () => {
 
-    // 실제 구현에서는 API 호출
-    const fetchMyReviews = async () => {
-      setIsLoading(true)
       try {
-        // API 호출 시뮬레이션
-        await new Promise(resolve => setTimeout(resolve, 500))
-        setReviews(dummyMyReviews)
+        const response = await reviewService.getMyReviewCnt();
+        setReviewCnt(response);
       } catch (error) {
-        console.error("리뷰 로딩 실패:", error)
         toast({
           title: "오류 발생",
           description: "리뷰를 불러오는 중 오류가 발생했습니다.",
           variant: "destructive",
         })
-      } finally {
-        setIsLoading(false)
       }
     }
 
-    fetchMyReviews()
-  }, [isLoggedIn])
+    getMyReviewCnt();
+
+  }, []);
+
+  // 리뷰 목록 api
+  const getMyReviews = async (pageNum: number) => {
+    if(isLoading) return;
+    setIsLoading(true);
+
+    try {
+      const response = await reviewService.getMyReviews(pageNum);
+      setReviewDatas((prev) => {
+        const merged = [...(prev || []), ...response.content];
+        const unique = [...new Map(merged.map(r => [r.reviewId, r])).values()]
+        return unique;
+      })
+      setPage(pageNum);
+      setHasMore(!response.last)
+      setIsError(false)
+    } catch (error) {
+      toast({
+        title: "오류 발생",
+        description: "리뷰를 불러오는 중 오류가 발생했습니다.",
+        variant: "destructive",
+      })
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // 리뷰 목록
+  useEffect(() => {
+    getMyReviews(0);
+  }, [])
+
+  // 무한 스크롤
+  useEffect(() => {
+    if(isLoading || !hasMore || isError) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if(entries[0].isIntersecting) {
+          getMyReviews(page + 1)
+        }
+      }, {threshold: 1}
+    );
+
+    if(observerRef.current) {
+      observer.observe(observerRef.current)
+    }
+
+    return () => {
+      if(observerRef.current) {
+        observer.unobserve(observerRef.current)
+      }
+      observer.disconnect();
+    }
+
+  }, [page, hasMore, isError])
 
   const renderStars = (rating: number) => {
     return [1, 2, 3, 4, 5].map((star) => (
@@ -117,17 +134,30 @@ export default function MyReviewsPage() {
     ))
   }
 
-  const handleEditReview = (reviewId: string, facilityId: string) => {
+  const handleEditReview = (reviewId: string, facilityId: string, reviewType: ReviewType) => {
     // 리뷰 수정 페이지로 이동
-    router.push(`/facilities/${facilityId}/review?edit=${reviewId}`)
+    router.push(`/facilities/${facilityId}/review/edit?reviewId=${reviewId}&reviewType=${reviewType}`)
   }
 
   const handleDeleteReview = async (reviewId: string) => {
     try {
       // 실제 구현에서는 API 호출
-      // await deleteReview(reviewId)
+      await reviewService.deleteReview(parseInt(reviewId));
+
+      // 삭제 대상 리뷰 찾기
+      const deleteReview = reviewDatas.find(r => r.reviewId === parseInt(reviewId));
+      if(!deleteReview) return;
+
+      const facilityId = deleteReview.facilityId;
+
+      // 리뷰 목록에서 제거
+      setReviewDatas((prev) => prev.filter(review => review.reviewId !== parseInt(reviewId)));
+
+      // 리뷰 카운트 감소
+      setReviewCnt((prev) => prev.map((cnt) => cnt.facilityId === facilityId ? 
+          {...cnt, facilityCnt: cnt.facilityCnt - 1}
+        : cnt).filter((cnt) => cnt.facilityCnt > 0)); // filter는 0개인 시설 제거
       
-      setReviews(reviews.filter(review => review.id !== reviewId))
       toast({
         title: "리뷰 삭제 완료",
         description: "리뷰가 성공적으로 삭제되었습니다.",
@@ -142,16 +172,19 @@ export default function MyReviewsPage() {
   }
 
   // 시설별로 리뷰 그룹화
-  const groupedReviews = reviews.reduce((acc, review) => {
+  const groupedReviews = reviewDatas.reduce((acc, review) => {
+    const facilityId = review.facilityId;
     if (!acc[review.facilityId]) {
+      const facilutyCnt = reviewCnt.find(cnt => cnt.facilityId === facilityId)?.facilityCnt || 0;
       acc[review.facilityId] = {
         facilityName: review.facilityName,
+        facilityCnt: facilutyCnt,
         reviews: []
       }
     }
     acc[review.facilityId].reviews.push(review)
     return acc
-  }, {} as Record<string, { facilityName: string; reviews: MyReview[] }>)
+  }, {} as Record<string, { facilityName: string; facilityCnt: number; reviews: MyReviewListResponse[]; }>)
 
   // 테스트용 로그인 처리
   const handleLogin = () => {
@@ -159,6 +192,22 @@ export default function MyReviewsPage() {
     setIsLoggedIn(true)
     router.refresh()
   }
+
+  // 리뷰 총 개수
+  const totalReviewCnt = () => {
+    let totalCnt = reviewCnt.reduce((sum, cnt) => sum + cnt.facilityCnt, 0);
+    return totalCnt;
+  }
+
+  // 날짜 포맷 함수
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString)
+        return new Intl.DateTimeFormat("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        }).format(date)
+    }
 
   // 로그인이 필요한 경우
   if (!isLoggedIn) {
@@ -187,24 +236,6 @@ export default function MyReviewsPage() {
     )
   }
 
-  if (isLoading) {
-    return (
-      <div className="container py-8">
-        <div className="flex items-center space-x-2 mb-6">
-          <ArrowLeft className="h-5 w-5" />
-          <Link href="/profile" className="text-indigo-600 hover:text-indigo-800 font-medium">
-            프로필로 돌아가기
-          </Link>
-        </div>
-        <Card>
-          <CardContent className="p-8 flex justify-center items-center">
-            <p className="text-gray-500">내 리뷰를 불러오는 중...</p>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
   return (
     <div className="container py-8 max-w-4xl mx-auto">
       {/* 헤더 */}
@@ -218,7 +249,7 @@ export default function MyReviewsPage() {
       {/* 페이지 제목 */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold">내가 작성한 리뷰</h1>
-        <p className="text-gray-600 mt-2">총 {reviews.length}개의 리뷰를 작성했습니다.</p>
+        <p className="text-gray-600 mt-2">총 {totalReviewCnt()}개의 리뷰를 작성했습니다.</p>
       </div>
 
       {/* 리뷰 목록 */}
@@ -231,14 +262,14 @@ export default function MyReviewsPage() {
                 <Building className="h-5 w-5 text-indigo-600 mr-2" />
                 <h2 className="text-xl font-semibold">{group.facilityName}</h2>
                 <Badge variant="outline" className="ml-2">
-                  {group.reviews.length}개 리뷰
+                  {group.facilityCnt}개 리뷰
                 </Badge>
               </div>
 
               {/* 해당 시설의 리뷰들 */}
               <div className="space-y-4">
                 {group.reviews.map((review) => (
-                  <Card key={review.id} className="overflow-hidden">
+                  <Card key={review.reviewId} className="overflow-hidden">
                     <CardContent className="p-6">
                       {/* 리뷰 헤더 */}
                       <div className="flex items-start justify-between mb-4">
@@ -249,9 +280,9 @@ export default function MyReviewsPage() {
                           <span className="font-medium mr-2">{review.rating}점</span>
                           <div className="flex items-center text-sm text-gray-500">
                             <Calendar className="h-4 w-4 mr-1" />
-                            <span>{review.createdAt}</span>
+                            <span>{formatDate(review.createdAt)}</span>
                             {review.updatedAt && review.updatedAt !== review.createdAt && (
-                              <span className="ml-2">(수정됨: {review.updatedAt})</span>
+                              <span className="ml-2">(수정됨: {formatDate(review.updatedAt)})</span>
                             )}
                           </div>
                         </div>
@@ -259,7 +290,7 @@ export default function MyReviewsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleEditReview(review.id, review.facilityId)}
+                            onClick={() => handleEditReview(review.reviewId.toString(), review.facilityId.toString(), review.reviewType)}
                           >
                             <Edit className="h-4 w-4 mr-1" />
                             수정
@@ -281,7 +312,7 @@ export default function MyReviewsPage() {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>취소</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => handleDeleteReview(review.id)}
+                                  onClick={() => handleDeleteReview(review.reviewId.toString())}
                                   className="bg-red-600 hover:bg-red-700"
                                 >
                                   삭제
@@ -293,21 +324,25 @@ export default function MyReviewsPage() {
                       </div>
 
                       {/* 리뷰 제목 */}
-                      <h3 className="font-semibold text-lg mb-2">{review.title}</h3>
+                      <h3 className="font-semibold text-lg mb-2">{review.reviewTitle}</h3>
 
                       {/* 리뷰 내용 */}
-                      <p className="text-gray-700 mb-4 leading-relaxed">{review.content}</p>
+                      <p className="text-gray-700 mb-4 leading-relaxed whitespace-pre-line">{review.reviewContent}</p>
 
                       {/* 리뷰 이미지 */}
                       {review.images.length > 0 && (
                         <div className="mt-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                            {review.images.map((image, index) => (
-                              <div key={index} className="relative aspect-square overflow-hidden rounded-lg">
+                            {review.images.map((image) => (
+                              <div key={image.imageOrder} className="relative aspect-square overflow-hidden rounded-lg">
                                 <Image
-                                  src={image}
-                                  alt={`리뷰 이미지 ${index + 1}`}
+                                  src={API_BASE_URL.slice(0, -1) + image.imageUrl}
+                                  alt={`리뷰 이미지 ${image.imageOrder}`}
                                   fill
+                                  loading="lazy"
+                                  sizes="(max-width: 768px) 100vw, 33vw"
+                                  placeholder="blur"
+                                  blurDataURL="/placeholder.jpg"
                                   className="object-cover"
                                 />
                               </div>
@@ -346,6 +381,12 @@ export default function MyReviewsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* 무한 스크롤 트리거 지점 */}
+      <div ref={observerRef} className="text-center min-h-[1]">
+        {isLoading && <p className="text-muted-foreground">불러오는 중...</p>}
+      </div>
+      
     </div>
   )
 } 

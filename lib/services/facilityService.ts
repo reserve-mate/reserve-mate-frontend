@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { api } from '../api';
 import { SportType } from '../enum/matchEnum';
-import { CourtName, FacilityManagerName, FacilityNames } from '../types/facilityTypes';
+import { CourtName, FacilityManagerName, FacilityNames, ReviewFacility } from '../types/facilityTypes';
 import { FacilityManager } from './userService';
 import { Address, OperatingHours, AssignFacilityManagerRequest, FacilityManagerListResponse } from '../types/facilityTypes';
 
@@ -116,6 +116,12 @@ export const facilityService = {
     const response = await api.get<Facility>(`/facility/name/type/${id}`)
     console.log(response);
     return response;
+  },
+
+  // 리뷰 시설 데이터 조회
+  getReviewFacility: (param: number) => {
+    let endPoint = `/facility/review/${param}`;
+    return api.get<ReviewFacility>(endPoint);
   },
   
   // 시설 등록 (관리자 전용)

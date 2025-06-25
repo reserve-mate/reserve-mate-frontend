@@ -369,7 +369,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
           <Card className="overflow-hidden border-0 shadow-lg rounded-xl">
             <div className="relative h-72 sm:h-80 md:h-96">
               <Image
-                src={`${matchDetail.facilityDataDto.imageDtos[0] !== null ? matchDetail.facilityDataDto.imageDtos[0] : "https://images.unsplash.com/photo-1626224583764-f88b815bad2a?q=80&amp;w=1024"}`}
+                src={`${(matchDetail.facilityDataDto.imageDtos[0] !== null || matchDetail.facilityDataDto.imageDtos.length > 0) ? matchDetail.facilityDataDto.imageDtos[0] : "https://images.unsplash.com/photo-1626224583764-f88b815bad2a?q=80&amp;w=1024"}`}
                 alt={`${matchDetail.facilityDataDto.facilityName} 이미지`}
                 fill
                 className="object-cover"

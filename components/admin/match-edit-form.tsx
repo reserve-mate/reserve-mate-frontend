@@ -20,6 +20,24 @@ import { facilityService } from "@/lib/services/facilityService"
 import { AdminMatchDetail, displaySportName, MatchRegist } from "@/lib/types/matchTypes"
 import { useRouter } from "next/navigation"
 
+type MatchData = {
+  title: string;
+  sportType: SportType | null;
+  facilityId: number;
+  facilityName: string;
+  address: string;
+  matchDate: string;
+  startTime: string;
+  endTime: string;
+  maxParticipants: string;
+  fee: string;
+  description: string;
+  courtId: number;
+  courtName: string;
+  managerId: number;
+  managerName: string;
+};
+
 type sportTypes = {
   value: SportType;
   label: string;
@@ -51,7 +69,7 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
   const [isLoading, setIsLoading] = useState(false)
   const [date, setDate] = useState<Date | undefined>(undefined)
 
-  const [selectSport, setSelectSport] = useState<SportType>(SportType.ALL);
+  const [selectSport, setSelectSport] = useState<SportType | null>(null);
 
   // 시설 이름 조회
   const [facilityNames, setFacilityNames] = useState<FacilityNames[]>([]);
@@ -65,9 +83,9 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
 
   const [availableTimeSlots, setAvailableTimeSlots] = useState<{ value: string, label: string }[]>([])
   const [loadingManagers, setLoadingManagers] = useState(false)
-  const [matchData, setMatchData] = useState({
+  const [matchData, setMatchData] = useState<MatchData>({
     title: "",
-    sportType: SportType.ALL,
+    sportType: null,
     facilityId: 0,
     facilityName: "",
     address: "",
@@ -317,15 +335,6 @@ export default function EditMatchForm({ matchId, initialData, onComplete }: Edit
       // 에러가 발생해도 폼이 작동하도록 빈 시설 목록 설정
       setFacilityNames([]);
     }
-  }
-
-  // 스포츠 종목 변경 처리
-  const handleSportChange = (value: SportType) => {
-    if (!value) return;
-
-    setSelectSport(value);
-    setMatchData(prev => ({...prev, ["sportType"]: value}));
-    fetchGetFacilities(value);
   }
 
   // 코트 조회

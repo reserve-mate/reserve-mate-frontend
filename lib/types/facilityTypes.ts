@@ -1,4 +1,10 @@
 import { CourtType } from "../enum/courtEnum";
+import { SportType } from "../enum/matchEnum";
+
+export interface ReviewFacility {
+    facilityName: string;
+    sportType: SportType;
+}
 
 export interface FacilityNames {
     facilityId: number;
