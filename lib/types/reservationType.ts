@@ -107,6 +107,7 @@ export interface Reservations {
     reservationDate: string;
     startTime: string;
     endTime: string;
+    reviewId: number;
 }
 
 // 예약상태 한글화
