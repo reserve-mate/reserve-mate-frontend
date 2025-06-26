@@ -190,6 +190,12 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
     router.push(`/payment?data=${encodeURIComponent(JSON.stringify(reservationData))}`)
   }
 
+  const goReviewLsit = async () => {
+    sessionStorage.removeItem("facility-review-list");
+    await Promise.resolve();
+    router.push(`/facilities/${facility.id}/reviews`);
+  }
+
   return (
     <div className="w-full bg-background py-6 md:py-8">
       <div className="container max-w-6xl mx-auto px-4 sm:px-6">
@@ -271,11 +277,11 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
             <div className="mt-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">리뷰</h3>
-                <Link href={`/facilities/${facility.id}/reviews`}>
+                <button onClick={() => goReviewLsit()}>
                   <Button variant="outline" size="sm">
                     리뷰 더보기
                   </Button>
-                </Link>
+                </button>
               </div>
               <div className="space-y-3">
                 <div className="border rounded-lg p-4">

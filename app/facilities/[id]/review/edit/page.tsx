@@ -10,13 +10,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Star, ArrowLeft, Building, LogIn } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
-import { ReviewReservation } from "@/lib/types/reservationType"
-import { reservationService } from "@/lib/services/reservationService"
 import { displaySportName } from "@/lib/types/matchTypes"
 import Image from "next/image"
-import { ReviewFacility } from "@/lib/types/facilityTypes"
-import { facilityService } from "@/lib/services/facilityService"
-import { ReviewDetail, ReviewImageResponse, ReviewModifyRequest, ReviewRequestDto, ReviewType } from "@/lib/types/reviewTypes"
+import { ReviewDetail, ReviewImageResponse, ReviewModifyRequest, ReviewType } from "@/lib/types/reviewTypes"
 import { reviewService } from "@/lib/services/reviewService"
 import { SportType } from "@/lib/enum/matchEnum"
 
@@ -37,7 +33,7 @@ export default function ReviewPage() {
   const reviewId = query.get("reviewId");
   const reviewType = query.get("reviewType");
 
-  const router = useRouter()
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -62,9 +58,6 @@ export default function ReviewPage() {
     useDate: "",
     images: []
   });
-
-  // 리뷰 시설 정보
-  const [reviewFacility, setReviewFacility] = useState<ReviewFacility | null>(null);
 
   // 교체할 이미지 목록
   const [delOrderIds, setDelOrderIds] = useState<number[]>([]);
@@ -325,9 +318,9 @@ export default function ReviewPage() {
       <div className="container py-8">
         <div className="flex items-center space-x-2 mb-6">
           <ArrowLeft className="h-5 w-5" />
-          <Link href="/reservations" className="text-indigo-600 hover:text-indigo-800 font-medium">
+          <button onClick={() => router.back()} className="text-indigo-600 hover:text-indigo-800 font-medium">
             예약 목록으로 돌아가기
-          </Link>
+          </button>
         </div>
         <Card>
           <CardContent className="p-8 flex justify-center items-center">
@@ -343,9 +336,9 @@ export default function ReviewPage() {
       <div className="container py-8">
         <div className="flex items-center space-x-2 mb-6">
           <ArrowLeft className="h-5 w-5" />
-          <Link href="/reservations" className="text-indigo-600 hover:text-indigo-800 font-medium">
+          <button onClick={() => router.back()} className="text-indigo-600 hover:text-indigo-800 font-medium">
             예약 목록으로 돌아가기
-          </Link>
+          </button>
         </div>
         <Card>
           <CardContent className="p-8 flex justify-center items-center">
@@ -361,9 +354,9 @@ export default function ReviewPage() {
       <div className="container py-8">
         <div className="flex items-center space-x-2 mb-6">
           <ArrowLeft className="h-5 w-5" />
-          <Link href="/reservations" className="text-indigo-600 hover:text-indigo-800 font-medium">
+          <button onClick={() => router.back()} className="text-indigo-600 hover:text-indigo-800 font-medium">
             예약 목록으로 돌아가기
-          </Link>
+          </button>
         </div>
 
         <Card className="max-w-2xl mx-auto">
@@ -475,7 +468,7 @@ export default function ReviewPage() {
                   type="button"
                   variant="outline"
                   className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300"
-                  onClick={() => router.push("/reservations")}
+                  onClick={() => router.back()}
                   disabled={isSubmitting}
                 >
                   취소

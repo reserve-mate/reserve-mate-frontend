@@ -274,9 +274,9 @@ export default function ReviewPage() {
     <div className="container py-8">
       <div className="flex items-center space-x-2 mb-6">
         <ArrowLeft className="h-5 w-5" />
-        <Link href="/reservations" className="text-indigo-600 hover:text-indigo-800 font-medium">
+        <button onClick={() => router.back()} className="text-indigo-600 hover:text-indigo-800 font-medium">
           예약 목록으로 돌아가기
-        </Link>
+        </button>
       </div>
 
       <Card className="max-w-2xl mx-auto">
@@ -388,7 +388,7 @@ export default function ReviewPage() {
                 type="button"
                 variant="outline"
                 className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300"
-                onClick={() => router.push("/reservations")}
+                onClick={() => router.back()}
                 disabled={isSubmitting}
               >
                 취소
