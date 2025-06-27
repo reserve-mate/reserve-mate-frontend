@@ -111,9 +111,9 @@ export function SiteHeader() {
             <Link href="/facilities" className={`font-medium transition-colors hover:text-indigo-600 ${isActive("/facilities") ? "font-bold text-indigo-600" : ""}`}>
               시설 찾기
             </Link>
-            <Link href="/matches" className={`font-medium transition-colors hover:text-indigo-600 ${isActive("/matches") ? "font-bold text-indigo-600" : ""}`}>
+            <button onClick={() => goListPage("matches-state", "/matches")} className={`font-medium transition-colors hover:text-indigo-600 ${isActive("/matches") ? "font-bold text-indigo-600" : ""}`}>
               소셜 매치
-            </Link>
+            </button>
           </nav>
         </div>
         

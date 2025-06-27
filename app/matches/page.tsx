@@ -68,9 +68,13 @@ export default function MatchesPage() {
 
     const saved = sessionStorage.getItem(STORAGE_KEY);
     if(saved) {
-      const {matches, page, hasMore, selectedDate, scrollY} = JSON.parse(saved);
+      const {matches, page, hasMore, selectedDate, searchTerm, sportType, matchStatus, region, scrollY} = JSON.parse(saved);
 
       setSelectedDate(selectedDate);
+      setSearchTerm(searchTerm);
+      setSportType(sportType);
+      setMatchStatus(matchStatus);
+      setRegion(region)
 
       setStartDate(selectedDate);
 
@@ -375,6 +379,10 @@ const goMatchDetail = (matchId: number) => {
     , page: page
     , hasMore: hasMore
     , selectedDate: selectedDate
+    , searchTerm: searchTerm
+    , sportType: sportType
+    , matchStatus: matchStatus
+    , region: region
     , scrollY: window.scrollY
   })
 
