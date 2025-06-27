@@ -20,6 +20,9 @@ import { Slice } from "@/lib/types/commonTypes"
 import { useRouter } from "next/navigation"
 import { ReservationStatus } from "@/lib/enum/reservationEnum"
 import { MatchStatus } from "@/lib/enum/matchEnum"
+import { scrollToWhenReady } from "@/hooks/use-scroll"
+
+const STORAGE_KEY = 'payments-status';
 
 export default function PaymentsPage() {
 
@@ -53,6 +56,42 @@ export default function PaymentsPage() {
   })
 
   const observerRef = useRef<HTMLDivElement | null>(null);
+
+  // 세션 복원
+  const savedScrollRef = useRef<number | null>(null);
+  const restoredRef = useRef(false);
+
+  // 세션에 정보 있으면 복원
+  useEffect(() => {
+    if(restoredRef.current) return;
+
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if(saved) {
+      const {paymentHist, page, hasMore, tabValue, scrollY} = JSON.parse(saved);
+
+      setActiveTab(tabValue);
+      setPaymentHist(paymentHist as PaymentHistResponse[]);
+      setPage(page);
+      setHasMore(hasMore);
+
+      savedScrollRef.current = scrollY;
+      requestAnimationFrame(() => window.scrollTo(0, scrollY));
+    } else {
+      getPaymentHist(activeTab, 0);
+    }
+
+    restoredRef.current = true;
+
+  }, [activeTab]);
+
+  // 스크롤 위치 복원
+  useEffect(() => {
+    if(savedScrollRef.current) {
+      scrollToWhenReady(savedScrollRef.current);
+      savedScrollRef.current = null;
+    }
+
+  }, [activeTab, paymentHist.length])
 
   // 결제 내역 카운트
   useEffect(() => {
@@ -98,11 +137,6 @@ export default function PaymentsPage() {
       
     }
 
-  // 결제 내역 조회
-  useEffect(() => {
-    getPaymentHist("match", 0);
-  }, []);
-
   // 무한 스크롤
   useEffect(() => {
     if(!hasMore || isLoading || isError) return;
@@ -143,12 +177,26 @@ export default function PaymentsPage() {
     setShowDetailModal(true)
   }
 
+  // 스크롤 세션 저장
+  const setSessionStorage = () => {
+    const payload = JSON.stringify({
+      paymentHist: paymentHist
+      , page: page
+      , hasMore: hasMore
+      , tabValue: activeTab
+      , scrollY: window.scrollY
+    });
+
+    sessionStorage.setItem(STORAGE_KEY, payload);
+  }
+
   // 환불 신청 처리
   const handleRefundSubmit = async () => {
     if (!selectedPayment) return
     
     setIsRefunding(true)
 
+    setSessionStorage();
     if(selectedPayment.paymentType === 'MATCH') {
       router.push(`/matches/cancel/${selectedPayment.refId}?orderId=${selectedPayment.orderId}`)
     }else {
@@ -461,7 +509,7 @@ export default function PaymentsPage() {
                 <Input
                   id="refund-amount"
                   type="number"
-                  value={
+                  defaultValue={
                     (selectedPayment.paymentType === 'MATCH') ?
                     refundAmount({
                     matchDate: selectedPayment.useDate,
@@ -522,6 +570,9 @@ export default function PaymentsPage() {
               <CheckCircle className="h-5 w-5 text-green-500" />
               결제 상세 정보
             </DialogTitle>
+            <DialogDescription>
+              결제 내역의 상세 정보입니다.
+            </DialogDescription>
           </DialogHeader>
           
           {selectedPayment && (

@@ -96,11 +96,6 @@ export default function ReservationsPage() {
 
   }
 
-  // 초기 조회
-  // useEffect(() => {
-  //   asyncReservations(tabValue, 0) // 예약 목록 조회
-  // }, [tabValue])
-  
   // 무한 스크롤
   useEffect(() => {
     if(!hasMore || loading || isError) return;

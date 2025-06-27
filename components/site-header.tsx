@@ -150,7 +150,7 @@ export function SiteHeader() {
                   <button className="w-full text-left" onClick={() => goListPage("reservations-list-state", "/reservations")}>예약 내역</button>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/payments">결제 내역</Link>
+                  <button className="w-full text-left" onClick={() => goListPage("payments-status", "/payments")}>결제 내역</button>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <button className="w-full text-left" onClick={() => goListPage("match-history-state", "/matches/history")}>매치 이용내역</button>

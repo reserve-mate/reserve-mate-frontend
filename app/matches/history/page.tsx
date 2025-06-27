@@ -54,6 +54,7 @@ export default function MatchHistoryPage() {
       asyncMatchHistory(tabValue, 0)
     }
 
+    restoredRef.current = true;
   }, [tabValue])
 
   // 스크롤 위치 시키기
@@ -96,13 +97,6 @@ export default function MatchHistoryPage() {
     }
   }
 
-  // 초기 조회
-  // useEffect(() => {
-  //   if (isLoggedIn) {
-  //     asyncMatchHistory(tabValue, 0) // 매치 이용내역 조회
-  //   }
-  // }, [tabValue, isLoggedIn])
-  
   // 무한 스크롤
   useEffect(() => {
     if(!hasMore || loading || isError) return;
@@ -139,6 +133,7 @@ export default function MatchHistoryPage() {
 
   const handleTab = (status: string) => {
     sessionStorage.removeItem(STORAGE_KEY);
+    restoredRef.current = false;
     setMatchHistory([]);
     setPage(0);
     setHasMore(false);
