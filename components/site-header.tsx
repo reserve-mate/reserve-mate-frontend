@@ -28,11 +28,12 @@ import {
   Trophy
 } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
 import { userService } from "@/lib/services/userService"
 
 export function SiteHeader() {
+  const router = useRouter();
   // 로그인 상태를 useState로 관리
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -91,6 +92,14 @@ export function SiteHeader() {
     }
     
   }
+
+  // 예약 목록 이동
+  const goListPage = async (state: string, link: string) => {
+    sessionStorage.removeItem(state)
+    await Promise.resolve();
+    router.push(link);
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
       <div className="container flex h-14 items-center justify-between max-w-6xl mx-auto px-2 sm:px-6">
@@ -138,13 +147,13 @@ export function SiteHeader() {
                   <Link href="/profile">프로필</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/reservations">예약 내역</Link>
+                  <button className="w-full text-left" onClick={() => goListPage("reservations-list-state", "/reservations")}>예약 내역</button>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/payments">결제 내역</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/matches/history">매치 이용내역</Link>
+                  <button className="w-full text-left" onClick={() => goListPage("match-history-state", "/matches/history")}>매치 이용내역</button>
                 </DropdownMenuItem>
                 {isAdmin && (
                   <>
