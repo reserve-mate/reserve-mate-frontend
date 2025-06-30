@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { 
@@ -19,6 +19,7 @@ import "@/app/globals.css"
 import { AdminHeader } from "@/components/admin-header"
 import AdminFooter from "@/components/admin-footer"
 import { Toaster } from "@/components/ui/toaster"
+import { ScrollContext } from "./scrollContext"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -30,6 +31,8 @@ export default function AdminLayout({
   const router = useRouter()
   const [isAdmin, setIsAdmin] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+
+  const mainRef = useRef<HTMLElement>(null);
 
   // 화면 크기에 따라 메뉴 상태 관리
   useEffect(() => {
@@ -104,6 +107,17 @@ export default function AdminLayout({
     })
   }
 
+  // 메뉴 이동
+  const goAdminMenu = async (state: string, link: string) => {
+    console.log(123)
+    if(window.innerWidth < 768) {
+      setMenuOpen(false)
+    }
+    sessionStorage.removeItem(state);
+    await Promise.resolve();
+    router.push(link);
+  }
+
   // 관리자 권한이 없으면 내용 표시하지 않음
   if (!isAdmin) {
     return null
@@ -156,14 +170,13 @@ export default function AdminLayout({
                 </Link>
               </li>
               <li>
-                <Link 
-                  href="/admin/matches" 
-                  className="flex items-center px-3 py-2.5 text-slate-200 hover:bg-indigo-600 hover:text-white rounded-md transition-colors"
-                  onClick={() => window.innerWidth < 768 && setMenuOpen(false)}
+                <button 
+                  className="w-full text-left flex items-center px-3 py-2.5 text-slate-200 hover:bg-indigo-600 hover:text-white rounded-md transition-colors"
+                  onClick={() => goAdminMenu('admin-matches-state', '/admin/matches')}
                 >
                   <Calendar className="h-5 w-5 shrink-0" style={{ marginLeft: !menuOpen ? 'auto' : '0', marginRight: !menuOpen ? 'auto' : '12px' }} />
                   <span className={`transition-opacity duration-200 ${!menuOpen ? 'hidden' : 'block'}`}>매치 관리</span>
-                </Link>
+                </button>
               </li>
               <li>
                 <Link 
@@ -209,20 +222,22 @@ export default function AdminLayout({
         </aside>
         
         {/* 메인 콘텐츠 영역 (헤더, 콘텐츠, 푸터 제외) */}
-        <div className="flex flex-col flex-1 w-full overflow-hidden bg-gray-100">
-          <AdminHeader toggleMenu={toggleMenu} menuOpen={menuOpen} />
-          
-          {/* 메인 콘텐츠 */}
-          <main className="flex-1 overflow-auto p-0">
-            <div className="w-full h-full flex justify-center">
-              <div className="w-full max-w-5xl py-6 px-4">
-                {children}
+        <ScrollContext.Provider value={mainRef}>
+          <div className="flex flex-col flex-1 w-full overflow-hidden bg-gray-100">
+            <AdminHeader toggleMenu={toggleMenu} menuOpen={menuOpen} />
+            
+            {/* 메인 콘텐츠 */}
+            <main className="flex-1 overflow-auto p-0" ref={mainRef}>
+              <div className="w-full h-full flex justify-center">
+                <div className="w-full max-w-5xl py-6 px-4">
+                  {children}
+                </div>
               </div>
-            </div>
-          </main>
-          
-          <AdminFooter />
-        </div>
+            </main>
+            
+            <AdminFooter />
+          </div>
+        </ScrollContext.Provider>
 
         {/* 모바일용 백드롭 */}
         {menuOpen && typeof window !== 'undefined' && window.innerWidth < 768 && (
