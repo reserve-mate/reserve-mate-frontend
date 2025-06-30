@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,13 +12,18 @@ import { ko } from "date-fns/locale"
 import { matchService } from "@/lib/services/matchService" 
 import { displayMatchStatus, displaySportName, MatchList, MatchSearch, MathDateCount } from "@/lib/types/matchTypes"
 import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
+import { scrollToWhenReady } from "@/hooks/use-scroll"
+import { useRouter } from "next/navigation"
 
 // 시간별로 그룹화된 매치 타입
 type GroupedMatches = {
   [timeSlot: string]: MatchList[]
 }
 
+const STORAGE_KEY = 'matches-state'
+
 export default function MatchesPage() {
+  const router = useRouter();
   // 검색 세팅
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [sportType, setSportType] = useState<SportType | null>(null);
@@ -49,9 +53,59 @@ export default function MatchesPage() {
   const observeRef = useRef<HTMLDivElement | null>(null);
 
   const ref = useRef(false);
+
+  // 세션 복원
+  const savedScrollRef = useRef<number | null>(null);
+  const restoredRef = useRef(false);
   
   // 로그인 상태를 관리
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    if(ref.current) return;
+    ref.current = true;
+    if(restoredRef.current) return;
+
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if(saved) {
+      const {matches, page, hasMore, selectedDate, searchTerm, sportType, matchStatus, region, scrollY} = JSON.parse(saved);
+
+      setSelectedDate(selectedDate);
+      setSearchTerm(searchTerm);
+      setSportType(sportType);
+      setMatchStatus(matchStatus);
+      setRegion(region)
+
+      setStartDate(selectedDate);
+
+      setMatches(matches as MatchList[]);
+      setPage(page);
+      setHasMore(hasMore);
+
+      savedScrollRef.current = scrollY;
+      requestAnimationFrame(() => window.scrollTo(0, scrollY));
+    }else {
+      // 처음 로드될 때만 오늘 날짜로 설정
+      const today = startOfDay(new Date())
+      setSelectedDate(today)
+      getMatchDatesScroll(today, 0);
+
+      // 이미 날짜가 필터링되어 있다면 다시 필터링
+      if ( matches && matches?.length > 0) {
+        let filtered = [...matches]
+        filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), today))
+        setFilteredMatches(filtered)
+      }
+    }
+  }, [selectedDate])
+
+  // 스크롤 복원
+  useEffect(() => {
+    if(savedScrollRef.current) {
+      scrollToWhenReady(savedScrollRef.current);
+      savedScrollRef.current = null;
+    }
+  }, [selectedDate, matches.length])
 
   // 사용자 매치 목록 조회
   const getMatchDatesScroll = (date: Date, pageNumber: number) => {
@@ -152,21 +206,21 @@ export default function MatchesPage() {
   }, [startDate])
 
   // 초기 선택된 날짜 설정
-  useEffect(() => {
-    if(ref.current) return;
-    ref.current = true;
-    // 처음 로드될 때만 오늘 날짜로 설정
-    const today = startOfDay(new Date())
-    setSelectedDate(today)
-    getMatchDatesScroll(today, 0);
+  // useEffect(() => {
+  //   if(ref.current) return;
+  //   ref.current = true;
+  //   // 처음 로드될 때만 오늘 날짜로 설정
+  //   const today = startOfDay(new Date())
+  //   setSelectedDate(today)
+  //   getMatchDatesScroll(today, 0);
     
-    // 이미 날짜가 필터링되어 있다면 다시 필터링
-    if ( matches && matches?.length > 0) {
-      let filtered = [...matches]
-      filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), today))
-      setFilteredMatches(filtered)
-    }
-  }, [])
+  //   // 이미 날짜가 필터링되어 있다면 다시 필터링
+  //   if ( matches && matches?.length > 0) {
+  //     let filtered = [...matches]
+  //     filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), today))
+  //     setFilteredMatches(filtered)
+  //   }
+  // }, [selectedDate])
 
   // 지난 날짜의 매치 비활성화 처리
   useEffect(() => {
@@ -316,6 +370,26 @@ export default function MatchesPage() {
       }
     }, 100)
   }
+
+// 매치 상세 페이지 이동
+const goMatchDetail = (matchId: number) => {
+
+  const payload = JSON.stringify({
+    matches: filteredMatches
+    , page: page
+    , hasMore: hasMore
+    , selectedDate: selectedDate
+    , searchTerm: searchTerm
+    , sportType: sportType
+    , matchStatus: matchStatus
+    , region: region
+    , scrollY: window.scrollY
+  })
+
+  sessionStorage.setItem(STORAGE_KEY, payload);
+
+  location.href = `/matches/${matchId}`;
+}
 
   return (
     <div className="page-container pb-16 sm:pb-0">
@@ -487,7 +561,7 @@ export default function MatchesPage() {
                 </div>
                 <div className="grid grid-cols-1 gap-4">
                   {matches.map((match) => (
-                    <MatchCard key={match.matchId} match={match} />
+                    <MatchCard key={match.matchId} match={match} onMove={() => goMatchDetail(match.matchId)} />
                   ))}
                 </div>
               </div>
@@ -508,7 +582,8 @@ export default function MatchesPage() {
 }
 
 // 매치 카드 컴포넌트
-function MatchCard({ match, compact = false }: { match: MatchList; compact?: boolean }) {
+function MatchCard({ match, compact = false, onMove }: { match: MatchList; compact?: boolean, onMove?: () => void }) {
+
   const isEnded = match.matchStatus === "END"
   
   return (
@@ -562,9 +637,9 @@ function MatchCard({ match, compact = false }: { match: MatchList; compact?: boo
             asChild
             className="w-full primary-button"
             variant={match.matchStatus === "FINISH" ? "secondary" : "default"}
-            disabled={match.matchStatus === "FINISH" || match.matchStatus === "END" || match.matchStatus === "ONGOING"}
+            //disabled={match.matchStatus === "FINISH" || match.matchStatus === "END" || match.matchStatus === "ONGOING"}
           >
-            <Link href={`/matches/${match.matchId}`}>{match.matchStatus === "APPLICABLE" || match.matchStatus === "CLOSE_TO_DEADLINE" ? "참가 신청하기" : "상세 보기"}</Link>
+            <button onClick={onMove}>{match.matchStatus === "APPLICABLE" || match.matchStatus === "CLOSE_TO_DEADLINE" ? "참가 신청하기" : "상세 보기"}</button>
           </Button>
         </CardFooter>
       )}

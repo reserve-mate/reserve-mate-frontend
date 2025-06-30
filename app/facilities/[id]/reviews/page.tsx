@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ReviewCountResponse, ReviewListResponse } from "@/lib/types/reviewTypes"
+import { ReviewCountResponse, ReviewListResponse, ReviewType } from "@/lib/types/reviewTypes"
 import { reviewService } from "@/lib/services/reviewService"
 import { toast } from "@/hooks/use-toast"
 import { ArrowLeft, Edit, MessageSquarePlus, Star, Trash, User } from "lucide-react"
@@ -11,8 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
+import { scrollToWhenReady } from "@/hooks/use-scroll"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sportmate.site/';
+const STORAGE_KEY = 'facility-review-list'
 
 export default function ReviewsPage({params} : {params: {id: string}}) {
 
@@ -32,6 +34,38 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
 
   // 무한 스크롤 트리거
   const observeRef = useRef<HTMLDivElement>(null);
+
+  // 세션이 있으면 복원
+  const savedScrollRef = useRef<number | null>(null);
+  const restoredRef = useRef(false);
+
+  // 세션 존재 시 스크롤 복원
+  useEffect(() => {
+    if(restoredRef.current) return;
+
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if(saved) {
+      const {reviews, page, hasMore, scrollY} = JSON.parse(saved);
+      setReviewDatas(reviews as ReviewListResponse[]);
+      setPage(page);
+      setHasMore(hasMore);
+
+      savedScrollRef.current = scrollY;
+      requestAnimationFrame(() => window.scrollTo(0, scrollY));
+    }else {
+      getFacilityReviews(0);
+    }
+
+    restoredRef.current = true;
+  }, []);
+
+  // 스크롤 렌더링
+  useEffect(() => {
+    if(savedScrollRef.current) {
+      scrollToWhenReady(savedScrollRef.current);
+      savedScrollRef.current = null;
+    }
+  }, [reviewDatas.length])
 
   // 리뷰 목록 조회
   const getFacilityReviews = async (pageNum: number) => {
@@ -167,6 +201,20 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
     )
   }
 
+  // 수정 세팅
+  const onEdit = (reviewId: number, reviewType: ReviewType) => {
+    const payload = JSON.stringify({
+        reviews: reviewDatas
+        , page: page
+        , hasMore: hasMore
+        , scrollY: window.scrollY
+      });
+
+      sessionStorage.setItem(STORAGE_KEY, payload);
+
+      router.push(`/facilities/${params.id}/review/edit?reviewId=${reviewId}&reviewType=${reviewType}`);
+  }
+
   return (
     <div className="container py-8 max-w-4xl mx-auto">
       {/* 헤더 */}
@@ -226,7 +274,7 @@ export default function ReviewsPage({params} : {params: {id: string}}) {
                             onClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
-                              router.push(`/facilities/${params.id}/review/edit?reviewId=${review.reviewId}&reviewType=${review.reviewType}`);
+                              onEdit(review.reviewId, review.reviewType)
                             }}
                           >
                             <Edit className="h-4 w-4" />

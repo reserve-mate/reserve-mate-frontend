@@ -14,9 +14,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Image from "next/image"
 import { userService } from "@/lib/services/userService"
 import Link from "next/link"
-import { Calendar, CreditCard, Trophy, MessageSquare } from "lucide-react"
+import { Calendar, CreditCard, Trophy, MessageSquare, Router } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function ProfilePage() {
+
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false)
   const [initialProfileData, setInitialProfileData] = useState({
     name: "홍길동",
@@ -271,6 +274,12 @@ export default function ProfilePage() {
     }
   }
 
+  const goReview = async () => {
+    sessionStorage.removeItem("review-list-state");
+    await Promise.resolve();
+    router.push("/profile/my-reviews");
+  }
+
   return (
     <div className="container max-w-6xl mx-auto px-4 sm:px-6 py-8">
       <h1 className="text-3xl font-bold mb-8">내 프로필</h1>
@@ -471,7 +480,7 @@ export default function ProfilePage() {
               <h3 className="text-lg font-semibold mb-2">내 리뷰</h3>
               <p className="text-gray-600 text-sm mb-4">작성한 리뷰를 관리하세요</p>
               <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
-                <Link href="/profile/my-reviews">내 리뷰 보기</Link>
+                <button onClick={() => goReview()}>내 리뷰 보기</button>
               </Button>
             </CardContent>
           </Card>

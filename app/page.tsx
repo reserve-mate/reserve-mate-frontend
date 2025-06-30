@@ -1,10 +1,23 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { MapPin, Calendar, CreditCard, Users, ArrowRight, Search, CalendarDays } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function Home() {
+
+  const router = useRouter();
+
+  // 예약 목록 이동
+  const goListPage = async (state: string, link: string) => {
+    sessionStorage.removeItem(state)
+    await Promise.resolve();
+    router.push(link);
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section - 모바일 최적화 */}
@@ -36,7 +49,7 @@ export default function Home() {
                 size="lg"
                 className="bg-indigo-600 border-2 border-white text-white hover:bg-indigo-700 px-6 py-5 text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
               >
-                <Link href="/matches">소셜 매치</Link>
+                <button onClick={() => goListPage("matches-state", "/matches")}>소셜 매치</button>
               </Button>
             </div>
           </div>

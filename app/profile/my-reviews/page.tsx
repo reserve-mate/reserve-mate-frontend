@@ -1,19 +1,22 @@
 "use client"
 
-import { useState, useEffect, useRef, useLayoutEffect} from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { ArrowLeft, Star, Edit, Trash2, Building, Calendar, MessageSquare } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { MyReviewCntResponse, MyReviewListResponse, ReviewType } from "@/lib/types/reviewTypes"
 import { reviewService } from "@/lib/services/reviewService"
+import { scrollToWhenReady } from "@/hooks/use-scroll"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sportmate.site/';
+
+const STORAGE_KEY = 'review-list-state';
 
 export default function MyReviewsPage() {
   const router = useRouter()
@@ -33,10 +36,40 @@ export default function MyReviewsPage() {
 
   const observerRef = useRef(null);
 
-  // 스크롤 초기화
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
+  // 세션이 있으면 복원
+  const savedScrollRef = useRef<number | null>(null);
+  const restoredRef = useRef(false);
+
+  // 세션에서 복원
+  useEffect(() => {
+    if(restoredRef.current) return;
+
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if(saved) {
+      const {reviews, page, hasMore, scrollY} = JSON.parse(saved);
+
+      setReviewDatas(reviews as MyReviewListResponse[]);
+      setPage(page);
+      setHasMore(hasMore);
+
+      /* DOM 그려진 뒤 한 프레임 늦춰 스크롤 적용 */
+      savedScrollRef.current = scrollY;
+      requestAnimationFrame(() => window.scrollTo(0, scrollY));
+    }else { // 세션에 정보 없으면 첫페이지
+      window.scrollTo(0, 0)
+      getMyReviews(0);
+    }
+
+    restoredRef.current = true
   }, []);
+
+  // 실제 DOM에 그려진 뒤 스크롤 적용
+  useEffect(() => {
+    if(savedScrollRef.current) {
+      scrollToWhenReady(savedScrollRef.current);
+      savedScrollRef.current = null;
+    }
+  }, [reviewDatas.length]);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -93,11 +126,6 @@ export default function MyReviewsPage() {
     }
   }
 
-  // 리뷰 목록
-  useEffect(() => {
-    getMyReviews(0);
-  }, [])
-
   // 무한 스크롤
   useEffect(() => {
     if(isLoading || !hasMore || isError) return;
@@ -107,7 +135,7 @@ export default function MyReviewsPage() {
         if(entries[0].isIntersecting) {
           getMyReviews(page + 1)
         }
-      }, {threshold: 1}
+      }, {threshold: 0, rootMargin: '0px 0px 200px 0px'}
     );
 
     if(observerRef.current) {
@@ -121,7 +149,7 @@ export default function MyReviewsPage() {
       observer.disconnect();
     }
 
-  }, [page, hasMore, isError])
+  }, [page, hasMore, isError, isLoading])
 
   const renderStars = (rating: number) => {
     return [1, 2, 3, 4, 5].map((star) => (
@@ -135,6 +163,15 @@ export default function MyReviewsPage() {
   }
 
   const handleEditReview = (reviewId: string, facilityId: string, reviewType: ReviewType) => {
+    const payload = JSON.stringify({
+        reviews: reviewDatas
+        , page: page
+        , hasMore: hasMore
+        , scrollY: window.scrollY
+      });
+
+      sessionStorage.setItem(STORAGE_KEY, payload);
+    
     // 리뷰 수정 페이지로 이동
     router.push(`/facilities/${facilityId}/review/edit?reviewId=${reviewId}&reviewType=${reviewType}`)
   }
@@ -236,14 +273,20 @@ export default function MyReviewsPage() {
     )
   }
 
+  const backProfile = async () => {
+    sessionStorage.removeItem(STORAGE_KEY); 
+    await Promise.resolve(); // next tick
+    router.push("/profile");
+  }
+
   return (
     <div className="container py-8 max-w-4xl mx-auto">
       {/* 헤더 */}
       <div className="flex items-center space-x-2 mb-6">
         <ArrowLeft className="h-5 w-5" />
-        <Link href="/profile" className="text-indigo-600 hover:text-indigo-800 font-medium">
+        <button onClick={() => {backProfile()}} className="text-indigo-600 hover:text-indigo-800 font-medium">
           프로필로 돌아가기
-        </Link>
+        </button>
       </div>
 
       {/* 페이지 제목 */}
@@ -383,9 +426,9 @@ export default function MyReviewsPage() {
       )}
 
       {/* 무한 스크롤 트리거 지점 */}
-      <div ref={observerRef} className="text-center min-h-[1]">
+      {reviewDatas.length >0 && <div ref={observerRef} className="text-center min-h-[1]">
         {isLoading && <p className="text-muted-foreground">불러오는 중...</p>}
-      </div>
+      </div>}
       
     </div>
   )

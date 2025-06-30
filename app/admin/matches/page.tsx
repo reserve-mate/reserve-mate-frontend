@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,6 +42,7 @@ import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
 import { useRouter } from "next/navigation"
 import { MiniModal } from "@/components/ui/mini-modal"
 import { toast } from "@/hooks/use-toast"
+import { useScrollRef } from "../scrollContext"
 
 // 스포츠 종류 목록
 const sportTypes: SportType[] = [
@@ -72,6 +73,8 @@ const setDateFormat = (date: Date) => {
   return `${year}-${month}-${day}`;
 }
 
+const STORAGE_KEY = 'admin-matches-state'
+
 export default function AdminMatchesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [showRegisterForm, setShowRegisterForm] = useState(false)
@@ -98,10 +101,52 @@ export default function AdminMatchesPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   const observerRef = useRef<HTMLTableElement | null>(null);
+  
+  // 스크롤 복원
+  const scrollRef = useScrollRef();
+  const savedScrollRef = useRef<number | null>(null);
+  const restoredRef = useRef(false);
 
-  const ref = useRef(false);
+  const didRestoreScroll = useRef(false);
+  
+  // 세션 정보 꺼내오기
+  useEffect(() => {
+    if(restoredRef.current) return;
+
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if(saved) {
+      const {matches, page, hasMore, searchTerm, selectedSport, matchStatus, startDate, endDate, scrollY} = JSON.parse(saved);
+      
+      setSearchTerm(searchTerm);
+      setAdminMatches(matches as AdminMatches[]);
+      setPage(page);
+      setHasMore(hasMore);
+      setSelectedSport(selectedSport);
+      setMatchStatus(matchStatus);
+      setStartDate(startDate);
+      setEndDate(endDate);
+
+      savedScrollRef.current = scrollY;
+    } else {
+      fetchGetAdinMatches(0);
+    }
+    restoredRef.current = true;
+  }, []);
+
+  // 세션 스크롤 화면 적용
+  useLayoutEffect(() => {
+    if (didRestoreScroll.current) return;           // 이미 복원했으면 패스
+    if (savedScrollRef.current != null && scrollRef.current) {
+      scrollRef.current.scrollTo(0, savedScrollRef.current);
+      savedScrollRef.current = null;
+      didRestoreScroll.current = true;              // 다시는 실행 안 됨
+    }
+  }, [adminMatches.length]);
 
   const fetchGetAdinMatches = async (pageNumber: number) => {
+
+    if(loading) return; // 로딩 중이면 중지
+    setLoading(true); // 로딩 실행
 
     let startDateStr: string = (startDate) ? setDateFormat(startDate) : "";
     let endDateStr: string = (endDate) ? setDateFormat(endDate) : "";
@@ -132,18 +177,6 @@ export default function AdminMatchesPage() {
     }
 
   }
-
-  // 관리자 매치 초기 조회
-  useEffect(() => {
-    if(ref.current) return;
-    ref.current = true; 
-
-    if(loading) return; // 로딩 중이면 중지
-
-    setLoading(true); // 로딩 실행
-
-    fetchGetAdinMatches(0);
-  }, [])
 
   // 무한 스크롤
   useEffect(() => {
@@ -240,9 +273,38 @@ export default function AdminMatchesPage() {
     }
   }
 
+  // 세션 스크롤 정보 세팅
+  const setSessionStorage = () => {
+    const payload = JSON.stringify({
+      matches: adminMatches
+      , page: page
+      , hasMore: hasMore
+      , searchTerm: searchTerm
+      , selectedSport: selectedSport
+      , matchStatus: matchStatus
+      , startDate: startDate
+      , endDate: endDate
+      , scrollY: scrollRef.current?.scrollTop ?? 0
+    });
+
+    sessionStorage.setItem(STORAGE_KEY, payload);
+  }
+
+  // 매치 상세 페이지 이동
+  const goMatchDetail = (matchId: number) => {
+    setSessionStorage();
+    router.push(`/admin/matches/${matchId}`);
+  }
+
+  // 매치 수정 페이지 이동
+  const goMatchEdit = (matchId: number) => {
+    setSessionStorage();
+    router.push(`/admin/matches/${matchId}/edit`);
+  }
+
   // 매치 관리 목록 UI
   const renderMatchesList = () => ( 
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>등록된 매치</CardTitle>
         <CardDescription>
@@ -426,7 +488,7 @@ export default function AdminMatchesPage() {
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
-                        router.push(`/admin/matches/${match.matchId}`);
+                        goMatchDetail(match.matchId);
                       }}
                     >
                       <Eye className="h-4 w-4" />
@@ -445,7 +507,7 @@ export default function AdminMatchesPage() {
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            router.push(`/admin/matches/${match.matchId}/edit`);
+                            goMatchEdit(match.matchId);
                           }}
                         >
                           <Edit className="h-4 w-4" />
@@ -533,7 +595,7 @@ export default function AdminMatchesPage() {
   )
 
   return (
-    <div>
+    <div className="page-container min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">매치 관리</h1>
         <Button 
