@@ -559,7 +559,7 @@ const goMatchDetail = (matchId: number) => {
                   <div className="flex-shrink-0 w-20 font-bold text-lg">{timeSlot}</div>
                   <div className="h-px flex-grow bg-gray-200"></div>
                 </div>
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {matches.map((match) => (
                     <MatchCard key={match.matchId} match={match} onMove={() => goMatchDetail(match.matchId)} />
                   ))}
