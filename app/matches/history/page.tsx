@@ -9,9 +9,15 @@ import { Badge } from "@/components/ui/badge"
 import { MapPin, Calendar, Clock, Users, LogIn, Trophy } from "lucide-react"
 import { matchService } from "@/lib/services/matchService"
 import { displaySportName, displayPlayerStatus, displayEjectReason, MatchHistoryResponse } from "@/lib/types/matchTypes"
-import { PlayerStatus } from "@/lib/enum/matchEnum"
+import { MatchStatus, PlayerStatus } from "@/lib/enum/matchEnum"
+import { scrollToWhenReady } from "@/hooks/use-scroll"
+import { useRouter } from "next/navigation"
+
+const STORAGE_KEY = 'match-history-state'
 
 export default function MatchHistoryPage() {
+  const router = useRouter();
+
   const [matchHistory, setMatchHistory] = useState<MatchHistoryResponse[]>([]);
 
   // 무한 스크롤
@@ -24,6 +30,40 @@ export default function MatchHistoryPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const observeRef = useRef<HTMLDivElement | null>(null);
+
+  // 세션 정보가 있으면 복원
+  const savedScrollRef = useRef<number | null>(null);
+  const restoredRef = useRef(false);
+
+  // 세션에서 복원
+  useEffect(() => {
+    if(restoredRef.current) return;
+
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if(saved) {
+      const {matches, page, hasMore, tabValue, scrollY} = JSON.parse(saved);
+
+      setTabValue(tabValue);
+      setMatchHistory(matches as MatchHistoryResponse[]);
+      setPage(page);
+      setHasMore(hasMore)
+
+      savedScrollRef.current = scrollY;
+      requestAnimationFrame(() => window.scrollTo(0, scrollY));
+    } else {
+      asyncMatchHistory(tabValue, 0)
+    }
+
+    restoredRef.current = true;
+  }, [tabValue])
+
+  // 스크롤 위치 시키기
+  useEffect(() => {
+    if(savedScrollRef.current) {
+      scrollToWhenReady(savedScrollRef.current);
+      savedScrollRef.current = null;
+    }
+  }, [tabValue, matchHistory.length])
   
   useEffect(() => {
     const loggedInStatus = localStorage.getItem('isLoggedIn')
@@ -44,7 +84,7 @@ export default function MatchHistoryPage() {
       
       setMatchHistory((prev) => { // id 중복 방지
         const merged = [...prev, ...response.content];
-        const unique = [...new Map(merged.map(match => [match.matchId, match])).values()];
+        const unique = [...new Map(merged.map(matchPlayer => [matchPlayer.playerId, matchPlayer])).values()];
         return unique;
       })
       setPage(pageNum);
@@ -57,14 +97,7 @@ export default function MatchHistoryPage() {
     }
   }
 
-  // 초기 조회
-  useEffect(() => {
-    if (isLoggedIn) {
-      asyncMatchHistory(tabValue, 0) // 매치 이용내역 조회
-    }
-  }, [tabValue, isLoggedIn])
-  
-  // 무한 스크롤 (샘플 데이터에서는 비활성화)
+  // 무한 스크롤
   useEffect(() => {
     if(!hasMore || loading || isError) return;
 
@@ -99,6 +132,8 @@ export default function MatchHistoryPage() {
   }
 
   const handleTab = (status: string) => {
+    sessionStorage.removeItem(STORAGE_KEY);
+    restoredRef.current = false;
     setMatchHistory([]);
     setPage(0);
     setHasMore(false);
@@ -110,6 +145,37 @@ export default function MatchHistoryPage() {
   // 시간 포맷
   const timeFormat = (time: number): string => {
     return `${time.toString().padStart(2, '0')}:00`;
+  }
+
+  // 스크롤 세션 저장
+  const setMatchSession = () => {
+    const payload = JSON.stringify({
+      matches: matchHistory
+      , page: page
+      , hasMore: hasMore
+      , tabValue: tabValue
+      , scrollY: window.scrollY
+    });
+
+    sessionStorage.setItem(STORAGE_KEY, payload);
+  }
+
+  // 매치 상세 화면 이동
+  const goMatchDetail = (matchId: number) => {
+    setMatchSession();
+    router.push(`/matches/${matchId}`);
+  }
+
+  // 매치 리뷰 작성 이동
+  const goRegistReview = (matchId: number) => {
+    setMatchSession();
+    router.push(`/facilities/${matchId}/review?reviewType=MATCH`);
+  }
+
+  // 매치 리뷰 재작성 이동
+  const goModifyReview = (facilityId: number, reviewId: number) => {
+    setMatchSession();
+    router.push(`/facilities/${facilityId}/review/edit?reviewId=${reviewId}&reviewType=MATCH`);
   }
 
   if (!isLoggedIn) {
@@ -228,12 +294,18 @@ export default function MatchHistoryPage() {
 
                           <div className="flex flex-col gap-2 md:min-w-[120px]">
                             <Button asChild variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300">
-                              <Link href={`/matches/${match.matchId}`}>매치 상세</Link>
+                              <button onClick={() => goMatchDetail(match.matchId)}>매치 상세</button>
                             </Button>
                             
-                            {match.playerStatus === PlayerStatus.COMPLETED && (
+                            {(match.playerStatus === PlayerStatus.COMPLETED && match.matchStatus === MatchStatus.END) && !match.reviewId && (
                               <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                                <Link href={`/matches/${match.matchId}/review`}>리뷰 작성</Link>
+                                <button onClick={() => goRegistReview(match.matchId)}>리뷰 작성</button>
+                              </Button>
+                            )}
+
+                            {(match.playerStatus === PlayerStatus.COMPLETED && match.matchStatus === MatchStatus.END) && match.reviewId && (
+                              <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                                <button onClick={() => goModifyReview(match.facilityId, match.reviewId)}>리뷰 재작성</button>
                               </Button>
                             )}
                           </div>

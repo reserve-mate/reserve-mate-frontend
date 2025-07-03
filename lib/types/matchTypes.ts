@@ -9,6 +9,7 @@ export interface MatchHistoryResponse {
     sportType: SportType;
     playerStatus: PlayerStatus;
     matchStatus: MatchStatus;
+    facilityId: number;
     facilityName: string;
     address: string;
     matchDate: string;
@@ -17,6 +18,7 @@ export interface MatchHistoryResponse {
     matchPrice: number;
     teamCapacity: number;
     playerCnt: number;
+    reviewId: number;
     ejectReason: RemovalReason
 }
 
@@ -113,6 +115,7 @@ export interface MatchSearchRequest {
     searchValue: string;
     sportType: SportType;
     matchStatus: MatchStatus;
+    region: string;
     matchDate: string;
     pageNumber: number;  // 선택적 프로퍼티
 }
@@ -250,7 +253,7 @@ export type MatchCancellationRequest = {
 }
 
 // 종목별 이름 화면 노출
-export const displaySportName = (sportType: SportType) => {
+export const displaySportName = (sportType: SportType | null) => {
     let sportName = "";
 
     switch (sportType) {
@@ -276,6 +279,10 @@ export const displaySportName = (sportType: SportType) => {
 
         case SportType.FUTSAL:
             sportName = "풋살";
+            break;
+
+        default:
+            sportName = "기타";
             break;
     }
 

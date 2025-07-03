@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,17 +12,23 @@ import { ko } from "date-fns/locale"
 import { matchService } from "@/lib/services/matchService" 
 import { displayMatchStatus, displaySportName, MatchList, MatchSearch, MathDateCount } from "@/lib/types/matchTypes"
 import { MatchStatus, SportType } from "@/lib/enum/matchEnum"
+import { scrollToWhenReady } from "@/hooks/use-scroll"
+import { useRouter } from "next/navigation"
 
 // 시간별로 그룹화된 매치 타입
 type GroupedMatches = {
   [timeSlot: string]: MatchList[]
 }
 
+const STORAGE_KEY = 'matches-state'
+
 export default function MatchesPage() {
+  const router = useRouter();
   // 검색 세팅
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [sportType, setSportType] = useState<SportType | null>(null);
   const [matchStatus, setMatchStatus] = useState<MatchStatus | null>(null);
+  const [region, setRegion] = useState<string>("서울");
 
   // 매치 조회 및 검색 필터링
   const [matches, setMatches] = useState<MatchList[]>([])
@@ -48,9 +53,59 @@ export default function MatchesPage() {
   const observeRef = useRef<HTMLDivElement | null>(null);
 
   const ref = useRef(false);
+
+  // 세션 복원
+  const savedScrollRef = useRef<number | null>(null);
+  const restoredRef = useRef(false);
   
   // 로그인 상태를 관리
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    if(ref.current) return;
+    ref.current = true;
+    if(restoredRef.current) return;
+
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if(saved) {
+      const {matches, page, hasMore, selectedDate, searchTerm, sportType, matchStatus, region, scrollY} = JSON.parse(saved);
+
+      setSelectedDate(selectedDate);
+      setSearchTerm(searchTerm);
+      setSportType(sportType);
+      setMatchStatus(matchStatus);
+      setRegion(region)
+
+      setStartDate(selectedDate);
+
+      setMatches(matches as MatchList[]);
+      setPage(page);
+      setHasMore(hasMore);
+
+      savedScrollRef.current = scrollY;
+      requestAnimationFrame(() => window.scrollTo(0, scrollY));
+    }else {
+      // 처음 로드될 때만 오늘 날짜로 설정
+      const today = startOfDay(new Date())
+      setSelectedDate(today)
+      getMatchDatesScroll(today, 0);
+
+      // 이미 날짜가 필터링되어 있다면 다시 필터링
+      if ( matches && matches?.length > 0) {
+        let filtered = [...matches]
+        filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), today))
+        setFilteredMatches(filtered)
+      }
+    }
+  }, [selectedDate])
+
+  // 스크롤 복원
+  useEffect(() => {
+    if(savedScrollRef.current) {
+      scrollToWhenReady(savedScrollRef.current);
+      savedScrollRef.current = null;
+    }
+  }, [selectedDate, matches.length])
 
   // 사용자 매치 목록 조회
   const getMatchDatesScroll = (date: Date, pageNumber: number) => {
@@ -59,6 +114,7 @@ export default function MatchesPage() {
       searchValue: searchTerm,
       matchStatus: matchStatus ?? undefined,
       sportType: sportType ?? undefined,
+      region: region,
       pageNumber: pageNumber
     };
 
@@ -73,9 +129,10 @@ export default function MatchesPage() {
         setPage(matches.number);
         setHasMore(!matches.last);  // 마지막 페이지가 아니면 true
       }catch(err){
-        console.log(err);
         setIsError(true);
-        window.location.reload();
+        setPage(0);
+        setHasMore(false);
+        setMatches([]);
       }
       finally{
         setLoading(false); // 
@@ -91,6 +148,7 @@ export default function MatchesPage() {
       matchDate: format(startDate, 'yyyy-MM-dd', { locale: ko }), // YYYY-MM-DD
       searchValue: searchTerm,
       sportType: sportType ?? undefined,
+      region: region,
       matchStatus: matchStatus ?? undefined
     };
     
@@ -99,7 +157,7 @@ export default function MatchesPage() {
         const matchDates: MathDateCount[] = await matchService.getMatchDates(dateParams);
         setMatchDate(matchDates);
       } catch (error) {
-        console.log(`매치 날짜 조회 실패: ${error}`)
+        setMatchDate([]);
       }
     }
     fetchMatchDates();
@@ -148,21 +206,21 @@ export default function MatchesPage() {
   }, [startDate])
 
   // 초기 선택된 날짜 설정
-  useEffect(() => {
-    if(ref.current) return;
-    ref.current = true;
-    // 처음 로드될 때만 오늘 날짜로 설정
-    const today = startOfDay(new Date())
-    setSelectedDate(today)
-    getMatchDatesScroll(today, 0);
+  // useEffect(() => {
+  //   if(ref.current) return;
+  //   ref.current = true;
+  //   // 처음 로드될 때만 오늘 날짜로 설정
+  //   const today = startOfDay(new Date())
+  //   setSelectedDate(today)
+  //   getMatchDatesScroll(today, 0);
     
-    // 이미 날짜가 필터링되어 있다면 다시 필터링
-    if ( matches && matches?.length > 0) {
-      let filtered = [...matches]
-      filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), today))
-      setFilteredMatches(filtered)
-    }
-  }, [])
+  //   // 이미 날짜가 필터링되어 있다면 다시 필터링
+  //   if ( matches && matches?.length > 0) {
+  //     let filtered = [...matches]
+  //     filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), today))
+  //     setFilteredMatches(filtered)
+  //   }
+  // }, [selectedDate])
 
   // 지난 날짜의 매치 비활성화 처리
   useEffect(() => {
@@ -313,6 +371,26 @@ export default function MatchesPage() {
     }, 100)
   }
 
+// 매치 상세 페이지 이동
+const goMatchDetail = (matchId: number) => {
+
+  const payload = JSON.stringify({
+    matches: filteredMatches
+    , page: page
+    , hasMore: hasMore
+    , selectedDate: selectedDate
+    , searchTerm: searchTerm
+    , sportType: sportType
+    , matchStatus: matchStatus
+    , region: region
+    , scrollY: window.scrollY
+  })
+
+  sessionStorage.setItem(STORAGE_KEY, payload);
+
+  location.href = `/matches/${matchId}`;
+}
+
   return (
     <div className="page-container pb-16 sm:pb-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
@@ -401,7 +479,32 @@ export default function MatchesPage() {
       {/* 검색 필터 */}
       <Card className="styled-card mb-8">
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+
+            <Select value={region} onValueChange={(value) => setRegion(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="지역" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="서울">서울</SelectItem>
+                <SelectItem value="경기">경기</SelectItem>
+                <SelectItem value="인천">인천</SelectItem>
+                <SelectItem value="강원">강원</SelectItem>
+                <SelectItem value="대전/세종">대전/세종</SelectItem>
+                <SelectItem value="충남">충남</SelectItem>
+                <SelectItem value="충북">충북</SelectItem>
+                <SelectItem value="대구">대구</SelectItem>
+                <SelectItem value="경북">경북</SelectItem>
+                <SelectItem value="부산">부산</SelectItem>
+                <SelectItem value="울산">울산</SelectItem>
+                <SelectItem value="경남">경남</SelectItem>
+                <SelectItem value="광주">광주</SelectItem>
+                <SelectItem value="전남">전남</SelectItem>
+                <SelectItem value="전북">전북</SelectItem>
+                <SelectItem value="제주">제주</SelectItem>
+              </SelectContent>
+            </Select>
+
             <div className="relative">
               <Input
                 placeholder="시설명 또는 위치 검색"
@@ -456,9 +559,9 @@ export default function MatchesPage() {
                   <div className="flex-shrink-0 w-20 font-bold text-lg">{timeSlot}</div>
                   <div className="h-px flex-grow bg-gray-200"></div>
                 </div>
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {matches.map((match) => (
-                    <MatchCard key={match.matchId} match={match} />
+                    <MatchCard key={match.matchId} match={match} onMove={() => goMatchDetail(match.matchId)} />
                   ))}
                 </div>
               </div>
@@ -479,7 +582,8 @@ export default function MatchesPage() {
 }
 
 // 매치 카드 컴포넌트
-function MatchCard({ match, compact = false }: { match: MatchList; compact?: boolean }) {
+function MatchCard({ match, compact = false, onMove }: { match: MatchList; compact?: boolean, onMove?: () => void }) {
+
   const isEnded = match.matchStatus === "END"
   
   return (
@@ -533,9 +637,9 @@ function MatchCard({ match, compact = false }: { match: MatchList; compact?: boo
             asChild
             className="w-full primary-button"
             variant={match.matchStatus === "FINISH" ? "secondary" : "default"}
-            disabled={match.matchStatus === "FINISH" || match.matchStatus === "END" || match.matchStatus === "ONGOING"}
+            //disabled={match.matchStatus === "FINISH" || match.matchStatus === "END" || match.matchStatus === "ONGOING"}
           >
-            <Link href={`/matches/${match.matchId}`}>{match.matchStatus === "APPLICABLE" || match.matchStatus === "CLOSE_TO_DEADLINE" ? "참가 신청하기" : "상세 보기"}</Link>
+            <button onClick={onMove}>{match.matchStatus === "APPLICABLE" || match.matchStatus === "CLOSE_TO_DEADLINE" ? "참가 신청하기" : "상세 보기"}</button>
           </Button>
         </CardFooter>
       )}

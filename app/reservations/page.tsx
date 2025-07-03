@@ -6,26 +6,19 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Calendar, Clock, CreditCard, LogIn } from "lucide-react"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { MapPin, Calendar, Clock, LogIn } from "lucide-react"
 import { displayReservationStatus, Reservations } from "@/lib/types/reservationType"
 import { reservationService } from "@/lib/services/reservationService"
 import { displaySportName } from "@/lib/types/matchTypes"
 import { ReservationStatus } from "@/lib/enum/reservationEnum"
 import { useRouter } from "next/navigation"
+import { scrollToWhenReady } from "@/hooks/use-scroll"
+
+const STORAGE_KEY = 'reservations-list-state'
 
 export default function ReservationsPage() {
   const router = useRouter();
-  const [reservationDatas, setReservationDatas] = useState<Reservations[]>();   // 예약 목록 데이터
+  const [reservationDatas, setReservationDatas] = useState<Reservations[]>([]);   // 예약 목록 데이터
   
   // 무한 스크롤
   const [page, setPage] = useState(0);
@@ -35,11 +28,42 @@ export default function ReservationsPage() {
 
   const [tabValue, setTabValue] = useState<"upcoming" | "past">("upcoming");
 
-  const [showCancelDialog, setShowCancelDialog] = useState(false)
-  const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const observeRef = useRef<HTMLDivElement | null>(null);
+
+  const savedScrollRef = useRef<number | null>(null);
+  const restoredRef = useRef(false);
+
+  // 세션에 정보 있으면 복원
+  useEffect(() => {
+    if(restoredRef.current) return;
+
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if(saved) {
+      const {reservations, page, hasMore, tabValue, scrollY} = JSON.parse(saved);
+
+      setTabValue(tabValue);
+      setReservationDatas(reservations as Reservations[]);
+      setPage(page);
+      setHasMore(hasMore);
+
+      savedScrollRef.current = scrollY;
+      requestAnimationFrame(() => window.scrollTo(0, scrollY));
+    }else {
+      asyncReservations(tabValue, 0) // 예약 목록 조회
+    }
+
+    restoredRef.current = true;
+  }, [tabValue]);
+
+  // 스크롤 위치 시키기
+  useEffect(() => {
+    if(savedScrollRef.current) {
+      scrollToWhenReady(savedScrollRef.current);
+      savedScrollRef.current = null;
+    }
+  }, [tabValue, reservationDatas.length])
   
   useEffect(() => {
     const loggedInStatus = localStorage.getItem('isLoggedIn')
@@ -65,18 +89,13 @@ export default function ReservationsPage() {
       setHasMore(!response.last);
     }catch(error : any) {
       setIsError(true);
-      setReservationDatas([])
+      //setReservationDatas([])
     }finally {
       setLoading(false);
     }
 
   }
 
-  // 초기 조회
-  useEffect(() => {
-    asyncReservations(tabValue, 0) // 예약 목록 조회
-  }, [tabValue])
-  
   // 무한 스크롤
   useEffect(() => {
     if(!hasMore || loading || isError) return;
@@ -120,6 +139,8 @@ export default function ReservationsPage() {
   }
 
   const handleTab = (type:string) => {
+    sessionStorage.removeItem(STORAGE_KEY);
+    restoredRef.current = false;
     setReservationDatas([]);
     setPage(0);
     setHasMore(false);
@@ -129,6 +150,7 @@ export default function ReservationsPage() {
 
   // 예약 취소 페이지 이동
   const handleCancel = (reservationId: number, status: ReservationStatus) => {
+    setSessionStorage();
     router.push(`/reservations/cancel/${reservationId}?status=${status}`);
   }
 
@@ -136,6 +158,37 @@ export default function ReservationsPage() {
   const timeFormat = (time: string): string => {
     const hour = parseInt(time.split(":")[0], 10);
     return `${hour.toString().padStart(2, '0')}:00`;
+  }
+
+  // 세션 데이터 세팅
+  const setSessionStorage = () => {
+    const payload = JSON.stringify({
+      reservations: reservationDatas
+      , page: page
+      , hasMore: hasMore
+      , tabValue: tabValue
+      , scrollY: window.scrollY
+    });
+
+    sessionStorage.setItem(STORAGE_KEY, payload);
+  }
+
+  // 상세 페이지 이동
+  const goReservationDetail = (reservationId: number) => {
+    setSessionStorage()
+    router.push(`/reservations/${reservationId}`);
+  }
+
+  // 리뷰 작성 페이지 이동
+  const goRegistReview = (reservationId: number) => {
+    setSessionStorage();
+    router.push(`/facilities/${reservationId}/review?reviewType=RESERVATION`);
+  }
+
+  // 리뷰 재작성 페이지 이동
+  const getModifyReview = (facilityId: number, reviewId: number) => {
+    setSessionStorage();
+    router.push(`/facilities/${facilityId}/review/edit?reviewId=${reviewId}&reviewType=RESERVATION`);
   }
 
   if(!reservationDatas) {
@@ -227,18 +280,11 @@ export default function ReservationsPage() {
                               <Clock className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
                               <span className="text-sm text-gray-500">{`${timeFormat(reservation.startTime)}-${timeFormat(reservation.endTime)}`}</span>
                             </div>
-
-                            {/* <div className="flex items-start">
-                              <CreditCard className="h-4 w-4 text-indigo-400 mr-2 mt-0.5" />
-                              <span className="text-sm text-gray-500">
-                                {reservation.totalPrice} | {reservation.paymentStatus}
-                              </span>
-                            </div> */}
                           </div>
 
                           <div className="flex flex-col gap-2 md:min-w-[120px]">
                             <Button asChild variant="outline" className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300">
-                              <Link href={`/reservations/${reservation.reservationId}`}>상세 보기</Link>
+                              <button onClick={() => goReservationDetail(reservation.reservationId)}>상세 보기</button>
                             </Button>
 
                             {((reservation.reservationStatus === ReservationStatus.PENDING) || (reservation.reservationStatus === ReservationStatus.CONFIRMED)) && (
@@ -251,9 +297,15 @@ export default function ReservationsPage() {
                               </Button>
                             )}
 
-                            {reservation.reservationStatus === ReservationStatus.COMPLETED && (
+                            {(reservation.reservationStatus === ReservationStatus.COMPLETED && !reservation.reviewId) && (
                               <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                                <Link href={`/facilities/${reservation.reservationId}/review`}>리뷰 작성</Link>
+                                <button onClick={() => goRegistReview(reservation.reservationId)}>리뷰 작성</button>
+                              </Button>
+                            )}
+
+                            {(reservation.reservationStatus === ReservationStatus.COMPLETED && reservation.reviewId) && (
+                              <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                                <button onClick={() => getModifyReview(reservation.facilityId, reservation.reviewId)}>리뷰 재작성</button>
                               </Button>
                             )}
                           </div>

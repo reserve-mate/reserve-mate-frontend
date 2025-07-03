@@ -10,7 +10,7 @@ export function AdminHeader({ toggleMenu, menuOpen }: { toggleMenu: () => void, 
   const router = useRouter()
   
   return (
-    <header className="sticky top-0 z-20 w-full border-b bg-gray-800 text-white shadow-md">
+    <header className="sticky top-0 z-50 w-full border-b bg-gray-800 text-white shadow-md">
       <div className="px-4 flex h-16 items-center justify-between">
         <div className="flex items-center gap-3">
           <Button

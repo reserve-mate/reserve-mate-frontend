@@ -190,6 +190,12 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
     router.push(`/payment?data=${encodeURIComponent(JSON.stringify(reservationData))}`)
   }
 
+  const goReviewLsit = async () => {
+    sessionStorage.removeItem("facility-review-list");
+    await Promise.resolve();
+    router.push(`/facilities/${facility.id}/reviews`);
+  }
+
   return (
     <div className="w-full bg-background py-6 md:py-8">
       <div className="container max-w-6xl mx-auto px-4 sm:px-6">
@@ -229,10 +235,9 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
             </div>
 
             <Tabs defaultValue="info">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="info">시설 정보</TabsTrigger>
                 <TabsTrigger value="price">가격 정보</TabsTrigger>
-                <TabsTrigger value="reviews">리뷰</TabsTrigger>
               </TabsList>
               <TabsContent value="info" className="p-4">
                 <h3 className="text-lg font-semibold mb-2">시설 정보</h3>
@@ -266,40 +271,49 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
                   </div>
                 </div>
               </TabsContent>
-              <TabsContent value="reviews" className="p-4">
-                <h3 className="text-lg font-semibold mb-2">리뷰</h3>
-                <div className="space-y-4">
-                  <div className="border-b pb-4">
-                    <div className="flex items-center mb-2">
-                      <span className="font-medium mr-2">김철수</span>
-                      <div className="flex">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`h-4 w-4 ${star <= 4 ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-sm">코트 상태가 좋고 직원분들이 친절해요. 다음에 또 이용할 예정입니다.</p>
-                  </div>
-                  <div className="border-b pb-4">
-                    <div className="flex items-center mb-2">
-                      <span className="font-medium mr-2">이영희</span>
-                      <div className="flex">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`h-4 w-4 ${star <= 5 ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-sm">시설이 깨끗하고 위치도 좋아요. 주차 공간도 넉넉해서 편리했습니다.</p>
-                  </div>
-                </div>
-              </TabsContent>
             </Tabs>
+
+            {/* 리뷰 섹션 */}
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">리뷰</h3>
+                <button onClick={() => goReviewLsit()}>
+                  <Button variant="outline" size="sm">
+                    리뷰 더보기
+                  </Button>
+                </button>
+              </div>
+              <div className="space-y-3">
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center mb-2">
+                    <span className="font-medium mr-2">김철수</span>
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-3 w-3 ${star <= 4 ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">코트 상태가 좋고 직원분들이 친절해요. 다음에 또 이용할 예정입니다.</p>
+                </div>
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center mb-2">
+                    <span className="font-medium mr-2">이영희</span>
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-3 w-3 ${star <= 5 ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">시설이 깨끗하고 위치도 좋아요. 주차 공간도 넉넉해서 편리했습니다.</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* 예약 폼 */}

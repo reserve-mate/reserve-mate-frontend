@@ -1,7 +1,7 @@
 import { api } from "../api";
 import { ReservationStatus } from "../enum/reservationEnum";
 import { Slice } from "../types/commonTypes";
-import { AdminReservationDetail, AdminReservationResponse, DashboardReservation, ReservationDetail, Reservations } from "../types/reservationType";
+import { AdminReservationDetail, AdminReservationResponse, DashboardReservation, ReservationDetail, Reservations, ReviewReservation } from "../types/reservationType";
 
 export const reservationService = {
 

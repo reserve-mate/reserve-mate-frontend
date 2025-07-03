@@ -37,6 +37,9 @@ function generateUniqueString(): string {
   );
 }
 
+// url
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sportmate.site/';
+
 export default function MatchDetailPage({ params }: { params: { id: number } }) {
   const numberFormat = /\B(?=(\d{3})+(?!\d))/g; // 천원단위 숫자 포맷
 
@@ -335,8 +338,8 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                   {matchDetail.playerDtos.slice(0, 4).map((participant) => (
                     <div key={participant.playerId} className="flex items-center p-2 bg-white rounded-lg shadow-sm">
                       <Avatar className="h-6 w-6 mr-2">
-                        <AvatarImage src={`${participant.profileImage !== null ? participant.profileImage : `/placeholder.svg?height=32&width=32&text=${participant.userName.charAt(0)}`}`} />
-                        <AvatarFallback>{`${participant.profileImage !== null ? participant.profileImage : `/placeholder.svg?height=32&width=32&text=${participant.userName.charAt(0)}`}`}</AvatarFallback>
+                        <AvatarImage src={`${participant.profileImage !== null ? API_BASE_URL.slice(0, -1) + participant.profileImage : `/placeholder.svg?height=32&width=32&text=${participant.userName.charAt(0)}`}`} />
+                        <AvatarFallback>{`${participant.profileImage !== null ? API_BASE_URL.slice(0, -1) + participant.profileImage : `/placeholder.svg?height=32&width=32&text=${participant.userName.charAt(0)}`}`}</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-medium text-xs">{participant.userName}</p>
@@ -369,7 +372,9 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
           <Card className="overflow-hidden border-0 shadow-lg rounded-xl">
             <div className="relative h-72 sm:h-80 md:h-96">
               <Image
-                src={`${matchDetail.facilityDataDto.imageDtos[0] !== null ? matchDetail.facilityDataDto.imageDtos[0] : "https://images.unsplash.com/photo-1626224583764-f88b815bad2a?q=80&amp;w=1024"}`}
+                src={`${matchDetail.facilityDataDto.imageDtos?.[0]
+                      ? API_BASE_URL.slice(0, -1) + matchDetail.facilityDataDto.imageDtos[0]
+                      : "https://images.unsplash.com/photo-1626224583764-f88b815bad2a?q=80&w=1024"}`}
                 alt={`${matchDetail.facilityDataDto.facilityName} 이미지`}
                 fill
                 className="object-cover"
@@ -448,8 +453,8 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                 <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">매니저 정보</h3>
                 <div className="flex items-center">
                   <Avatar className="h-9 w-9 sm:h-10 sm:w-10 mr-3">
-                    <AvatarImage src={`${matchDetail.matchDataDto.mangerImage !== null ? matchDetail.matchDataDto.mangerImage : `/placeholder.svg?height=32&width=32&text=${matchDetail.matchDataDto.manager.charAt(0)}`}`} />
-                    <AvatarFallback>{`${matchDetail.matchDataDto.mangerImage !== null ? matchDetail.matchDataDto.mangerImage : `/placeholder.svg?height=32&width=32&text=${matchDetail.matchDataDto.manager.charAt(0)}`}`}</AvatarFallback>
+                    <AvatarImage src={`${matchDetail.matchDataDto.mangerImage !== null ? API_BASE_URL.slice(0, -1) + matchDetail.matchDataDto.mangerImage : `/placeholder.svg?height=32&width=32&text=${matchDetail.matchDataDto.manager.charAt(0)}`}`} />
+                    <AvatarFallback>{`${matchDetail.matchDataDto.mangerImage !== null ? API_BASE_URL.slice(0, -1) + matchDetail.matchDataDto.mangerImage : `/placeholder.svg?height=32&width=32&text=${matchDetail.matchDataDto.manager.charAt(0)}`}`}</AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium text-sm sm:text-base">{matchDetail.matchDataDto.manager}</p>
@@ -472,8 +477,8 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
                     matchDetail.playerDtos.map((participant) => (
                         <div key={participant.playerId} className="flex items-center p-2 bg-white rounded-lg shadow-sm">
                           <Avatar className="h-7 w-7 sm:h-8 sm:w-8 mr-2">
-                            <AvatarImage src={`${participant.profileImage !== null ? participant.profileImage : `/placeholder.svg?height=32&width=32&text=${participant.userName.charAt(0)}`}`} />
-                            <AvatarFallback>{`${participant.profileImage !== null ? participant.profileImage : `/placeholder.svg?height=32&width=32&text=${participant.userName.charAt(0)}`}`}</AvatarFallback>
+                            <AvatarImage src={`${participant.profileImage !== null ? API_BASE_URL.slice(0, -1) + participant.profileImage : `/placeholder.svg?height=32&width=32&text=${participant.userName.charAt(0)}`}`} />
+                            <AvatarFallback>{`${participant.profileImage !== null ? API_BASE_URL.slice(0, -1) + participant.profileImage : `/placeholder.svg?height=32&width=32&text=${participant.userName.charAt(0)}`}`}</AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-medium text-xs sm:text-sm">{participant.userName}</p>
