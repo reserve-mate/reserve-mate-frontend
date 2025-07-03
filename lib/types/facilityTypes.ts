@@ -52,3 +52,27 @@ export interface FacilityManagerListResponse {
     email: string;
     phone: string;
 }
+
+export interface FacilityListRequest {
+    sportType : string;
+    minPrice : number;
+    maxPrice : number;
+    lastId : string | null;
+    size : number;
+}
+
+export interface FacilitiesResponse {
+    content: Facilities[];
+    last : boolean;
+}
+
+export interface Facilities {
+    facilityId : number;
+    facilityName : string;
+    sportType : string;
+    address : string;
+    courtId : number;
+    courtName : string;
+    fee : number;
+    imageUrl : string;
+}

@@ -3,7 +3,7 @@ import { api } from '../api';
 import { SportType } from '../enum/matchEnum';
 import { CourtName, FacilityManagerName, FacilityNames } from '../types/facilityTypes';
 import { FacilityManager } from './userService';
-import { Address, OperatingHours, AssignFacilityManagerRequest, FacilityManagerListResponse } from '../types/facilityTypes';
+import { Address, OperatingHours, AssignFacilityManagerRequest, FacilityManagerListResponse, FacilitiesResponse } from '../types/facilityTypes';
 
 // 시설 타입 정의
 export interface Facility {
@@ -65,18 +65,26 @@ export interface FacilityList {
   courtCount: number;
   reservationCount: number;
   active? : boolean;
+  
 }
 
 interface FacilityListResponse {
   content: FacilityList[];
   totalPages: number;
-
 }
 
 // 시설 서비스
 export const facilityService = {
   // 시설 목록 조회
-  getFacilities: async(data:{ keyword : string; lastId : string | null; size : string}) => {
+  getFacilities: async(data:{SportType: string| null, keyword: string, minPrice: number, maxPrice: number, lastId: number, size: number}) => {
+    return api.get<FacilitiesResponse>("/facility/list",{
+      params: data,
+    })
+    // console.log("시설찾기 service data: ", JSON.stringify(response, null, 2));
+    // return response.content;
+  },
+  // 시설 목록 조회(관리자 전용)
+  getAdminFacilities: async(data:{ keyword : string; lastId : string | null; size : string}) => {
     const res =  await api.get<FacilityListResponse>("/admin/facilities",{
       params: data,
     })
