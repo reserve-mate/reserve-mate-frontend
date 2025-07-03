@@ -125,7 +125,11 @@ export default function MatchesPage() {
 
       try{
         const matches = await matchService.getMatches(listParams);
-        setMatches((prev) => [...prev, ...matches.content]); // 최신 상태를 기반으로 업데이트, 자바스크립트에서 기존 배열을 복사해서 새로운 배열을 만드는 spread 문법
+        setMatches((prev) => {
+          const merged = [...prev, ...matches.content];
+          const unique = [...new Map(merged.map(m => [m.matchId, m])).values()];
+          return unique;
+        }); // 최신 상태를 기반으로 업데이트, 자바스크립트에서 기존 배열을 복사해서 새로운 배열을 만드는 spread 문법
         setPage(matches.number);
         setHasMore(!matches.last);  // 마지막 페이지가 아니면 true
       }catch(err){
@@ -204,23 +208,6 @@ export default function MatchesPage() {
     getMatchDateCnt();
 
   }, [startDate])
-
-  // 초기 선택된 날짜 설정
-  // useEffect(() => {
-  //   if(ref.current) return;
-  //   ref.current = true;
-  //   // 처음 로드될 때만 오늘 날짜로 설정
-  //   const today = startOfDay(new Date())
-  //   setSelectedDate(today)
-  //   getMatchDatesScroll(today, 0);
-    
-  //   // 이미 날짜가 필터링되어 있다면 다시 필터링
-  //   if ( matches && matches?.length > 0) {
-  //     let filtered = [...matches]
-  //     filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), today))
-  //     setFilteredMatches(filtered)
-  //   }
-  // }, [selectedDate])
 
   // 지난 날짜의 매치 비활성화 처리
   useEffect(() => {

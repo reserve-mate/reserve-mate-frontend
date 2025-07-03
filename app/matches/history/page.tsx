@@ -70,7 +70,7 @@ export default function MatchHistoryPage() {
     setIsLoggedIn(loggedInStatus === 'true')
   }, [])
 
-  // 매치 이용내역 조회 (샘플 데이터 사용)
+  // 매치 이용내역 조회
   const asyncMatchHistory = async (status: string, pageNum: number) => {
     if(loading) return;
     setLoading(true);
@@ -91,7 +91,7 @@ export default function MatchHistoryPage() {
       setHasMore(!response.last); // 샘플 데이터이므로 추가 페이지 없음
     }catch(error : any) {
       setIsError(true);
-      setMatchHistory([])
+      //setMatchHistory([])
     }finally {
       setLoading(false);
     }
@@ -117,6 +117,7 @@ export default function MatchHistoryPage() {
       if(observeRef.current) {
         observer.unobserve(observeRef.current);
       }
+      observer.disconnect();
     }
   }, [page, hasMore, loading])
 
@@ -215,12 +216,7 @@ export default function MatchHistoryPage() {
             </TabsList>
 
             <TabsContent value={tabValue}>
-              {loading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                  <p className="text-gray-500">매치 내역을 불러오는 중...</p>
-                </div>
-              ) : matchHistory.length === 0 ? (
+              {matchHistory.length === 0 ? (
                 <div className="text-center py-12">
                   <Trophy className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                   <p className="text-gray-500 mb-4">
@@ -236,7 +232,7 @@ export default function MatchHistoryPage() {
               ) : (
                 <div className="space-y-4">
                   {matchHistory.map((match) => (
-                    <Card key={`${match.matchId}-${match.playerId}`} className="border border-indigo-100 hover:shadow-md transition-shadow">
+                    <Card key={match.playerId} className="border border-indigo-100 hover:shadow-md transition-shadow">
                       <CardContent className="p-5">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                           <div className="space-y-2">
