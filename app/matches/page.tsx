@@ -68,16 +68,15 @@ export default function MatchesPage() {
 
     const saved = sessionStorage.getItem(STORAGE_KEY);
     if(saved) {
-      const {matches, page, hasMore, selectedDate, searchTerm, sportType, matchStatus, region, scrollY} = JSON.parse(saved);
+      const {matchDates, matches, page, hasMore, selectedDate, searchTerm, sportType, matchStatus, region, scrollY} = JSON.parse(saved);
 
       setSelectedDate(selectedDate);
       setSearchTerm(searchTerm);
       setSportType(sportType);
       setMatchStatus(matchStatus);
       setRegion(region)
-
       setStartDate(selectedDate);
-
+      setMatchDate(matchDates as MathDateCount[]);
       setMatches(matches as MatchList[]);
       setPage(page);
       setHasMore(hasMore);
@@ -88,6 +87,7 @@ export default function MatchesPage() {
       // 처음 로드될 때만 오늘 날짜로 설정
       const today = startOfDay(new Date())
       setSelectedDate(today)
+      getMatchDateCnt();  // 날짜별 매치 카운트
       getMatchDatesScroll(today, 0);
 
       // 이미 날짜가 필터링되어 있다면 다시 필터링
@@ -97,6 +97,7 @@ export default function MatchesPage() {
         setFilteredMatches(filtered)
       }
     }
+    
   }, [selectedDate])
 
   // 스크롤 복원
@@ -205,7 +206,7 @@ export default function MatchesPage() {
     }
     setDateRange(range)
 
-    getMatchDateCnt();
+    //getMatchDateCnt();
 
   }, [startDate])
 
@@ -362,7 +363,8 @@ export default function MatchesPage() {
 const goMatchDetail = (matchId: number) => {
 
   const payload = JSON.stringify({
-    matches: filteredMatches
+    matchDates: matchDate
+    ,  matches: filteredMatches
     , page: page
     , hasMore: hasMore
     , selectedDate: selectedDate
