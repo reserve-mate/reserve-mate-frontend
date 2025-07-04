@@ -10,74 +10,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider"
 import { MapPin, Search, Filter, Star, Plus } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { facilityService } from "@/lib/services/facilityService"
+import { toast } from "@/hooks/use-toast"
+import { Facilities } from "@/lib/types/facilityTypes"
 
 // 시설 데이터 타입
 type Facility = {
-  id: string
-  name: string
-  address: string
-  sportType: string
-  rating: number
-  priceRange: string
-  imageUrl: string
+  facilityId : number
+  facilityName : string
+  address : string
+  sportType : string
+  courtId : number
+  courtName : string
+  fee : number
+  imageUrl : string
 }
 
-// 더미 데이터
-const dummyFacilities: Facility[] = [
-  {
-    id: "1",
-    name: "서울 테니스 센터",
-    address: "서울시 강남구 테헤란로 123",
-    sportType: "테니스",
-    rating: 4.5,
-    priceRange: "20,000원 ~ 40,000원",
-    imageUrl: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    id: "2",
-    name: "강남 풋살장",
-    address: "서울시 강남구 역삼동 456",
-    sportType: "풋살",
-    rating: 4.2,
-    priceRange: "30,000원 ~ 50,000원",
-    imageUrl: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    id: "3",
-    name: "종로 농구코트",
-    address: "서울시 종로구 종로 789",
-    sportType: "농구",
-    rating: 4.0,
-    priceRange: "15,000원 ~ 25,000원",
-    imageUrl: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    id: "4",
-    name: "한강 배드민턴장",
-    address: "서울시 영등포구 여의도동 101",
-    sportType: "배드민턴",
-    rating: 4.7,
-    priceRange: "10,000원 ~ 20,000원",
-    imageUrl: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    id: "5",
-    name: "송파 스포츠 센터",
-    address: "서울시 송파구 잠실동 202",
-    sportType: "테니스",
-    rating: 4.3,
-    priceRange: "25,000원 ~ 45,000원",
-    imageUrl: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    id: "6",
-    name: "마포 실내 풋살장",
-    address: "서울시 마포구 합정동 303",
-    sportType: "풋살",
-    rating: 4.1,
-    priceRange: "35,000원 ~ 55,000원",
-    imageUrl: "/placeholder.svg?height=200&width=300",
-  },
+// sportTypes 추가
+const sportTypes = [
+  { value: "TENNIS", label: "테니스" },
+  { value: "FUTSAL", label: "풋살" },
+  { value: "BASKETBALL", label: "농구" },
+  { value: "VOLLEYBALL", label: "배구" },
+  { value: "BADMINTON", label: "배드민턴" },
+  { value: "BASEBALL", label: "야구" },
+  { value: "SOCCER", label: "축구"},
+  { value: "OTHER", label: "기타" },
 ]
 
 export default function FacilitiesPage() {
@@ -86,9 +44,14 @@ export default function FacilitiesPage() {
   const [priceRange, setPriceRange] = useState([0, 10])
   const [minPrice, setMinPrice] = useState("0")
   const [maxPrice, setMaxPrice] = useState("10")
-  const [facilities, setFacilities] = useState<Facility[]>(dummyFacilities)
+  const [facilities, setFacilities] = useState<Facilities[]>([])
   const [isPriceInputVisible, setIsPriceInputVisible] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  //페이징
+  const [lastId, setLastId] = useState<number>(0)
+  const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const PAGE_SIZE = 6
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -96,19 +59,53 @@ export default function FacilitiesPage() {
     setIsLoggedIn(loggedInStatus === 'true')
   }, [])
 
+  // 페이지 첫 로딩 시 api 호출
+  useEffect(()=> {
+    handleSearch()
+  },[])
+
   // 검색 처리
-  const handleSearch = () => {
-    // 실제 구현에서는 API 호출을 통해 검색 결과를 가져옵니다
-    const filtered = dummyFacilities.filter((facility) => {
-      const matchesSearch =
-        facility.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        facility.address.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesSport = sportType === "" || sportType === "all" || facility.sportType === sportType
+  const handleSearch = async() => {
+    try {
+      // 실제 구현에서는 API 호출을 통해 검색 결과를 가져옵니다
+      const response = await facilityService.getFacilities({
+        SportType: sportType === "ALL" ? null : sportType,
+        minPrice: Number(minPrice) * 10000,
+        maxPrice: Number(maxPrice) * 10000,
+        keyword: searchTerm,
+        lastId: lastId,
+        size: PAGE_SIZE,
+      })
+      console.log("시설목록----------");
+      console.log(response);
+      /*
+      const filtered = dummyFacilities.filter((facility) => {
+        const matchesSearch =
+          facility.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          facility.address.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesSport = sportType === "" || sportType === "all" || facility.sportType === sportType
 
-      return matchesSearch && matchesSport
-    })
+        return matchesSearch && matchesSport
+      })
+      */  
 
-    setFacilities(filtered)
+      setFacilities(response.content)
+      if (response.content.length > 0) {
+        const lastCourt = response.content[response.content.length - 1]
+        setLastId(lastCourt.courtId)
+      }
+      setHasMore(!response.last)  
+    } catch (error) {
+      console.log(error);
+      toast({
+        title: "시설 목록 오류 발생",
+        description: "시설 목록을 가져오는 중 오류가 발생했습니다.",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
+    
   }
 
   // 가격 범위 변경 처리
@@ -170,11 +167,10 @@ export default function FacilitiesPage() {
                   <SelectValue placeholder="스포츠 종류" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">전체</SelectItem>
-                  <SelectItem value="테니스">테니스</SelectItem>
-                  <SelectItem value="풋살">풋살</SelectItem>
-                  <SelectItem value="농구">농구</SelectItem>
-                  <SelectItem value="배드민턴">배드민턴</SelectItem>
+                  <SelectItem value="All">전체</SelectItem>
+                  {sportTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -240,21 +236,24 @@ export default function FacilitiesPage() {
       {/* 시설 목록 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {facilities.map((facility) => (
-          <Card key={facility.id} className="styled-card h-full">
+          <Card key={facility.facilityId} className="styled-card h-full">
             <div className="relative h-48">
               <Image
-                src={facility.imageUrl || "/placeholder.svg"}
-                alt={facility.name}
+                src={facility.imageUrl ? `/uploads${facility.imageUrl}` : "/placeholder.svg"}
+                alt={facility.facilityName}
                 fill
                 className="object-cover rounded-t-xl"
               />
             </div>
             <CardContent className="p-5">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="text-lg font-semibold">{facility.name}</h3>
+                <div>
+                  <h3 className="text-lg font-semibold">{facility.facilityName}</h3>
+                  <p className="text-sm">{facility.courtName}</p>
+                </div>
                 <div className="flex items-center">
                   <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
-                  <span className="text-sm">{facility.rating}</span>
+                  {/* <span className="text-sm">{facility.rating}</span> */}
                 </div>
               </div>
               <div className="flex items-start mb-2">
@@ -262,13 +261,16 @@ export default function FacilitiesPage() {
                 <span className="text-sm text-gray-500">{facility.address}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{facility.sportType}</span>
-                <span className="text-sm text-gray-500">{facility.priceRange}</span>
+                <span className="text-sm font-medium">
+                  {sportTypes.find((type) => type.value === facility.sportType)?.label ?? facility.sportType}
+                  {/* {facility.sportType} */}
+                </span>
+                <span className="text-sm text-gray-500">{facility.fee} 원</span>
               </div>
             </CardContent>
             <CardFooter className="p-5 pt-0">
               <Button asChild className="w-full primary-button">
-                <Link href={`/facilities/${facility.id}`}>예약하기</Link>
+                <Link href={`/facilities/${facility.facilityId}/${facility.courtId}`}>예약하기</Link>
               </Button>
             </CardFooter>
           </Card>

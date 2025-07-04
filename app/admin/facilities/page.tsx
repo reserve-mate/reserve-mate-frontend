@@ -56,14 +56,14 @@ export default function AdminFacilitiesPage() {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const [showRegisterForm, setShowRegisterForm] = useState(false)
   const router = useRouter();
-  const PAGE_SIZE = 7
+  const PAGE_SIZE = 6
   
   const loadFacilities = useCallback(async () => {
     if (loading || !hasMore ) return
     setLoading(true)
     
     try {
-      const response = await facilityService.getFacilities({
+      const response = await facilityService.getAdminFacilities({
         keyword: searchTerm,
         lastId: lastId ?? null,
         size: String(PAGE_SIZE),
@@ -91,17 +91,22 @@ export default function AdminFacilitiesPage() {
     const fetchOnSearch = async () => {
       setLoading(true)
       try {
-        const response = await facilityService.getFacilities({
+        const response = await facilityService.getAdminFacilities({
           keyword: searchTerm,
           lastId: null,  // 검색시 항상 처음부터
           size: String(PAGE_SIZE),
         });
 
-        setFacilities(response);
+        setFacilities(response || []);
         setLastId(response.length > 0 ? String(response[response.length - 1].facilityId) : null);
         setHasMore(response.length === PAGE_SIZE);
       } catch (e) {
         console.error("검색 중 에러", e);
+        toast({
+          title: "시설 검색 실패",
+          description: "시설 목록을 가져오는 데 실패했습니다.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
