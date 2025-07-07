@@ -51,7 +51,8 @@ export default function MatchHistoryPage() {
       savedScrollRef.current = scrollY;
       requestAnimationFrame(() => window.scrollTo(0, scrollY));
     } else {
-      asyncMatchHistory(tabValue, 0)
+      asyncMatchHistory(tabValue, 0);
+      window.scrollTo(0, 0);
     }
 
     restoredRef.current = true;

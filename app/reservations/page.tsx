@@ -52,6 +52,7 @@ export default function ReservationsPage() {
       requestAnimationFrame(() => window.scrollTo(0, scrollY));
     }else {
       asyncReservations(tabValue, 0) // 예약 목록 조회
+      window.scrollTo(0, 0);  // 스크롤 맨 위로 초기화
     }
 
     restoredRef.current = true;
