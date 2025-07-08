@@ -25,7 +25,7 @@ const STORAGE_KEY = 'matches-state'
 export default function MatchesPage() {
   const router = useRouter();
   // 검색 세팅
-  const [searchTerm, setSearchTerm] = useState<string>("")
+  const [searchTerm, setSearchTerm] = useState<string | null>(null);
   const [sportType, setSportType] = useState<SportType | null>(null);
   const [matchStatus, setMatchStatus] = useState<MatchStatus | null>(null);
   const [region, setRegion] = useState<string>("서울");
@@ -112,7 +112,7 @@ export default function MatchesPage() {
   const getMatchDatesScroll = (date: Date, pageNumber: number) => {
     const listParams: MatchSearch = {
       matchDate: format(date, 'yyyy-MM-dd', { locale: ko }), // YYYY-MM-DD
-      searchValue: searchTerm,
+      searchValue: searchTerm ?? undefined,
       matchStatus: matchStatus ?? undefined,
       sportType: sportType ?? undefined,
       region: region,
@@ -151,7 +151,7 @@ export default function MatchesPage() {
   const getMatchDateCnt = () => {
     const dateParams: MatchSearch = {
       matchDate: format(startDate, 'yyyy-MM-dd', { locale: ko }), // YYYY-MM-DD
-      searchValue: searchTerm,
+      searchValue: searchTerm ?? undefined,
       sportType: sportType ?? undefined,
       region: region,
       matchStatus: matchStatus ?? undefined
@@ -497,7 +497,7 @@ const goMatchDetail = (matchId: number) => {
             <div className="relative">
               <Input
                 placeholder="시설명 또는 위치 검색"
-                value={searchTerm}
+                value={searchTerm ?? undefined}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />

@@ -76,7 +76,7 @@ const setDateFormat = (date: Date) => {
 const STORAGE_KEY = 'admin-matches-state'
 
 export default function AdminMatchesPage() {
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState<string | null>(null);
   const [showRegisterForm, setShowRegisterForm] = useState(false)
 
   // 관리자 매치 목록 조회
@@ -152,7 +152,7 @@ export default function AdminMatchesPage() {
     let endDateStr: string = (endDate) ? setDateFormat(endDate) : "";
 
     const searchParam: AdminMatchSearch = {
-      searchValue: searchTerm,
+      searchValue: searchTerm ?? undefined,
       pageNumber: pageNumber,
       startDate: startDateStr,
       endDate: endDateStr,
@@ -316,7 +316,7 @@ export default function AdminMatchesPage() {
             <div className="relative w-full sm:max-w-sm">
               <Input 
                 placeholder="매치명, 시설명으로 검색" 
-                value={searchTerm}
+                value={searchTerm ?? undefined}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-8"
               />
