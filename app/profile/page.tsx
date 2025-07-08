@@ -274,10 +274,11 @@ export default function ProfilePage() {
     }
   }
 
-  const goReview = async () => {
-    sessionStorage.removeItem("review-list-state");
+  // 해당 리스트로 이동
+  const goList = async (state: string, link: string) => {
+    sessionStorage.removeItem(state);
     await Promise.resolve();
-    router.push("/profile/my-reviews");
+    router.push(link);
   }
 
   return (
@@ -458,7 +459,7 @@ export default function ProfilePage() {
               <h3 className="text-lg font-semibold mb-2">예약 내역</h3>
               <p className="text-gray-600 text-sm mb-4">시설 예약 현황을 확인하세요</p>
               <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
-                <Link href="/reservations">예약 내역 보기</Link>
+                <button onClick={() => goList("reservations-list-state", "/reservations")}>예약 내역 보기</button>
               </Button>
             </CardContent>
           </Card>
@@ -469,7 +470,7 @@ export default function ProfilePage() {
               <h3 className="text-lg font-semibold mb-2">매치 이용내역</h3>
               <p className="text-gray-600 text-sm mb-4">참여한 매치 내역을 확인하세요</p>
               <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
-                <Link href="/matches/history">매치 내역 보기</Link>
+                <button onClick={() => goList("match-history-state", "/matches/history")}>매치 내역 보기</button>
               </Button>
             </CardContent>
           </Card>
@@ -480,7 +481,7 @@ export default function ProfilePage() {
               <h3 className="text-lg font-semibold mb-2">내 리뷰</h3>
               <p className="text-gray-600 text-sm mb-4">작성한 리뷰를 관리하세요</p>
               <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
-                <button onClick={() => goReview()}>내 리뷰 보기</button>
+                <button onClick={() => goList("review-list-state", "/profile/my-reviews")}>내 리뷰 보기</button>
               </Button>
             </CardContent>
           </Card>
@@ -491,7 +492,7 @@ export default function ProfilePage() {
               <h3 className="text-lg font-semibold mb-2">결제 내역</h3>
               <p className="text-gray-600 text-sm mb-4">결제 및 환불 내역을 확인하세요</p>
               <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
-                <Link href="/payments">결제 내역 보기</Link>
+                <button onClick={() => goList("payments-status", "/payments")}>결제 내역 보기</button>
               </Button>
             </CardContent>
           </Card>

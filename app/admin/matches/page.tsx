@@ -76,7 +76,7 @@ const setDateFormat = (date: Date) => {
 const STORAGE_KEY = 'admin-matches-state'
 
 export default function AdminMatchesPage() {
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState<string | null>(null);
   const [showRegisterForm, setShowRegisterForm] = useState(false)
 
   // 관리자 매치 목록 조회
@@ -152,7 +152,7 @@ export default function AdminMatchesPage() {
     let endDateStr: string = (endDate) ? setDateFormat(endDate) : "";
 
     const searchParam: AdminMatchSearch = {
-      searchValue: searchTerm,
+      searchValue: searchTerm ?? undefined,
       pageNumber: pageNumber,
       startDate: startDateStr,
       endDate: endDateStr,
@@ -316,7 +316,7 @@ export default function AdminMatchesPage() {
             <div className="relative w-full sm:max-w-sm">
               <Input 
                 placeholder="매치명, 시설명으로 검색" 
-                value={searchTerm}
+                value={searchTerm ?? undefined}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-8"
               />
@@ -425,7 +425,7 @@ export default function AdminMatchesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[140px] max-w-[140px] text-center">매치명</TableHead>
+              <TableHead className="min-w-[120px] max-w-[120px] text-center">매치명</TableHead>
               <TableHead className="min-w-[70px] text-center">종류</TableHead>
               <TableHead className="hidden md:table-cell min-w-[150px] max-w-[200px] text-center">시설</TableHead>
               <TableHead className="hidden md:table-cell min-w-[90px] text-center">날짜</TableHead>
@@ -442,7 +442,7 @@ export default function AdminMatchesPage() {
                 className="isolate relative"
                 style={{ position: 'relative' }}
               >
-                <TableCell className="font-medium truncate max-w-[140px]" title={match.matchName}>{match.matchName}</TableCell>
+                <TableCell className="font-medium truncate max-w-[120px]" title={match.matchName}>{match.matchName}</TableCell>
                 <TableCell>
                   <span className="whitespace-nowrap">{displaySportName(match.sportType)}</span>
                 </TableCell>
