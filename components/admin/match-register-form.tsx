@@ -105,14 +105,8 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
     if (matchData.facilityId) {
       const facility = facilityNames.find(f => f.facilityId === parseInt(matchData.facilityId))
       setSelectFacilityName(facility || null);
-      
-      if (facility && courtNames) {
-        fetchGetCourts(facility.facilityId);
-        // const activeCourts = courtNames.filter(court => court.isActive)
-        // setAvailableCourts(activeCourts)
-      } else {
-        setCourtNames([]);
-      }
+      setCourtNames([]);
+      setManagerNames([]);
       
       // 시설 주소 자동 설정
       if (facility) {
@@ -122,9 +116,6 @@ export default function RegisterMatchForm({ onComplete }: RegisterMatchFormProps
           address: facility.address
         }))
         
-        // 시설 관리자 목록 조회
-        //loadFacilityManagers(parseInt(facility.id))
-        fetchGetFacilityManger(facility.facilityId);
       }
     } else {
       setSelectFacilityName(null)

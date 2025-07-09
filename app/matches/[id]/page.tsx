@@ -272,7 +272,7 @@ export default function MatchDetailPage({ params }: { params: { id: number } }) 
 
   return (
     <div className="container py-4 sm:py-8 px-4 sm:px-6 max-w-6xl mx-auto">
-      <Button variant="ghost" className="mb-4 sm:mb-6 flex items-center gap-1" onClick={() => router.push("/matches")}>
+      <Button variant="ghost" className="mb-4 sm:mb-6 flex items-center gap-1" onClick={() => router.back()}>
         <ChevronLeft className="h-4 w-4" /> 매치 목록으로 돌아가기
       </Button>
 

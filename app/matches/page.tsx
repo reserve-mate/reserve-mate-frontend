@@ -25,7 +25,7 @@ const STORAGE_KEY = 'matches-state'
 export default function MatchesPage() {
   const router = useRouter();
   // 검색 세팅
-  const [searchTerm, setSearchTerm] = useState<string>("")
+  const [searchTerm, setSearchTerm] = useState<string | null>(null);
   const [sportType, setSportType] = useState<SportType | null>(null);
   const [matchStatus, setMatchStatus] = useState<MatchStatus | null>(null);
   const [region, setRegion] = useState<string>("서울");
@@ -68,16 +68,15 @@ export default function MatchesPage() {
 
     const saved = sessionStorage.getItem(STORAGE_KEY);
     if(saved) {
-      const {matches, page, hasMore, selectedDate, searchTerm, sportType, matchStatus, region, scrollY} = JSON.parse(saved);
+      const {matchDates, matches, page, hasMore, selectedDate, searchTerm, sportType, matchStatus, region, scrollY} = JSON.parse(saved);
 
       setSelectedDate(selectedDate);
       setSearchTerm(searchTerm);
       setSportType(sportType);
       setMatchStatus(matchStatus);
       setRegion(region)
-
       setStartDate(selectedDate);
-
+      setMatchDate(matchDates as MathDateCount[]);
       setMatches(matches as MatchList[]);
       setPage(page);
       setHasMore(hasMore);
@@ -88,6 +87,7 @@ export default function MatchesPage() {
       // 처음 로드될 때만 오늘 날짜로 설정
       const today = startOfDay(new Date())
       setSelectedDate(today)
+      getMatchDateCnt();  // 날짜별 매치 카운트
       getMatchDatesScroll(today, 0);
 
       // 이미 날짜가 필터링되어 있다면 다시 필터링
@@ -97,6 +97,7 @@ export default function MatchesPage() {
         setFilteredMatches(filtered)
       }
     }
+    
   }, [selectedDate])
 
   // 스크롤 복원
@@ -111,7 +112,7 @@ export default function MatchesPage() {
   const getMatchDatesScroll = (date: Date, pageNumber: number) => {
     const listParams: MatchSearch = {
       matchDate: format(date, 'yyyy-MM-dd', { locale: ko }), // YYYY-MM-DD
-      searchValue: searchTerm,
+      searchValue: searchTerm ?? undefined,
       matchStatus: matchStatus ?? undefined,
       sportType: sportType ?? undefined,
       region: region,
@@ -125,7 +126,11 @@ export default function MatchesPage() {
 
       try{
         const matches = await matchService.getMatches(listParams);
-        setMatches((prev) => [...prev, ...matches.content]); // 최신 상태를 기반으로 업데이트, 자바스크립트에서 기존 배열을 복사해서 새로운 배열을 만드는 spread 문법
+        setMatches((prev) => {
+          const merged = [...prev, ...matches.content];
+          const unique = [...new Map(merged.map(m => [m.matchId, m])).values()];
+          return unique;
+        }); // 최신 상태를 기반으로 업데이트, 자바스크립트에서 기존 배열을 복사해서 새로운 배열을 만드는 spread 문법
         setPage(matches.number);
         setHasMore(!matches.last);  // 마지막 페이지가 아니면 true
       }catch(err){
@@ -146,7 +151,7 @@ export default function MatchesPage() {
   const getMatchDateCnt = () => {
     const dateParams: MatchSearch = {
       matchDate: format(startDate, 'yyyy-MM-dd', { locale: ko }), // YYYY-MM-DD
-      searchValue: searchTerm,
+      searchValue: searchTerm ?? undefined,
       sportType: sportType ?? undefined,
       region: region,
       matchStatus: matchStatus ?? undefined
@@ -201,26 +206,9 @@ export default function MatchesPage() {
     }
     setDateRange(range)
 
-    getMatchDateCnt();
+    //getMatchDateCnt();
 
   }, [startDate])
-
-  // 초기 선택된 날짜 설정
-  // useEffect(() => {
-  //   if(ref.current) return;
-  //   ref.current = true;
-  //   // 처음 로드될 때만 오늘 날짜로 설정
-  //   const today = startOfDay(new Date())
-  //   setSelectedDate(today)
-  //   getMatchDatesScroll(today, 0);
-    
-  //   // 이미 날짜가 필터링되어 있다면 다시 필터링
-  //   if ( matches && matches?.length > 0) {
-  //     let filtered = [...matches]
-  //     filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), today))
-  //     setFilteredMatches(filtered)
-  //   }
-  // }, [selectedDate])
 
   // 지난 날짜의 매치 비활성화 처리
   useEffect(() => {
@@ -375,7 +363,8 @@ export default function MatchesPage() {
 const goMatchDetail = (matchId: number) => {
 
   const payload = JSON.stringify({
-    matches: filteredMatches
+    matchDates: matchDate
+    ,  matches: filteredMatches
     , page: page
     , hasMore: hasMore
     , selectedDate: selectedDate
@@ -508,7 +497,7 @@ const goMatchDetail = (matchId: number) => {
             <div className="relative">
               <Input
                 placeholder="시설명 또는 위치 검색"
-                value={searchTerm}
+                value={searchTerm ?? undefined}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />

@@ -406,7 +406,6 @@ export default function AdminDashboardPage() {
                   <TableHead className="hidden md:table-cell">시간</TableHead>
                   <TableHead>상태</TableHead>
                   <TableHead className="hidden md:table-cell">금액</TableHead>
-                  <TableHead className="text-left">액션</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -431,12 +430,6 @@ export default function AdminDashboardPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{reservation.totalPrice.toLocaleString()}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="h-8 px-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50">
-                        <Eye className="h-4 w-4 mr-1" />
-                        <span className="hidden md:inline">상세</span>
-                      </Button>
-                    </TableCell>
                   </TableRow>
                 )) : (
                   <TableRow>

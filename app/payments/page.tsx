@@ -78,6 +78,7 @@ export default function PaymentsPage() {
       requestAnimationFrame(() => window.scrollTo(0, scrollY));
     } else {
       getPaymentHist(activeTab, 0);
+      window.scrollTo(0, 0);
     }
 
     restoredRef.current = true;
