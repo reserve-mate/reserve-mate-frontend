@@ -40,6 +40,8 @@ export default function MatchesPage() {
   const [loading, setLoading] = useState(false); // loading 없는 경우 중복 요청, ui깨짐, 데이터 덮어쓰기 에러 발생
   const [isError, setIsError] = useState(false);
 
+  const [isRestored, setIsRestored] = useState(false);
+
   // 날짜별 매치 개수 조회
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [dateRange, setDateRange] = useState<Date[]>([])
@@ -80,6 +82,7 @@ export default function MatchesPage() {
       setMatches(matches as MatchList[]);
       setPage(page);
       setHasMore(hasMore);
+      setIsRestored(true);
 
       savedScrollRef.current = scrollY;
       requestAnimationFrame(() => window.scrollTo(0, scrollY));
@@ -90,12 +93,7 @@ export default function MatchesPage() {
       getMatchDateCnt();  // 날짜별 매치 카운트
       getMatchDatesScroll(today, 0);
 
-      // 이미 날짜가 필터링되어 있다면 다시 필터링
-      if ( matches && matches?.length > 0) {
-        let filtered = [...matches]
-        filtered = filtered.filter((match) => isSameDay(parseISO(match.matchDate), today))
-        setFilteredMatches(filtered)
-      }
+      setIsRestored(true);
     }
     
   }, [selectedDate])
@@ -169,8 +167,7 @@ export default function MatchesPage() {
   }
 
   useEffect(() => {
-    if( !hasMore || loading || isError ) return;  // 더이상 데이터가 없거나 데이터를 불러오는 중인 경우 중단
-
+    if(!isRestored || !hasMore || loading || isError ) return;  // 더이상 데이터가 없거나 데이터를 불러오는 중인 경우 중단
     const observer = new IntersectionObserver(
       (entries) => {
         if(entries[0].isIntersecting){
@@ -189,7 +186,7 @@ export default function MatchesPage() {
       }
     }
 
-  }, [ page, hasMore, loading ]);
+  }, [ isRestored, page, hasMore, loading ]);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -206,31 +203,13 @@ export default function MatchesPage() {
     }
     setDateRange(range)
 
-    //getMatchDateCnt();
+  }, [isRestored, startDate])
 
+  // 이전, 오늘, 다음 버튼 클릭 시 날짜별 매치 개수 세팅
+  useEffect(() => {
+    if (!isRestored) return;
+    getMatchDateCnt();
   }, [startDate])
-
-  // 지난 날짜의 매치 비활성화 처리
-  useEffect(() => {
-    const today = startOfDay(new Date())
-    
-    // 매치 데이터를 복사하여 날짜가 지난 매치의 상태를 '종료'로 변경
-    const updatedMatches = matches.map(match => {
-      const matchDate = parseISO(match.matchDate)
-      if (matchDate < today) {
-        return { ...match, status: "END" as const }
-      }
-      return match
-    })
-    
-  }, [])
-
-  // 검색 및 필터링 처리
-  useEffect(() => {
-    let filtered = [...matches]
-
-    setFilteredMatches(filtered)
-  }, [matches, selectedDate])
 
   const applyFilter = () => {
     let filtered = [...matches];
@@ -291,7 +270,7 @@ export default function MatchesPage() {
   
   // 시간순으로 정렬된 그룹화된 매치
   const sortedGroupedMatches = (): [string, MatchList[]][] => {
-    const grouped = groupMatchesByTime(filteredMatches);
+    const grouped = groupMatchesByTime(matches);
     
     // 시간을 키로 정렬
     return Object.entries(grouped).sort((a, b) => {
@@ -364,7 +343,7 @@ const goMatchDetail = (matchId: number) => {
 
   const payload = JSON.stringify({
     matchDates: matchDate
-    ,  matches: filteredMatches
+    ,  matches: matches
     , page: page
     , hasMore: hasMore
     , selectedDate: selectedDate
@@ -540,7 +519,7 @@ const goMatchDetail = (matchId: number) => {
 
       {/* 날짜별 매치 목록 */}
       <div className="mt-4">
-        {( filteredMatches && filteredMatches?.length) > 0 ? (
+        {( matches && matches?.length) > 0 ? (
           <div className="space-y-8">
             {sortedGroupedMatches().map(([timeSlot, matches]) => (
               <div key={timeSlot} className="space-y-4">
