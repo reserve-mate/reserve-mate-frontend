@@ -76,12 +76,10 @@ interface FacilityListResponse {
 // 시설 서비스
 export const facilityService = {
   // 시설 목록 조회
-  getFacilities: async(data:{SportType: string| null, keyword: string, minPrice: number, maxPrice: number, lastId: number, size: number}) => {
+  getFacilities: async(data:{sportType: string| null, keyword: string, minPrice: number, maxPrice: number, lastId: number, size: number}) => {
     return api.get<FacilitiesResponse>("/facility/list",{
       params: data,
     })
-    // console.log("시설찾기 service data: ", JSON.stringify(response, null, 2));
-    // return response.content;
   },
   // 시설 목록 조회(관리자 전용)
   getAdminFacilities: async(data:{ keyword : string; lastId : string | null; size : string}) => {
@@ -115,14 +113,12 @@ export const facilityService = {
   // 시설 상세 조회
   getFacility: async (id: number) => {
     const response = await api.get<Facility>(`/admin/facilities/${id}`);
-    console.log(response);
     return response;
   },
 
   // 시설 이름,스포츠타입 조회
   getFacilitySportType: async (id: number) => {
     const response = await api.get<Facility>(`/facility/name/type/${id}`)
-    console.log(response);
     return response;
   },
 
@@ -135,7 +131,6 @@ export const facilityService = {
   // 시설 등록 (관리자 전용)
   createFacility: (data: CreateFacilityRequest) => {
     const formData = new FormData();
-    console.log(data.images);
     // JSON 데이터를 FormData에 추가
     const facilityData = {
       name: data.name,
@@ -166,10 +161,9 @@ export const facilityService = {
           isMain: index === 0 // 첫번째 이미지를 메인으로
         })
       });
+
       // 이미지 상세 정보 추가
       formData.append(`imageMeta`, new Blob([JSON.stringify(imageMeta)], {type: 'application/json'}));
-      console.log(formData);
-    
     }
     return api.post<Facility>('/admin/facilities', formData) 
     

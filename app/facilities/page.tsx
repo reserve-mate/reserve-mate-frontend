@@ -64,30 +64,69 @@ export default function FacilitiesPage() {
     handleSearch()
   },[])
 
-  // 검색 처리
-  const handleSearch = async() => {
+  //스크롤 감지 이벤트 추가
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY
+      const innerHeight = window.innerHeight
+      const offsetHeight = document.documentElement.offsetHeight
+  
+      if (scrollY + innerHeight >= offsetHeight - 100) {
+        loadMoreFacilities()
+      }
+    }
+  
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [lastId, hasMore, loading])
+
+  // 페이징 처리
+  const loadMoreFacilities = async () => {
+    if (loading || !hasMore) return
+  
     try {
-      // 실제 구현에서는 API 호출을 통해 검색 결과를 가져옵니다
+      setLoading(true)
       const response = await facilityService.getFacilities({
-        SportType: sportType === "ALL" ? null : sportType,
+        sportType: sportType === "ALL" || sportType === "" ? null : sportType,
         minPrice: Number(minPrice) * 10000,
         maxPrice: Number(maxPrice) * 10000,
         keyword: searchTerm,
         lastId: lastId,
         size: PAGE_SIZE,
       })
-      console.log("시설목록----------");
-      console.log(response);
-      /*
-      const filtered = dummyFacilities.filter((facility) => {
-        const matchesSearch =
-          facility.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          facility.address.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesSport = sportType === "" || sportType === "all" || facility.sportType === sportType
 
-        return matchesSearch && matchesSport
+      setFacilities((prev) => [...prev, ...response.content]) // 👉 추가
+      if (response.content.length > 0) {
+        const lastCourt = response.content[response.content.length - 1]
+        setLastId(lastCourt.courtId)
+      }
+      setHasMore(!response.last)
+    } catch (error) {
+      console.log(error)
+      toast({
+        title: "시설 목록 오류 발생",
+        description: "시설 목록을 가져오는 중 오류가 발생했습니다.",
+        variant: "destructive"
       })
-      */  
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  // 검색 처리
+  const handleSearch = async() => {
+    try {
+      setLoading(true)
+      
+      // 실제 구현에서는 API 호출을 통해 검색 결과를 가져옵니다
+      const response = await facilityService.getFacilities({
+        sportType: sportType === "ALL" || sportType === "" ? null : sportType,
+        minPrice: Number(minPrice) * 10000,
+        maxPrice: Number(maxPrice) * 10000,
+        keyword: searchTerm,
+        lastId: 0,  //초기화
+        size: PAGE_SIZE,
+      })
 
       setFacilities(response.content)
       if (response.content.length > 0) {
@@ -167,7 +206,7 @@ export default function FacilitiesPage() {
                   <SelectValue placeholder="스포츠 종류" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">전체</SelectItem>
+                  <SelectItem value="ALL">전체</SelectItem>
                   {sportTypes.map((type) => (
                     <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
                   ))}
@@ -236,7 +275,7 @@ export default function FacilitiesPage() {
       {/* 시설 목록 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {facilities.map((facility) => (
-          <Card key={facility.facilityId} className="styled-card h-full">
+          <Card key={`${facility.facilityId}-${facility.courtId}`} className="styled-card h-full">
             <div className="relative h-48">
               <Image
                 src={facility.imageUrl ? `/uploads${facility.imageUrl}` : "/placeholder.svg"}
@@ -253,7 +292,6 @@ export default function FacilitiesPage() {
                 </div>
                 <div className="flex items-center">
                   <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
-                  {/* <span className="text-sm">{facility.rating}</span> */}
                 </div>
               </div>
               <div className="flex items-start mb-2">
@@ -263,14 +301,13 @@ export default function FacilitiesPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">
                   {sportTypes.find((type) => type.value === facility.sportType)?.label ?? facility.sportType}
-                  {/* {facility.sportType} */}
                 </span>
                 <span className="text-sm text-gray-500">{facility.fee} 원</span>
               </div>
             </CardContent>
             <CardFooter className="p-5 pt-0">
               <Button asChild className="w-full primary-button">
-                <Link href={`/facilities/${facility.facilityId}/${facility.courtId}`}>예약하기</Link>
+                <Link href={`/facilities/${facility.courtId}`}>예약하기</Link>
               </Button>
             </CardFooter>
           </Card>
