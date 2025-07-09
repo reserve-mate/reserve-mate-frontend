@@ -24,8 +24,11 @@ export const reservationService = {
     },
 
     // 관리자 예약현황
-    getAdminReservations: (params: {searchTerm: string, reserveStatus: string, facility: number, searchDate: string, pageNum: number}) => {
+    getAdminReservations: (params: {searchTerm: string | null, reserveStatus: string, facility: number, searchDate: string, pageNum: number}) => {
         let endPoint = `/admin/reservation/reservations?searchTerm=${params.searchTerm}&reserveStatus=${params.reserveStatus}&facility=${params.facility}&searchDate=${params.searchDate}&pageNum=${params.pageNum}`;
+        if(!params.searchTerm) {
+            endPoint = `/admin/reservation/reservations?reserveStatus=${params.reserveStatus}&facility=${params.facility}&searchDate=${params.searchDate}&pageNum=${params.pageNum}`;
+        }
         return api.get<Slice<AdminReservationResponse>>(endPoint);
     },
 

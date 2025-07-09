@@ -85,13 +85,12 @@ export default function AdminReservationStatus({ selectedFacilityId }: Reservati
   const [isLoading, setIsLoading] = useState(false)
   const [reservations, setReservations] = useState<Reservation[]>([])
   
-  const [statusFilter, setStatusFilter] = useState<string>("");
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
   const [selectedReservation, setSelectedReservation] = useState<AdminReservationResponse | null>(null)
 
   // 검색 조건
   const [tabValue, setTabValue] = useState<"ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED">("ALL");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [facilityNames, setFacilityNames] = useState<FacilityNames[]>([]);
   const [selectFacility, setSelectFacility] = useState<string>("all");
@@ -112,7 +111,7 @@ export default function AdminReservationStatus({ selectedFacilityId }: Reservati
     if(isLoading) return;
     setIsLoading(true);
     const searchParam = {
-      searchTerm: searchTerm,
+      searchTerm: searchTerm ?? null,
       reserveStatus: (type === "ALL") ? "" : type,
       facility: isNaN(parseInt(selectFacility)) ? 0 : parseInt(selectFacility),
       searchDate: (date) ? format(date, "yyyy-MM-dd") : "",
@@ -311,7 +310,7 @@ export default function AdminReservationStatus({ selectedFacilityId }: Reservati
                 <Input
                   placeholder="고객명, 시설명 검색"
                   className="pl-8"
-                  value={searchTerm}
+                  value={searchTerm ?? undefined}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
