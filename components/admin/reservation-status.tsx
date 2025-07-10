@@ -579,10 +579,9 @@ function ReservationTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>예약 ID</TableHead>
+            <TableHead>예약일시</TableHead>
             <TableHead>고객명</TableHead>
             <TableHead>시설/코트</TableHead>
-            <TableHead>예약일시</TableHead>
             <TableHead>상태</TableHead>
             <TableHead>결제</TableHead>
             <TableHead className="text-right">관리</TableHead>
@@ -591,7 +590,12 @@ function ReservationTable({
         <TableBody>
           {reservations.map((reservation) => (
             <TableRow key={reservation.reservationId}>
-              <TableCell className="font-medium">#{reservation.reservationId}</TableCell>
+              <TableCell>
+                <div>{format(new Date(reservation.reservationDate), 'yyyy-MM-dd (EEE)', { locale: ko })}</div>
+                <div className="text-xs text-gray-500">
+                  {timeFormat(reservation.startTime)} - {timeFormat(reservation.endTime)}
+                </div>
+              </TableCell>
               <TableCell>{reservation.userName}</TableCell>
               <TableCell>
                 <div>{reservation.facilityName
@@ -600,12 +604,6 @@ function ReservationTable({
                     : reservation.facilityName
                   : ""}</div>
                 <div className="text-xs text-gray-500">{reservation.courtName}</div>
-              </TableCell>
-              <TableCell>
-                <div>{format(new Date(reservation.reservationDate), 'yyyy-MM-dd (EEE)', { locale: ko })}</div>
-                <div className="text-xs text-gray-500">
-                  {timeFormat(reservation.startTime)} - {timeFormat(reservation.endTime)}
-                </div>
               </TableCell>
               <TableCell>
                 <Badge className={getStatusBadgeStyle(reservation.reservationStatus)}>
