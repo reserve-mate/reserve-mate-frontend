@@ -85,13 +85,12 @@ export default function AdminReservationStatus({ selectedFacilityId }: Reservati
   const [isLoading, setIsLoading] = useState(false)
   const [reservations, setReservations] = useState<Reservation[]>([])
   
-  const [statusFilter, setStatusFilter] = useState<string>("");
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
   const [selectedReservation, setSelectedReservation] = useState<AdminReservationResponse | null>(null)
 
   // 검색 조건
   const [tabValue, setTabValue] = useState<"ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED">("ALL");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [facilityNames, setFacilityNames] = useState<FacilityNames[]>([]);
   const [selectFacility, setSelectFacility] = useState<string>("all");
@@ -112,7 +111,7 @@ export default function AdminReservationStatus({ selectedFacilityId }: Reservati
     if(isLoading) return;
     setIsLoading(true);
     const searchParam = {
-      searchTerm: searchTerm,
+      searchTerm: searchTerm ?? null,
       reserveStatus: (type === "ALL") ? "" : type,
       facility: isNaN(parseInt(selectFacility)) ? 0 : parseInt(selectFacility),
       searchDate: (date) ? format(date, "yyyy-MM-dd") : "",
@@ -311,7 +310,7 @@ export default function AdminReservationStatus({ selectedFacilityId }: Reservati
                 <Input
                   placeholder="고객명, 시설명 검색"
                   className="pl-8"
-                  value={searchTerm}
+                  value={searchTerm ?? undefined}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
@@ -397,7 +396,7 @@ export default function AdminReservationStatus({ selectedFacilityId }: Reservati
       {(reservationDetail) && (
         <>
           <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[60vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>예약 세부 정보</DialogTitle>
                 <DialogDescription>
@@ -497,37 +496,8 @@ export default function AdminReservationStatus({ selectedFacilityId }: Reservati
               )}
               
               <DialogFooter className="flex flex-col sm:flex-row gap-2">
-                {reservationDetail.reservationStatus === "PENDING" && (
+                {(reservationDetail.reservationStatus === "PENDING" || reservationDetail.reservationStatus === "CONFIRMED") && (
                   <>
-                    <Button
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CONFIRMED" as ReservationStatus)}
-                      disabled={isLoading}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      예약 확정
-                    </Button>
-                    <Button
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CANCELED" as ReservationStatus)}
-                      disabled={isLoading}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      예약 취소
-                    </Button>
-                  </>
-                )}
-                
-                {reservationDetail.reservationStatus === "CONFIRMED" && (
-                  <>
-                    <Button
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "COMPLETED" as ReservationStatus)}
-                      disabled={isLoading}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      이용 완료
-                    </Button>
                     <Button
                       className="bg-red-600 hover:bg-red-700 text-white"
                       onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CANCELED" as ReservationStatus)}
@@ -580,10 +550,9 @@ function ReservationTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>예약 ID</TableHead>
+            <TableHead>예약일시</TableHead>
             <TableHead>고객명</TableHead>
             <TableHead>시설/코트</TableHead>
-            <TableHead>예약일시</TableHead>
             <TableHead>상태</TableHead>
             <TableHead>결제</TableHead>
             <TableHead className="text-right">관리</TableHead>
@@ -592,7 +561,12 @@ function ReservationTable({
         <TableBody>
           {reservations.map((reservation) => (
             <TableRow key={reservation.reservationId}>
-              <TableCell className="font-medium">#{reservation.reservationId}</TableCell>
+              <TableCell>
+                <div>{format(new Date(reservation.reservationDate), 'yyyy-MM-dd (EEE)', { locale: ko })}</div>
+                <div className="text-xs text-gray-500">
+                  {timeFormat(reservation.startTime)} - {timeFormat(reservation.endTime)}
+                </div>
+              </TableCell>
               <TableCell>{reservation.userName}</TableCell>
               <TableCell>
                 <div>{reservation.facilityName
@@ -601,12 +575,6 @@ function ReservationTable({
                     : reservation.facilityName
                   : ""}</div>
                 <div className="text-xs text-gray-500">{reservation.courtName}</div>
-              </TableCell>
-              <TableCell>
-                <div>{format(new Date(reservation.reservationDate), 'yyyy-MM-dd (EEE)', { locale: ko })}</div>
-                <div className="text-xs text-gray-500">
-                  {timeFormat(reservation.startTime)} - {timeFormat(reservation.endTime)}
-                </div>
               </TableCell>
               <TableCell>
                 <Badge className={getStatusBadgeStyle(reservation.reservationStatus)}>
