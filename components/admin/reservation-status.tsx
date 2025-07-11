@@ -396,7 +396,7 @@ export default function AdminReservationStatus({ selectedFacilityId }: Reservati
       {(reservationDetail) && (
         <>
           <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[60vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>예약 세부 정보</DialogTitle>
                 <DialogDescription>
@@ -496,37 +496,8 @@ export default function AdminReservationStatus({ selectedFacilityId }: Reservati
               )}
               
               <DialogFooter className="flex flex-col sm:flex-row gap-2">
-                {reservationDetail.reservationStatus === "PENDING" && (
+                {(reservationDetail.reservationStatus === "PENDING" || reservationDetail.reservationStatus === "CONFIRMED") && (
                   <>
-                    <Button
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CONFIRMED" as ReservationStatus)}
-                      disabled={isLoading}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      예약 확정
-                    </Button>
-                    <Button
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CANCELED" as ReservationStatus)}
-                      disabled={isLoading}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      예약 취소
-                    </Button>
-                  </>
-                )}
-                
-                {reservationDetail.reservationStatus === "CONFIRMED" && (
-                  <>
-                    <Button
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                      onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "COMPLETED" as ReservationStatus)}
-                      disabled={isLoading}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      이용 완료
-                    </Button>
                     <Button
                       className="bg-red-600 hover:bg-red-700 text-white"
                       onClick={() => updateReservationStatus(reservationDetail.reservationId.toString(), "CANCELED" as ReservationStatus)}

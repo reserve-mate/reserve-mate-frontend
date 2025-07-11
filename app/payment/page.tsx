@@ -308,23 +308,6 @@ function PaymentContent() {
                 <span className="text-indigo-600">{totalPrice.toLocaleString()}원</span>
               </div>
 
-              <div className="pt-4">
-                <h4 className="font-medium mb-3">결제 수단</h4>
-                <div className="space-y-2">
-                  <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="card"
-                      defaultChecked
-                      className="mr-3"
-                    />
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    <span>신용카드</span>
-                  </label>
-                </div>
-              </div>
-
               <Button
                 onClick={handlePayment}
                 disabled={isProcessing}
