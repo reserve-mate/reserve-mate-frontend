@@ -6,6 +6,14 @@ export enum ReviewType {
     RESERVATION = "RESERVATION"
 }
 
+// 시설 상세 리뷰
+export interface FacilityDetailReview {
+    id: number;
+    rating: number;
+    title: string;
+    content: string;
+}
+
 // 내가 쓴 리뷰 목록
 export interface MyReviewListResponse {
     reviewId: number;

@@ -1,5 +1,33 @@
 import { CourtType } from "../enum/courtEnum";
 import { SportType } from "../enum/matchEnum";
+import { FacilityDetailReview } from "./reviewTypes";
+
+// 시설 상세
+export interface FacilityDetail {
+    facilityId: number;
+    facilityName: string;
+    sportType: SportType;
+    address: string;
+    description: string;
+    hours: OperatingHours[];
+    courts: Court[];
+    reviews: FacilityDetailReview[];
+    managerPhoneNumber: string;
+    imageUrl: string;
+    rating: number;
+}
+
+// 시설 상세 코트
+interface Court {
+    id: number;
+    name: string;
+    courtType: CourtType;
+    width: number;
+    height: number;
+    indoor: boolean;
+    active: boolean;
+    fee: number;
+}
 
 export interface ReviewFacility {
     facilityName: string;
@@ -81,4 +109,28 @@ export interface Facilities {
     courtName : string;
     fee : number;
     imageUrl : string;
+}
+
+// 요일 한글화
+export const displayDayOfWeek = (dayOfWeek: string) => {
+
+    switch (dayOfWeek) {
+    case "MONDAY":
+        return "월요일";
+    case "TUESDAY":
+        return "화요일";
+    case "WEDNESDAY":
+        return "수요일";
+    case "THURSDAY":
+        return "목요일";
+    case "FRIDAY":
+        return "금요일";
+    case "SATURDAY":
+        return "토요일";
+    case "SUNDAY":
+        return "일요일";
+    default:
+      return dayOfWeek; // 알 수 없는 값일 경우 원본 반환
+}
+
 }
