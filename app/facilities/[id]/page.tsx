@@ -8,52 +8,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar } from "@/components/ui/calendar"
-import { MapPin, Phone, Clock, Star, Info } from "lucide-react"
+import { MapPin, Phone, Clock, Star, Info, ChevronUp, ChevronDown } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
-
-// 시설 상세 데이터 타입
-type FacilityDetail = {
-  id: string
-  name: string
-  description: string
-  address: string
-  contactPhone: string
-  sportType: string
-  rating: number
-  operatingHours: string
-  priceRange: string
-  imageUrl: string
-  courts: Court[]
-}
-
-type Court = {
-  id: string
-  name: string
-  sportType: string
-  indoor: boolean
-}
-
-// 더미 데이터
-const dummyFacility: FacilityDetail = {
-  id: "1",
-  name: "서울 테니스 센터",
-  description: "최신 시설을 갖춘 실내외 테니스 코트입니다. 초보자부터 전문가까지 모두 이용 가능합니다.",
-  address: "서울시 강남구 테헤란로 123",
-  contactPhone: "02-123-4567",
-  sportType: "테니스",
-  rating: 4.5,
-  operatingHours: "평일 06:00 - 22:00, 주말 08:00 - 20:00",
-  priceRange: "20,000원 ~ 40,000원",
-  imageUrl: "/placeholder.svg?height=400&width=800",
-  courts: [
-    { id: "c1", name: "코트 A", sportType: "테니스", indoor: true },
-    { id: "c2", name: "코트 B", sportType: "테니스", indoor: true },
-    { id: "c3", name: "코트 C", sportType: "테니스", indoor: false },
-    { id: "c4", name: "코트 D", sportType: "테니스", indoor: false },
-  ],
-}
+import { facilityService } from "@/lib/services/facilityService"
+import { displayDayOfWeek, FacilityDetail } from "@/lib/types/facilityTypes"
+import { displaySportName } from "@/lib/types/matchTypes"
 
 // 시간 파싱 함수
 const parseOperatingHours = (operatingHours: string) => {
@@ -120,6 +81,8 @@ const formatTimeRange = (hours: number[]) => {
   return `${start.toString().padStart(2, "0")}:00 - ${end.toString().padStart(2, "0")}:00`
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sportmate.site/';
+
 export default function FacilityDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [date, setDate] = useState<Date | undefined>(new Date())
@@ -127,14 +90,37 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<number[]>([])
   const [timeSlots, setTimeSlots] = useState<Array<{id: number, display: string, hour: number}>>([])
 
-  // 실제 구현에서는 API를 통해 시설 정보를 가져옵니다
-  const facility = dummyFacility
+  // 시설 상세
+  const [facilityDetail, setFacilityDetail] = useState<FacilityDetail | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  // 시설 상세 초기화
+  useEffect(() => {
+
+    const getFacilityDetail = async () => {
+      try {
+        const response = await facilityService.getFacilityDetail(parseInt(params.id));
+        setFacilityDetail(response);
+      }catch(error) {
+        toast({
+          title: "조회 오류",
+          description: (error instanceof Error) ? error.message : "데이터를 불러오는 중 에러가 발생하였습니다.",
+          variant: "destructive",
+        })
+        router.back();
+      }
+      
+    }
+
+    getFacilityDetail();
+
+  }, [params.id])
   
   // 날짜가 변경될 때 가능한 시간 슬롯 업데이트
-  useEffect(() => {
-    setTimeSlots(generateTimeSlots(date, facility.operatingHours))
-    setSelectedTimeSlots([]) // 날짜가 변경되면 선택된 시간 초기화
-  }, [date, facility.operatingHours])
+  // useEffect(() => {
+  //   setTimeSlots(generateTimeSlots(date, facility.operatingHours))
+  //   setSelectedTimeSlots([]) // 날짜가 변경되면 선택된 시간 초기화
+  // }, [date, facility.operatingHours])
 
   const handleTimeSlotClick = (hour: number) => {
     const newSelectedSlots = selectedTimeSlots.includes(hour)
@@ -175,27 +161,35 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
     }
 
     // 예약 정보를 세션에 저장하거나 상태 관리 라이브러리에 저장
-    const reservationData = {
-      facilityId: facility.id,
-      facilityName: facility.name,
-      courtId: selectedCourt,
-      courtName: facility.courts.find((c) => c.id === selectedCourt)?.name,
-      date: date.toISOString().split("T")[0],
-      timeSlots: selectedTimeSlots,
-      timeRange: formatTimeRange(selectedTimeSlots),
-      duration: selectedTimeSlots.length,
-    }
+    // const reservationData = {
+    //   facilityId: facility.id,
+    //   facilityName: facility.name,
+    //   courtId: selectedCourt,
+    //   courtName: facility.courts.find((c) => c.id === selectedCourt)?.name,
+    //   date: date.toISOString().split("T")[0],
+    //   timeSlots: selectedTimeSlots,
+    //   timeRange: formatTimeRange(selectedTimeSlots),
+    //   duration: selectedTimeSlots.length,
+    // }
 
     // 결제 페이지로 이동
-    router.push(`/payment?data=${encodeURIComponent(JSON.stringify(reservationData))}`)
+    // router.push(`/payment?data=${encodeURIComponent(JSON.stringify(reservationData))}`)
   }
 
   const goReviewLsit = async () => {
     sessionStorage.removeItem("facility-review-list");
     await Promise.resolve();
-    router.push(`/facilities/${facility.id}/reviews`);
+    router.push(`/facilities/${facilityDetail?.facilityId}/reviews`);
   }
 
+  // 시설 평점
+  const formatTime = (time: string | null) => {
+    if(time) {
+      return time.replace(/^(\d{2}:\d{2}):\d{2}$/, "$1");
+    }
+  }
+
+  if(facilityDetail)
   return (
     <div className="w-full bg-background py-6 md:py-8">
       <div className="container max-w-6xl mx-auto px-4 sm:px-6">
@@ -203,72 +197,73 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
           {/* 시설 정보 */}
           <div className="lg:col-span-2 space-y-6">
             <div className="relative h-64 md:h-96 rounded-lg overflow-hidden">
-              <Image src={facility.imageUrl || "/placeholder.svg"} alt={facility.name} fill className="object-cover" />
+              <Image src={facilityDetail.imageUrl ? API_BASE_URL.slice(0, -1) + facilityDetail.imageUrl : "https://images.unsplash.com/photo-1626224583764-f88b815bad2a?q=80&w=1024"} alt={facilityDetail.facilityName} fill className="object-cover" />
             </div>
 
             <div>
-              <h1 className="text-3xl font-bold mb-2">{facility.name}</h1>
+              <h1 className="text-3xl font-bold mb-2">{facilityDetail.facilityName}</h1>
               <div className="flex items-center mb-4">
                 <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 mr-1" />
-                <span className="font-medium mr-2">{facility.rating}</span>
-                <span className="text-gray-500">| {facility.sportType}</span>
+                <span className="font-medium mr-2">{facilityDetail.rating.toFixed(1)}</span>
+                <span className="text-gray-500">| {displaySportName(facilityDetail.sportType)}</span>
               </div>
 
               <div className="space-y-3">
                 <div className="flex items-start">
                   <MapPin className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-                  <span>{facility.address}</span>
+                  <span>{facilityDetail.address}</span>
                 </div>
                 <div className="flex items-start">
                   <Phone className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-                  <span>{facility.contactPhone}</span>
+                  <span>{facilityDetail.managerPhoneNumber}</span>
                 </div>
-                <div className="flex items-start">
-                  <Clock className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-                  <span>{facility.operatingHours}</span>
-                </div>
-                <div className="flex items-start">
-                  <Info className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-                  <span>{facility.description}</span>
+                <div className="flex flex-col items-start">
+                  <div
+                    className="flex items-start cursor-pointer"
+                    onClick={() => setExpanded(!expanded)}
+                  >
+                    <Clock className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
+                    <span>운영시간</span>
+                    {expanded ? (
+                      <ChevronUp className="h-4 w-4 text-gray-500 mt-[2px] ml-1" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-gray-500 mt-[2px] ml-1" />
+                    )}
+                  </div>
+
+                  {expanded && (
+                    <ul className="ml-7 mt-1 text-gray-700">
+                      {facilityDetail.hours.map((hour, idx) => (
+                        <li key={idx}>
+                          {displayDayOfWeek(hour.dayOfWeek)}: {formatTime(hour.openTime)} ~ {formatTime(hour.closeTime)}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
             </div>
 
             <Tabs defaultValue="info">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-1">
                 <TabsTrigger value="info">시설 정보</TabsTrigger>
-                <TabsTrigger value="price">가격 정보</TabsTrigger>
               </TabsList>
               <TabsContent value="info" className="p-4">
                 <h3 className="text-lg font-semibold mb-2">시설 정보</h3>
-                <p className="mb-4">{facility.description}</p>
+                <p className="mb-4">{facilityDetail.description ?? "시설에 대한 설명이 아직 등록되지 않았습니다."}</p>
 
                 <h4 className="font-medium mb-2">코트 정보</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {facility.courts.map((court) => (
+                  {facilityDetail.courts.map((court) => (
                     <Card key={court.id}>
                       <CardContent className="p-4">
                         <h5 className="font-medium">{court.name}</h5>
                         <p className="text-sm text-gray-500">
-                          {court.indoor ? "실내" : "실외"} | {court.sportType}
+                          {court.indoor ? "실내" : "실외"} | {court.courtType} | {court.fee.toLocaleString()}원
                         </p>
                       </CardContent>
                     </Card>
                   ))}
-                </div>
-              </TabsContent>
-              <TabsContent value="price" className="p-4">
-                <h3 className="text-lg font-semibold mb-2">가격 정보</h3>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium">평일</h4>
-                    <p className="text-sm text-gray-500">06:00 - 18:00: 20,000원/시간</p>
-                    <p className="text-sm text-gray-500">18:00 - 22:00: 30,000원/시간</p>
-                  </div>
-                  <div>
-                    <h4 className="font-medium">주말 및 공휴일</h4>
-                    <p className="text-sm text-gray-500">08:00 - 20:00: 40,000원/시간</p>
-                  </div>
                 </div>
               </TabsContent>
             </Tabs>
@@ -284,34 +279,24 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
                 </button>
               </div>
               <div className="space-y-3">
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center mb-2">
-                    <span className="font-medium mr-2">김철수</span>
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`h-3 w-3 ${star <= 4 ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
-                        />
-                      ))}
+                {facilityDetail.reviews.length > 0 ? facilityDetail.reviews.map((review) => (
+                  <div key={review.id} className="border rounded-lg p-4">
+                    <div className="flex items-center mb-2">
+                      <span className="font-medium mr-2">{review.title}</span>
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`h-3 w-3 ${star <= review.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
+                          />
+                        ))}
+                      </div>
                     </div>
+                    <p className="text-sm text-gray-600">{review.content}</p>
                   </div>
-                  <p className="text-sm text-gray-600">코트 상태가 좋고 직원분들이 친절해요. 다음에 또 이용할 예정입니다.</p>
-                </div>
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center mb-2">
-                    <span className="font-medium mr-2">이영희</span>
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`h-3 w-3 ${star <= 5 ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600">시설이 깨끗하고 위치도 좋아요. 주차 공간도 넉넉해서 편리했습니다.</p>
-                </div>
+                )) : (
+                  <p className="text-center">아직 등록된 리뷰가 없습니다.</p>
+                )}
               </div>
             </div>
           </div>
@@ -326,16 +311,14 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
                   <div>
                     <h3 className="text-sm font-medium mb-3">코트 선택</h3>
                     <div className="grid grid-cols-2 gap-3">
-                      {facility.courts.map((court) => (
+                      {facilityDetail.courts
+                      .filter((court) => court.id === parseInt(params.id))
+                      .map((court) => (
                         <Button
                           key={court.id}
                           type="button"
-                          onClick={() => setSelectedCourt(court.id)}
-                          className={`justify-start h-10 text-sm border ${
-                            selectedCourt === court.id 
-                              ? "bg-indigo-600 hover:bg-indigo-700 text-white border-transparent" 
-                              : "bg-white hover:bg-gray-50 text-gray-800 border-gray-200"
-                          } rounded-lg px-4 py-2 w-full`}
+                          //onClick={() => setSelectedCourt(court.id)}
+                          className={`justify-start h-10 text-sm border bg-white hover:bg-gray-50 text-gray-800 border-gray-200`}
                         >
                           {court.name}
                         </Button>
