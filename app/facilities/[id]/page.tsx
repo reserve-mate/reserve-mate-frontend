@@ -15,6 +15,7 @@ import { ko } from "date-fns/locale"
 import { facilityService } from "@/lib/services/facilityService"
 import { displayDayOfWeek, FacilityDetail } from "@/lib/types/facilityTypes"
 import { displaySportName } from "@/lib/types/matchTypes"
+import { reservationService } from "@/lib/services/reservationService"
 
 // 시간 파싱 함수
 const parseOperatingHours = (operatingHours: string) => {
@@ -90,6 +91,8 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<number[]>([])
   const [timeSlots, setTimeSlots] = useState<Array<{id: number, display: string, hour: number}>>([])
 
+  const [timeSlot, setTimeSlot] = useState<string[]>([]);
+
   // 시설 상세
   const [facilityDetail, setFacilityDetail] = useState<FacilityDetail | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -115,12 +118,31 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
     getFacilityDetail();
 
   }, [params.id])
-  
+
   // 날짜가 변경될 때 가능한 시간 슬롯 업데이트
-  // useEffect(() => {
-  //   setTimeSlots(generateTimeSlots(date, facility.operatingHours))
-  //   setSelectedTimeSlots([]) // 날짜가 변경되면 선택된 시간 초기화
-  // }, [date, facility.operatingHours])
+  useEffect(() => {
+    // setTimeSlots(generateTimeSlots(date, facility.operatingHours))
+    setSelectedTimeSlots([]) // 날짜가 변경되면 선택된 시간 초기화
+    // 예약 가능 시간 조회
+    const getPossibleHours = async () => {
+      try {
+        const formattedDate = date ? format(date, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");  // 날짜 포맷 수정
+        const response = await reservationService.getPossibleHours(parseInt(params.id), formattedDate);
+        setTimeSlot(response);
+        // setTimeSlots(generateTimeSlots(date, facility.operatingHours))
+      } catch (error) {
+        toast({
+          title: "조회 오류",
+          description: (error instanceof Error) ? error.message : "예약 가능 시간을 불러오는데 오류가 발생하였습니다.",
+          variant: "destructive",
+        })
+        setSelectedTimeSlots([]) // 날짜가 변경되면 선택된 시간 초기화
+      }
+      
+    }
+    
+    getPossibleHours();
+  }, [date])
 
   const handleTimeSlotClick = (hour: number) => {
     const newSelectedSlots = selectedTimeSlots.includes(hour)
@@ -176,17 +198,27 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
     // router.push(`/payment?data=${encodeURIComponent(JSON.stringify(reservationData))}`)
   }
 
+  // 시설 평점
+  const formatTime = (time: string | null) => {
+    if(time) {
+      return time.replace(/^(\d{2}:\d{2}):\d{2}$/, "$1");
+    }
+  }
+
   const goReviewLsit = async () => {
     sessionStorage.removeItem("facility-review-list");
     await Promise.resolve();
     router.push(`/facilities/${facilityDetail?.facilityId}/reviews`);
   }
 
-  // 시설 평점
-  const formatTime = (time: string | null) => {
-    if(time) {
-      return time.replace(/^(\d{2}:\d{2}):\d{2}$/, "$1");
-    }
+  // 시간 파싱
+  const parseHour = (time: string) => {
+    return parseInt(time.split(":")[0], 10);
+  }
+
+  // 시 표시용 포맷 변환
+  const formatDisplay = (time: string) => {
+    return time.slice(0, 5); // -> 00:00
   }
 
   if(facilityDetail)
@@ -383,22 +415,27 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
                         </p>
                       </div>
                     )}
-                    {timeSlots.length > 0 ? (
+                    {timeSlot.length > 0 ? (
                       <div className="grid grid-cols-2 gap-3 max-h-[240px] overflow-y-auto pr-1">
-                        {timeSlots.map((slot) => (
+                        {timeSlot.map((slot, index) => {
+                          
+                          const hour = parseHour(slot);
+                          const display = formatDisplay(slot);
+
+                          return (
                           <Button
-                            key={slot.id}
+                            key={index}
                             type="button"
-                            onClick={() => handleTimeSlotClick(slot.hour)}
+                            onClick={() => handleTimeSlotClick(hour)}
                             className={`justify-center h-12 text-sm border ${
-                              selectedTimeSlots.includes(slot.hour) 
+                              selectedTimeSlots.includes(hour) 
                                 ? "bg-indigo-600 hover:bg-indigo-700 text-white border-transparent" 
                                 : "bg-white hover:bg-gray-50 text-gray-800 border-gray-200"
                             } rounded-xl px-3 py-2 w-full transition-colors`}
                           >
-                            {slot.display}
+                            {display}
                           </Button>
-                        ))}
+                        )})}
                       </div>
                     ) : (
                       <p className="text-sm text-gray-500 p-4 border rounded-xl bg-gray-50">선택한 날짜에 예약 가능한 시간이 없습니다.</p>

@@ -37,6 +37,12 @@ export const reservationService = {
         return api.get<DashboardReservation[]>(`/admin/reservation/dashboardReservations?facilityId=${params.facilityId}&year=${params.year}&month=${params.month}`);
     },
 
+    // 예약 가능 시간 조회
+    getPossibleHours: (courtId: number, reserveDate: string) => {
+        let endPoint = `/reserve/reserveHours?courtId=${courtId}&reserveDate=${reserveDate}`;
+        return api.get<string[]>(endPoint);
+    },
+
     // 예약 취소
     cancelReservation: (params: {id: number, cancelReason: string}) => {
         let endPoint = `/reserve/cancel/${params.id}?cancelReason=${params.cancelReason}`;
