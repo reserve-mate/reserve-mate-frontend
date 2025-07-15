@@ -18,7 +18,7 @@ export interface FacilityDetail {
 }
 
 // 시설 상세 코트
-interface Court {
+export interface Court {
     id: number;
     name: string;
     courtType: CourtType;
