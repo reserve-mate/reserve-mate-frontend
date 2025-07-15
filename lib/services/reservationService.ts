@@ -40,7 +40,7 @@ export const reservationService = {
     // 에약 대기 생성
     pendingReservation: (params: {reserveDate: string, startTime: string, endTime: string, totalPrice: number, courtId: number}) => {
         let endPoint = `/reserve/saveReservation`;
-        return api.post(endPoint, params);
+        return api.post<number>(endPoint, params);
     },
 
     // 예약 가능 시간 조회

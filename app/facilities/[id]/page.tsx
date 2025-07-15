@@ -13,7 +13,7 @@ import { toast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 import { facilityService } from "@/lib/services/facilityService"
-import { Court, displayDayOfWeek, FacilityDetail } from "@/lib/types/facilityTypes"
+import { Court, displayDayOfWeek, FacilityDetail, getCourtTypeLabel } from "@/lib/types/facilityTypes"
 import { displaySportName } from "@/lib/types/matchTypes"
 import { reservationService } from "@/lib/services/reservationService"
 
@@ -324,7 +324,7 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
                       <CardContent className="p-4">
                         <h5 className="font-medium">{court.name}</h5>
                         <p className="text-sm text-gray-500">
-                          {court.indoor ? "실내" : "실외"} | {court.courtType} | {court.fee.toLocaleString()}원
+                          {court.indoor ? "실내" : "실외"} | {getCourtTypeLabel(court.courtType)} | {court.fee.toLocaleString()}원
                         </p>
                       </CardContent>
                     </Card>
