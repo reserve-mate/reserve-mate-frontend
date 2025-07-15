@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -13,8 +13,9 @@ import { toast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 import { facilityService } from "@/lib/services/facilityService"
-import { displayDayOfWeek, FacilityDetail } from "@/lib/types/facilityTypes"
+import { Court, displayDayOfWeek, FacilityDetail, getCourtTypeLabel } from "@/lib/types/facilityTypes"
 import { displaySportName } from "@/lib/types/matchTypes"
+import { reservationService } from "@/lib/services/reservationService"
 
 // 시간 파싱 함수
 const parseOperatingHours = (operatingHours: string) => {
@@ -88,11 +89,15 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null)
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<number[]>([])
-  const [timeSlots, setTimeSlots] = useState<Array<{id: number, display: string, hour: number}>>([])
+
+  const [timeSlot, setTimeSlot] = useState<string[]>([]);
 
   // 시설 상세
   const [facilityDetail, setFacilityDetail] = useState<FacilityDetail | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [selectCourt, setSelectCourt] = useState<Court | null>(null);
+
+  const timeSlotRef = useRef<HTMLDivElement | null>(null);
 
   // 시설 상세 초기화
   useEffect(() => {
@@ -114,13 +119,45 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
 
     getFacilityDetail();
 
-  }, [params.id])
-  
+  }, [params.id]);
+
+  useEffect(() => {
+    if(facilityDetail && facilityDetail.courts.length > 0) {
+      const targetCourt = facilityDetail.courts.find(
+        (court) => parseInt(params.id) === court.id
+      );
+
+      if(targetCourt) {
+        setSelectCourt(targetCourt);
+      }
+    }
+  }, [facilityDetail, params.id])
+
   // 날짜가 변경될 때 가능한 시간 슬롯 업데이트
-  // useEffect(() => {
-  //   setTimeSlots(generateTimeSlots(date, facility.operatingHours))
-  //   setSelectedTimeSlots([]) // 날짜가 변경되면 선택된 시간 초기화
-  // }, [date, facility.operatingHours])
+  useEffect(() => {
+    setSelectedTimeSlots([]) // 날짜가 변경되면 선택된 시간 초기화
+    if(timeSlotRef.current) {
+      timeSlotRef.current.scrollTop = 0;
+    }
+    // 예약 가능 시간 조회
+    const getPossibleHours = async () => {
+      try {
+        const formattedDate = date ? format(date, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");  // 날짜 포맷 수정
+        const response = await reservationService.getPossibleHours(parseInt(params.id), formattedDate);
+        setTimeSlot(response);
+      } catch (error) {
+        toast({
+          title: "조회 오류",
+          description: (error instanceof Error) ? error.message : "예약 가능 시간을 불러오는데 오류가 발생하였습니다.",
+          variant: "destructive",
+        })
+        setSelectedTimeSlots([]) // 날짜가 변경되면 선택된 시간 초기화
+      }
+      
+    }
+    
+    getPossibleHours();
+  }, [date])
 
   const handleTimeSlotClick = (hour: number) => {
     const newSelectedSlots = selectedTimeSlots.includes(hour)
@@ -150,8 +187,8 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
     setSelectedTimeSlots(newSelectedSlots)
   }
 
-  const handleReservation = () => {
-    if (!selectedCourt || selectedTimeSlots.length === 0 || !date) {
+  const handleReservation = async () => {
+    if (selectedTimeSlots.length === 0 || !date) {
       toast({
         title: "예약 정보 부족",
         description: "코트, 날짜, 시간을 모두 선택해주세요.",
@@ -160,20 +197,39 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
       return
     }
 
-    // 예약 정보를 세션에 저장하거나 상태 관리 라이브러리에 저장
-    // const reservationData = {
-    //   facilityId: facility.id,
-    //   facilityName: facility.name,
-    //   courtId: selectedCourt,
-    //   courtName: facility.courts.find((c) => c.id === selectedCourt)?.name,
-    //   date: date.toISOString().split("T")[0],
-    //   timeSlots: selectedTimeSlots,
-    //   timeRange: formatTimeRange(selectedTimeSlots),
-    //   duration: selectedTimeSlots.length,
-    // }
+    // 예약 정보
+    const reservationData = {
+      reserveDate: format(date, "yyyy-MM-dd"),
+      startTime: `${selectedTimeSlots[0]}:00`,  // 사용 시작 시간
+      endTime: `${selectedTimeSlots[selectedTimeSlots.length - 1] + 1}:00`, // 사용 종료 시간
+      totalPrice: selectCourt ? selectCourt.fee * selectedTimeSlots.length : 0,
+      courtId: parseInt(params.id)
+    }
 
-    // 결제 페이지로 이동
-    // router.push(`/payment?data=${encodeURIComponent(JSON.stringify(reservationData))}`)
+    try {
+      const response = await reservationService.pendingReservation(reservationData);
+
+      toast({
+        title: "예약 오류",
+        description: "예약 대기가 등록되었습니다.",
+      })
+
+      router.push(`/reservations/${response}`);
+    }catch(error: any) {
+      toast({
+        title: "예약 오류",
+        description: error.message || "예약 대기 생성 중 오류가 발생하였습니다.",
+        variant: "destructive",
+      })
+    }
+
+  }
+
+  // 시설 평점
+  const formatTime = (time: string | null) => {
+    if(time) {
+      return time.replace(/^(\d{2}:\d{2}):\d{2}$/, "$1");
+    }
   }
 
   const goReviewLsit = async () => {
@@ -182,11 +238,20 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
     router.push(`/facilities/${facilityDetail?.facilityId}/reviews`);
   }
 
-  // 시설 평점
-  const formatTime = (time: string | null) => {
-    if(time) {
-      return time.replace(/^(\d{2}:\d{2}):\d{2}$/, "$1");
-    }
+  // 시간 파싱
+  const parseHour = (time: string) => {
+    return parseInt(time.split(":")[0], 10);
+  }
+
+  // 시 표시용 포맷 변환
+  const formatDisplay = (time: string) => {
+    const [hour, minuteStr] = time.split(":");
+    const startHour = parseInt(hour, 10);
+    const endHour = (startHour + 1) % 24;
+
+    const pad = (num: number) => String(num).padStart(2, "0");
+
+    return `${pad(startHour)}:${minuteStr} - ${pad(endHour)}:${minuteStr}`; // -> 00:00
   }
 
   if(facilityDetail)
@@ -259,7 +324,7 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
                       <CardContent className="p-4">
                         <h5 className="font-medium">{court.name}</h5>
                         <p className="text-sm text-gray-500">
-                          {court.indoor ? "실내" : "실외"} | {court.courtType} | {court.fee.toLocaleString()}원
+                          {court.indoor ? "실내" : "실외"} | {getCourtTypeLabel(court.courtType)} | {court.fee.toLocaleString()}원
                         </p>
                       </CardContent>
                     </Card>
@@ -311,18 +376,25 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
                   <div>
                     <h3 className="text-sm font-medium mb-3">코트 선택</h3>
                     <div className="grid grid-cols-2 gap-3">
-                      {facilityDetail.courts
+                      <Button
+                          //key={court.id}
+                          type="button"
+                          //onClick={() => setSelectedCourt(court.id)}
+                          className={`justify-start h-10 text-sm border bg-white hover:bg-gray-50 text-gray-800 border-gray-200`}
+                        >
+                          {selectCourt?.name || "코트 선택"}
+                        </Button>
+                      {/* {facilityDetail.courts
                       .filter((court) => court.id === parseInt(params.id))
                       .map((court) => (
                         <Button
                           key={court.id}
                           type="button"
-                          //onClick={() => setSelectedCourt(court.id)}
                           className={`justify-start h-10 text-sm border bg-white hover:bg-gray-50 text-gray-800 border-gray-200`}
                         >
                           {court.name}
                         </Button>
-                      ))}
+                      ))} */}
                     </div>
                   </div>
 
@@ -383,22 +455,26 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
                         </p>
                       </div>
                     )}
-                    {timeSlots.length > 0 ? (
-                      <div className="grid grid-cols-2 gap-3 max-h-[240px] overflow-y-auto pr-1">
-                        {timeSlots.map((slot) => (
+                    {timeSlot.length > 0 ? (
+                      <div ref={timeSlotRef} className="grid grid-cols-2 gap-3 max-h-[240px] overflow-y-auto pr-1">
+                        {timeSlot.map((slot, index) => {
+                          const hour = parseHour(slot);
+                          const display = formatDisplay(slot);
+
+                          return (
                           <Button
-                            key={slot.id}
+                            key={index}
                             type="button"
-                            onClick={() => handleTimeSlotClick(slot.hour)}
+                            onClick={() => handleTimeSlotClick(hour)}
                             className={`justify-center h-12 text-sm border ${
-                              selectedTimeSlots.includes(slot.hour) 
+                              selectedTimeSlots.includes(hour) 
                                 ? "bg-indigo-600 hover:bg-indigo-700 text-white border-transparent" 
                                 : "bg-white hover:bg-gray-50 text-gray-800 border-gray-200"
                             } rounded-xl px-3 py-2 w-full transition-colors`}
                           >
-                            {slot.display}
+                            {display}
                           </Button>
-                        ))}
+                        )})}
                       </div>
                     ) : (
                       <p className="text-sm text-gray-500 p-4 border rounded-xl bg-gray-50">선택한 날짜에 예약 가능한 시간이 없습니다.</p>
@@ -407,8 +483,8 @@ export default function FacilityDetailPage({ params }: { params: { id: string } 
 
                   <Button
                     onClick={handleReservation}
+                    disabled={selectedTimeSlots.length === 0 || !date}
                     className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl mt-6"
-                    disabled={!selectedCourt || selectedTimeSlots.length === 0 || !date}
                   >
                     {selectedTimeSlots.length > 0 
                       ? `${selectedTimeSlots.length}시간 예약하기` 
