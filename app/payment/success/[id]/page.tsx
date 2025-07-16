@@ -76,7 +76,7 @@ export default function PaymentSuccessPage({params} : {params: {id: number}}) {
               (<>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-muted-foreground">예약 날짜</span>
-                  <span className="text-sm font-medium">2024.06.15</span>
+                  <span className="text-sm font-medium">{paymentInfo.reserveDate}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">예약 시간</span>

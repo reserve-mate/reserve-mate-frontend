@@ -60,7 +60,7 @@ function PaymentCancel({params} : {params: {id: number}}) {
             <div className="flex justify-between mb-2">
               <span className="text-sm text-muted-foreground">예약 시설</span>
               {
-                (paymentInfo.type === 'matchPaymentSuccess' || paymentInfo.type === 'reservePayment') && (
+                (paymentInfo.type === 'matchPaymentSuccess') && (
                   <span className="text-sm font-medium">{paymentInfo.facilityCourt}</span>
                 )
               }
