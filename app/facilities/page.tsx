@@ -38,6 +38,8 @@ const sportTypes = [
   { value: "OTHER", label: "기타" },
 ]
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sportmate.site/';
+
 export default function FacilitiesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [sportType, setSportType] = useState("")
@@ -278,7 +280,7 @@ export default function FacilitiesPage() {
           <Card key={`${facility.facilityId}-${facility.courtId}`} className="styled-card h-full">
             <div className="relative h-48">
               <Image
-                src={facility.imageUrl ? `/uploads${facility.imageUrl}` : "/placeholder.svg"}
+                src={facility.imageUrl ? `${API_BASE_URL.slice(0, -1)}${facility.imageUrl}` : "/placeholder.svg"}
                 alt={facility.facilityName}
                 fill
                 className="object-cover rounded-t-xl"
