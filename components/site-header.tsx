@@ -194,18 +194,18 @@ export function SiteHeader() {
                         <User className="w-5 h-5 text-gray-400" />
                         <span>내 프로필</span>
                       </Link>
-                      <Link href="/reservations" className="flex items-center gap-3 text-base font-medium text-gray-700 hover:text-indigo-600">
+                      <button onClick={() => goListPage("reservations-list-state", "/reservations")} className="flex items-center gap-3 text-base font-medium text-gray-700 hover:text-indigo-600">
                         <Calendar className="w-5 h-5 text-gray-400" />
                         <span>예약 내역</span>
-                      </Link>
-                      <Link href="/payments" className="flex items-center gap-3 text-base font-medium text-gray-700 hover:text-indigo-600">
+                      </button>
+                      <button onClick={() => goListPage("payments-status", "/payments")} className="flex items-center gap-3 text-base font-medium text-gray-700 hover:text-indigo-600">
                         <CreditCard className="w-5 h-5 text-gray-400" />
                         <span>결제 내역</span>
-                      </Link>
-                      <Link href="/matches/history" className="flex items-center gap-3 text-base font-medium text-gray-700 hover:text-indigo-600">
+                      </button>
+                      <button onClick={() => goListPage("match-history-state", "/matches/history")} className="flex items-center gap-3 text-base font-medium text-gray-700 hover:text-indigo-600">
                         <Trophy className="w-5 h-5 text-gray-400" />
                         <span>매치 이용내역</span>
-                      </Link>
+                      </button>
                       {isAdmin && (
                         <Link href="/admin/dashboard" className="flex items-center gap-3 text-base font-medium text-indigo-600 hover:text-indigo-800">
                           <Settings className="w-5 h-5 text-indigo-500" />
