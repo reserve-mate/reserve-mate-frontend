@@ -74,6 +74,13 @@ export function SiteHeader() {
       setIsAdmin(false)
       localStorage.removeItem("accessToken");
       localStorage.setItem('isAdmin', 'false')
+      // 현재 경로가 '/'이면 reload, 아니면 replace('/')
+      console.log(pathname)
+      if (pathname === '/') {
+        window.location.reload()
+      } else {
+        router.replace('/');
+      }
 
       toast({
         title: "로그아웃 완료",

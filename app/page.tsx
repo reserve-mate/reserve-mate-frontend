@@ -18,6 +18,15 @@ export default function Home() {
   const router = useRouter();
   const [popularFacility, setPopularFacility] = useState<PoppularFacility[]>([]);
 
+  // 로그인 상태를 관리
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  // 로그인 상태 확인
+  useEffect(() => {
+    const loggedInStatus = localStorage.getItem('isLoggedIn');
+    setIsLoggedIn(loggedInStatus === 'true');
+  }, []);
+
   // 인기 시설 조회
   useEffect(() => {
     const getPopularFacility = async () => {
@@ -59,25 +68,60 @@ export default function Home() {
             <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
               ReserveMate
             </h1>
-            <p className="max-w-[800px] text-gray-100 text-lg md:text-xl px-2">
-              간편하게 스포츠 시설을 예약하고 관리하세요. 테니스, 축구, 농구 등 다양한 스포츠 시설을 한 곳에서.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full px-8 sm:px-0 sm:w-auto">
-              <Button
-                asChild
-                size="lg"
-                className="bg-white text-indigo-700 hover:bg-gray-100 px-6 py-5 text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
-              >
-                <Link href="/facilities">시설 찾기</Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                className="bg-indigo-600 border-2 border-white text-white hover:bg-indigo-700 px-6 py-5 text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
-              >
-                <button onClick={() => goListPage("matches-state", "/matches")}>소셜 매치</button>
-              </Button>
-            </div>
+            {isLoggedIn ? (
+              <>
+                <p className="max-w-[800px] text-gray-100 text-lg md:text-xl px-2">
+                  간편하게 스포츠 시설을 예약하고 관리하세요.
+                </p>
+                <p className="max-w-[800px] text-gray-100 text-lg md:text-xl px-2">
+                  테니스, 축구, 농구 등 다양한 스포츠 시설을 한 곳에서.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full px-8 sm:px-0 sm:w-auto">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-white text-indigo-700 hover:bg-gray-100 px-6 py-5 text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
+                  >
+                    <Link href="/facilities">시설 찾기</Link>
+                  </Button>
+                  <Button
+                    size="lg"
+                    className="bg-indigo-600 border-2 border-white text-white hover:bg-indigo-700 px-6 py-5 text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
+                    onClick={() => goListPage("matches-state", "/matches")}
+                  >
+                    소셜 매치
+                  </Button>
+                </div>
+              </>
+            ) : (
+              // 비로그인 상태인 경우
+              <>
+                <div className="space-y-3 text-center">
+                  <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl">
+                    지금 바로 시작하세요
+                  </h2>
+                  <p className="max-w-[700px] text-gray-200 text-base md:text-lg mx-auto px-2">
+                    회원가입 후 다양한 스포츠 시설을 이용해보세요.
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4 mt-4 w-full px-8 sm:px-0 sm:w-auto justify-center">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-white text-indigo-700 hover:bg-gray-100 px-6 py-5 text-base md:text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
+                  >
+                    <Link href="/signup">회원가입</Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-indigo-600 border-2 border-white text-white hover:bg-indigo-700 px-6 py-5 text-base md:text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
+                  >
+                    <Link href="/login">로그인</Link>
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
           
           {/* 모바일용 스크롤 안내 */}
@@ -150,76 +194,52 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
-            {popularFacility.map((facility) => (
-              <Card key={facility.facilityId} className="styled-card overflow-hidden">
-                <div className="relative h-40 md:h-48 w-full">
-                  <Image
-                    src={(facility.imageUrl) ? `${API_BASE_URL.slice(0, -1)}${facility.imageUrl}` : "/placeholder.svg?height=300&width=500&text=이미지없음"}
-                    alt={facility.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <CardContent className="p-4 md:p-6">
-                  <h3 className="text-lg md:text-xl font-bold mb-2">{facility.name}</h3>
-                  <p className="text-gray-500 text-sm md:text-base mb-4 truncate">{facility.description}</p>
-
-                  {/* 코트 버튼 - 2열 그리드 */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {facility.courts.map((court) => (
-                      <Button
-                        key={court.courtId}
-                        asChild
-                        variant="outline"
-                        className="hover:text-indigo-700 hover:border-indigo-700 w-full"
-                      >
-                        <Link href={`/facilities/${court.courtId}`}>
-                          {court.name} <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                      </Button>
-                    ))}
+          {popularFacility.length === 0 ? (
+            <div className="w-full text-center text-gray-500 py-12">
+              등록된 시설이 없습니다.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+              {popularFacility.map((facility) => (
+                <Card key={facility.facilityId} className="styled-card overflow-hidden">
+                  <div className="relative h-40 md:h-48 w-full">
+                    <Image
+                      src={
+                        facility.imageUrl
+                          ? `${API_BASE_URL.slice(0, -1)}${facility.imageUrl}`
+                          : "/placeholder.svg?height=300&width=500&text=이미지없음"
+                      }
+                      alt={facility.name}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+                  <CardContent className="p-4 md:p-6">
+                    <h3 className="text-lg md:text-xl font-bold mb-2">{facility.name}</h3>
+                    <p className="text-gray-500 text-sm md:text-base mb-4 truncate">
+                      {facility.description}
+                    </p>
 
-      {/* CTA Section */}
-      <section className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-br from-indigo-600 to-purple-700 text-white relative overflow-hidden">
-        {/* 백그라운드 장식 */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-          <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-indigo-500 rounded-full opacity-20 blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-purple-500 rounded-full opacity-20 blur-3xl"></div>
-        </div>
-        
-        <div className="container px-4 sm:px-6 max-w-6xl mx-auto relative z-10">
-          <div className="flex flex-col items-center justify-center space-y-6 text-center">
-            <div className="space-y-3">
-              <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl">지금 바로 시작하세요</h2>
-              <p className="max-w-[700px] text-gray-200 text-base md:text-lg mx-auto px-2">
-                회원가입 후 다양한 스포츠 시설을 이용해보세요.
-              </p>
+                    {/* 코트 버튼 - 2열 그리드 */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {facility.courts.map((court) => (
+                        <Button
+                          key={court.courtId}
+                          asChild
+                          variant="outline"
+                          className="hover:text-indigo-700 hover:border-indigo-700 w-full"
+                        >
+                          <Link href={`/facilities/${court.courtId}`}>
+                            {court.name} <ArrowRight className="ml-2 h-4 w-4" />
+                          </Link>
+                        </Button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 mt-4 w-full px-8 sm:px-0 sm:w-auto">
-              <Button
-                asChild
-                size="lg"
-                className="bg-white text-indigo-700 hover:bg-gray-100 px-6 py-5 text-base md:text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
-              >
-                <Link href="/signup">회원가입</Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                className="bg-indigo-600 border-2 border-white text-white hover:bg-indigo-700 px-6 py-5 text-base md:text-lg rounded-xl shadow-lg transition-transform hover:scale-105 w-full sm:w-auto"
-              >
-                <Link href="/login">로그인</Link>
-              </Button>
-            </div>
-          </div>
+          )}
         </div>
       </section>
 
