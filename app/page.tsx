@@ -150,40 +150,52 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
-            {popularFacility.map((facility) => (
-              <Card key={facility.facilityId} className="styled-card overflow-hidden">
-                <div className="relative h-40 md:h-48 w-full">
-                  <Image
-                    src={(facility.imageUrl) ? `${API_BASE_URL.slice(0, -1)}${facility.imageUrl}` : "/placeholder.svg?height=300&width=500&text=이미지없음"}
-                    alt={facility.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <CardContent className="p-4 md:p-6">
-                  <h3 className="text-lg md:text-xl font-bold mb-2">{facility.name}</h3>
-                  <p className="text-gray-500 text-sm md:text-base mb-4 truncate">{facility.description}</p>
-
-                  {/* 코트 버튼 - 2열 그리드 */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {facility.courts.map((court) => (
-                      <Button
-                        key={court.courtId}
-                        asChild
-                        variant="outline"
-                        className="hover:text-indigo-700 hover:border-indigo-700 w-full"
-                      >
-                        <Link href={`/facilities/${court.courtId}`}>
-                          {court.name} <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                      </Button>
-                    ))}
+          {popularFacility.length === 0 ? (
+            <div className="w-full text-center text-gray-500 py-12">
+              등록된 시설이 없습니다.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+              {popularFacility.map((facility) => (
+                <Card key={facility.facilityId} className="styled-card overflow-hidden">
+                  <div className="relative h-40 md:h-48 w-full">
+                    <Image
+                      src={
+                        facility.imageUrl
+                          ? `${API_BASE_URL.slice(0, -1)}${facility.imageUrl}`
+                          : "/placeholder.svg?height=300&width=500&text=이미지없음"
+                      }
+                      alt={facility.name}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <CardContent className="p-4 md:p-6">
+                    <h3 className="text-lg md:text-xl font-bold mb-2">{facility.name}</h3>
+                    <p className="text-gray-500 text-sm md:text-base mb-4 truncate">
+                      {facility.description}
+                    </p>
+
+                    {/* 코트 버튼 - 2열 그리드 */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {facility.courts.map((court) => (
+                        <Button
+                          key={court.courtId}
+                          asChild
+                          variant="outline"
+                          className="hover:text-indigo-700 hover:border-indigo-700 w-full"
+                        >
+                          <Link href={`/facilities/${court.courtId}`}>
+                            {court.name} <ArrowRight className="ml-2 h-4 w-4" />
+                          </Link>
+                        </Button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
