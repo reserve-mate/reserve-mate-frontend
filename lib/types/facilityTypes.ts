@@ -2,6 +2,21 @@ import { CourtType } from "../enum/courtEnum";
 import { SportType } from "../enum/matchEnum";
 import { FacilityDetailReview } from "./reviewTypes";
 
+// 인기 시설
+export interface PoppularFacility {
+    facilityId: number;
+    name: string;
+    description: string;
+    imageUrl: string;
+    courts: CourtIdName[];
+}
+
+// 코트 이름 번호
+interface CourtIdName {
+    courtId: number;
+    name: string;
+}
+
 // 시설 상세
 export interface FacilityDetail {
     facilityId: number;

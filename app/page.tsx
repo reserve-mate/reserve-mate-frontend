@@ -6,10 +6,36 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { MapPin, Calendar, CreditCard, Users, ArrowRight, Search, CalendarDays } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { PoppularFacility } from "@/lib/types/facilityTypes"
+import { facilityService } from "@/lib/services/facilityService"
+import { toast } from "@/hooks/use-toast"
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.sportmate.site/';
 
 export default function Home() {
 
   const router = useRouter();
+  const [popularFacility, setPopularFacility] = useState<PoppularFacility[]>([]);
+
+  // 인기 시설 조회
+  useEffect(() => {
+    const getPopularFacility = async () => {
+      try{
+        const response = await facilityService.getPopularFacility();
+        setPopularFacility(response);
+      }catch(error) {
+        setPopularFacility([]);
+        toast({
+          title: "조회 오류",
+          description: "새 비밀번호와 비밀번호 확인이 일치하지 않습니다.",
+          variant: "destructive",
+        })
+      }
+      
+    }
+    getPopularFacility();
+  }, []);
 
   // 예약 목록 이동
   const goListPage = async (state: string, link: string) => {
@@ -125,24 +151,35 @@ export default function Home() {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="styled-card overflow-hidden">
+            {popularFacility.map((facility) => (
+              <Card key={facility.facilityId} className="styled-card overflow-hidden">
                 <div className="relative h-40 md:h-48 w-full">
                   <Image
-                    src={`/placeholder.svg?height=300&width=500&text=인기시설${i}`}
-                    alt={`인기 시설 ${i}`}
+                    src={(facility.imageUrl) ? `${API_BASE_URL.slice(0, -1)}${facility.imageUrl}` : "/placeholder.svg?height=300&width=500&text=이미지없음"}
+                    alt={facility.name}
                     fill
                     className="object-cover"
                   />
                 </div>
                 <CardContent className="p-4 md:p-6">
-                  <h3 className="text-lg md:text-xl font-bold mb-2">인기 스포츠 시설 {i}</h3>
-                  <p className="text-gray-500 text-sm md:text-base mb-4">최신 시설과 편리한 위치로 많은 사용자들이 이용하는 시설입니다.</p>
-                  <Button asChild variant="outline" className="w-full hover:text-indigo-700 hover:border-indigo-700">
-                    <Link href="/facilities">
-                      자세히 보기 <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
+                  <h3 className="text-lg md:text-xl font-bold mb-2">{facility.name}</h3>
+                  <p className="text-gray-500 text-sm md:text-base mb-4 truncate">{facility.description}</p>
+
+                  {/* 코트 버튼 - 2열 그리드 */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {facility.courts.map((court) => (
+                      <Button
+                        key={court.courtId}
+                        asChild
+                        variant="outline"
+                        className="hover:text-indigo-700 hover:border-indigo-700 w-full"
+                      >
+                        <Link href={`/facilities/${court.courtId}`}>
+                          {court.name} <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             ))}

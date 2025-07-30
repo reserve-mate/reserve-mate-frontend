@@ -14,16 +14,12 @@ import {
 import { 
   User, 
   Menu, 
-  Search, 
   Home, 
   Map, 
   Users, 
   Calendar, 
   Settings, 
-  HelpCircle, 
-  Info,
   CreditCard,
-  Bookmark,
   Zap,
   Trophy
 } from "lucide-react"
