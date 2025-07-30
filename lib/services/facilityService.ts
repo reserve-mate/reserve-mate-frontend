@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { api } from '../api';
 import { SportType } from '../enum/matchEnum';
-import { CourtName, FacilityDetail, FacilityManagerName, FacilityNames, ReviewFacility } from '../types/facilityTypes';
+import { CourtName, FacilityDetail, FacilityManagerName, FacilityNames, PoppularFacility, ReviewFacility } from '../types/facilityTypes';
 import { FacilityManager } from './userService';
 import { Address, OperatingHours, AssignFacilityManagerRequest, FacilityManagerListResponse, FacilitiesResponse } from '../types/facilityTypes';
 
@@ -75,6 +75,12 @@ interface FacilityListResponse {
 
 // 시설 서비스
 export const facilityService = {
+
+  // 인기 시설 조회
+  getPopularFacility: () => {
+    let endPoint = `/facility/popularFacility`;
+    return api.get<PoppularFacility[]>(endPoint);
+  },
 
   // 시설 상세 조회
   getFacilityDetail: (param: number) => {
