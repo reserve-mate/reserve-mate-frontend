@@ -528,7 +528,7 @@ export default function AdminDashboardPage() {
             <CardHeader className="p-5 border-b bg-gray-50">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <CardTitle>시설 목록</CardTitle>
-                <Button variant="outline" size="sm" className="text-sm">
+                <Button onClick={() => router.push("/admin/facilities")} variant="outline" size="sm" className="text-sm">
                   전체보기
                 </Button>
               </div>
@@ -547,16 +547,26 @@ export default function AdminDashboardPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {dashFacilities.map((facility, index) => (
-                      <TableRow key={index} className="hover:bg-gray-50">
-                        <TableCell className="font-medium">{dashFacilities.length - index}</TableCell>
-                        <TableCell>{facility.facilityName}</TableCell>
-                        <TableCell className="hidden md:table-cell">{facility.address}</TableCell>
-                        <TableCell className="hidden md:table-cell">{displaySportName(facility.sportType as SportType | null)}</TableCell>
-                        <TableCell>{facility.courtCount}</TableCell>
-                        <TableCell className="text-right">{facility.reservationCount}</TableCell>
+                    {dashFacilities.length > 0 ? (
+                      dashFacilities.map((facility, index) => (
+                        <TableRow key={facility.facilityId || index} className="hover:bg-gray-50">
+                          <TableCell className="font-medium">{dashFacilities.length - index}</TableCell>
+                          <TableCell>{facility.facilityName}</TableCell>
+                          <TableCell className="hidden md:table-cell">{facility.address}</TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {displaySportName(facility.sportType as SportType | null)}
+                          </TableCell>
+                          <TableCell>{facility.courtCount}</TableCell>
+                          <TableCell className="text-right">{facility.reservationCount}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-6 text-gray-500">
+                          등록된 시설이 없습니다.
+                        </TableCell>
                       </TableRow>
-                    ))}
+                    )}
                   </TableBody>
                 </Table>
               </div>
