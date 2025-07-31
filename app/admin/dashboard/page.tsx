@@ -16,7 +16,9 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FacilityNames } from "@/lib/types/facilityTypes"
 import { timeFormat } from "@/lib/types/commonTypes"
-import { facilityService } from "@/lib/services/facilityService"
+import { FacilityList, facilityService } from "@/lib/services/facilityService"
+import { displaySportName } from "@/lib/types/matchTypes"
+import { SportType } from "@/lib/enum/matchEnum"
 
 export default function AdminDashboardPage() {
 
@@ -35,6 +37,9 @@ export default function AdminDashboardPage() {
   const [totalReservation, setTotalReservation] = useState<number>(0);  // 총 예약 수
   const [totalPlayerCnt, setTotalPlayerCnt] = useState<number>(0); // 매치 총 이용자 수
   const [loading, setLoading] = useState(false);
+
+  // 대시보드 시설 조회
+  const [dashFacilities, setDashFacilities] = useState<FacilityList[]>([]);
 
   // 시설명 조회
   useEffect(() => {
@@ -131,6 +136,22 @@ export default function AdminDashboardPage() {
     getDashboardReservations();
 
   }, [selectFacility, year, month]);
+
+  // 대시보드 시설 조회
+  useEffect(() => {
+
+    const getDashboardFacilities = async () => {
+      try {
+        const response = await facilityService.getDashboardFacilities();
+        setDashFacilities(response);
+      } catch (error) {
+        setDashFacilities([]);
+      }
+    }
+
+    getDashboardFacilities();
+
+  }, [])
 
   // 더미 데이터
   const stats = {
@@ -526,14 +547,14 @@ export default function AdminDashboardPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {facilities.map((facility) => (
-                      <TableRow key={facility.id} className="hover:bg-gray-50">
-                        <TableCell className="font-medium">{facility.id}</TableCell>
-                        <TableCell>{facility.name}</TableCell>
+                    {dashFacilities.map((facility, index) => (
+                      <TableRow key={index} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{dashFacilities.length - index}</TableCell>
+                        <TableCell>{facility.facilityName}</TableCell>
                         <TableCell className="hidden md:table-cell">{facility.address}</TableCell>
-                        <TableCell className="hidden md:table-cell">{facility.sportType}</TableCell>
-                        <TableCell>{facility.courtsCount}</TableCell>
-                        <TableCell className="text-right">{facility.reservationsCount}</TableCell>
+                        <TableCell className="hidden md:table-cell">{displaySportName(facility.sportType as SportType | null)}</TableCell>
+                        <TableCell>{facility.courtCount}</TableCell>
+                        <TableCell className="text-right">{facility.reservationCount}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

@@ -65,7 +65,6 @@ export interface FacilityList {
   courtCount: number;
   reservationCount: number;
   active? : boolean;
-  
 }
 
 interface FacilityListResponse {
@@ -94,6 +93,13 @@ export const facilityService = {
       params: data,
     })
   },
+
+  // 대시보드 시설 조회(관리자)
+  getDashboardFacilities : () => {
+    let endPoint = `/admin/facilities/dashboardFacilities`;
+    return api.get<FacilityList[]>(endPoint);
+  },
+
   // 시설 목록 조회(관리자 전용)
   getAdminFacilities: async(data:{ keyword : string; lastId : string | null; size : string}) => {
     const res =  await api.get<FacilityListResponse>("/admin/facilities",{
