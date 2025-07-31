@@ -2,14 +2,24 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function ClientFooter() {
+  const router = useRouter();
+
   const [year, setYear] = useState(2024); // 안전한 기본값
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     setYear(new Date().getFullYear());
   }, []);
+
+  // 목록 이동
+  const goListPage = async (state: string, link: string) => {
+    sessionStorage.removeItem(state)
+    await Promise.resolve();
+    router.push(link);
+  }
 
   return (
     <footer className="border-t bg-indigo-50">
@@ -18,7 +28,7 @@ export default function ClientFooter() {
         <div className="container max-w-6xl mx-auto px-4">
           <div className="py-4 flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-indigo-600">ReserveMate</h3>
+              <h3 className="text-lg font-bold text-indigo-600">Sport Mate</h3>
               <p className="text-sm text-gray-500">간편한 스포츠 시설 예약</p>
             </div>
             <button 
@@ -55,14 +65,14 @@ export default function ClientFooter() {
                       </Link>
                     </li>
                     <li>
-                      <Link href="/matches" className="text-sm text-gray-600 hover:text-indigo-600">
+                      <button onClick={() => goListPage("matches-state", "/matches")} className="text-sm text-gray-600 hover:text-indigo-600">
                         소셜 매치
-                      </Link>
+                      </button>
                     </li>
                     <li>
-                      <Link href="/reservations" className="text-sm text-gray-600 hover:text-indigo-600">
+                      <button onClick={() => goListPage("reservations-list-state", "/reservations")} className="text-sm text-gray-600 hover:text-indigo-600">
                         예약 관리
-                      </Link>
+                      </button>
                     </li>
                   </ul>
                 </div>
@@ -140,7 +150,7 @@ export default function ClientFooter() {
           {/* 모바일 환경의 저작권 표시 */}
           <div className={`py-4 border-t border-indigo-100 text-center ${showAll ? '' : 'mt-2'}`}>
             <p className="text-xs text-gray-500">
-              &copy; {year} ReserveMate. All rights reserved.
+              &copy; {year} Sport Mate. All rights reserved.
             </p>
           </div>
         </div>
@@ -151,7 +161,7 @@ export default function ClientFooter() {
         <div className="container max-w-6xl mx-auto px-4 md:px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-3">
-              <h3 className="text-lg font-bold text-indigo-600">ReserveMate</h3>
+              <h3 className="text-lg font-bold text-indigo-600">Sport Mate</h3>
               <p className="text-sm text-gray-600">간편하게 스포츠 시설을 예약하고 관리하세요.</p>
             </div>
             <div className="space-y-3">
@@ -163,14 +173,14 @@ export default function ClientFooter() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/matches" className="text-sm text-gray-600 hover:text-indigo-600">
+                  <button onClick={() => goListPage("matches-state", "/matches")} className="text-sm text-gray-600 hover:text-indigo-600">
                     소셜 매치
-                  </Link>
+                  </button>
                 </li>
                 <li>
-                  <Link href="/reservations" className="text-sm text-gray-600 hover:text-indigo-600">
+                  <button onClick={() => goListPage("reservations-list-state", "/reservations")} className="text-sm text-gray-600 hover:text-indigo-600">
                     예약 관리
-                  </Link>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -215,7 +225,7 @@ export default function ClientFooter() {
           </div>
           <div className="border-t mt-8 pt-8 flex flex-col md:flex-row justify-between items-center border-indigo-100">
             <p className="text-sm text-gray-500">
-              &copy; {year} ReserveMate. All rights reserved.
+              &copy; {year} Sport Mate. All rights reserved.
             </p>
             <div className="flex space-x-4 mt-4 md:mt-0">
               <Link href="#" className="text-indigo-400 hover:text-indigo-600">

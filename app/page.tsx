@@ -66,7 +66,7 @@ export default function Home() {
         <div className="container px-4 sm:px-6 max-w-6xl mx-auto relative z-10">
           <div className="flex flex-col items-center space-y-6 text-center">
             <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
-              ReserveMate
+              Sport Mate
             </h1>
             {isLoggedIn ? (
               <>

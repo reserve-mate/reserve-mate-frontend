@@ -108,7 +108,7 @@ export function SiteHeader() {
       <div className="container flex h-14 items-center justify-between max-w-6xl mx-auto px-2 sm:px-6">
         <div className="flex items-center">
           <Link href="/" className="flex items-center pl-0">
-            <span className="text-xl font-bold text-indigo-600">ReserveMate</span>
+            <span className="text-xl font-bold text-indigo-600">Sport Mate</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm ml-8">
             <Link href="/facilities" className={`font-medium transition-colors hover:text-indigo-600 ${isActive("/facilities") ? "font-bold text-indigo-600" : ""}`}>
