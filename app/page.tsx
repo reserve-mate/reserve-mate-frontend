@@ -35,11 +35,6 @@ export default function Home() {
         setPopularFacility(response);
       }catch(error) {
         setPopularFacility([]);
-        toast({
-          title: "조회 오류",
-          description: "새 비밀번호와 비밀번호 확인이 일치하지 않습니다.",
-          variant: "destructive",
-        })
       }
       
     }
