@@ -36,6 +36,7 @@ export default function AdminDashboardPage() {
   const [totalRevenues, setTotalRevenues] = useState<number>(0);  // 총 매출
   const [totalReservation, setTotalReservation] = useState<number>(0);  // 총 예약 수
   const [totalPlayerCnt, setTotalPlayerCnt] = useState<number>(0); // 매치 총 이용자 수
+  const [totalFacility, setTotalFacility] = useState<number>(0); // 본인 시설 수
   const [loading, setLoading] = useState(false);
 
   // 대시보드 시설 조회
@@ -55,6 +56,22 @@ export default function AdminDashboardPage() {
 
     fetchGetFacilities();
   }, [])
+
+  // 본인 시설 수
+  useEffect(() => {
+
+    const getDashFacilityCnt = async () => {
+      try{
+        const response = await facilityService.getDashFacilityCnt();
+        setTotalFacility(response);
+      }catch(error) {
+        setTotalFacility(0)
+      }
+    }
+
+    getDashFacilityCnt();
+
+  }, []);
 
   // 대시보드 매치 총 이용자 수
   useEffect(() => {
@@ -393,7 +410,7 @@ export default function AdminDashboardPage() {
           <CardContent className="p-4 md:p-6 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">등록된 시설</p>
-              <p className="text-2xl md:text-3xl font-bold mt-1">{stats.facilitiesCount}</p>
+              <p className="text-2xl md:text-3xl font-bold mt-1">{totalFacility}</p>
             </div>
             <div className="p-3 rounded-full bg-purple-100 text-purple-600">
               <Building className="h-5 w-5 md:h-6 md:w-6" />
@@ -464,15 +481,9 @@ export default function AdminDashboardPage() {
       </Card>
 
       {/* 탭 콘텐츠 */}
-      <Tabs defaultValue="users" className="mb-2">
+      <Tabs defaultValue="facilities" className="mb-2">
         <div className="border-b mb-4">
           <TabsList className="w-full justify-start bg-transparent p-0">
-            <TabsTrigger
-              value="users"
-              className="px-4 py-2 data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 rounded-none bg-transparent"
-            >
-              사용자 목록
-            </TabsTrigger>
             <TabsTrigger
               value="facilities"
               className="px-4 py-2 data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 rounded-none bg-transparent"
@@ -481,47 +492,6 @@ export default function AdminDashboardPage() {
             </TabsTrigger>
           </TabsList>
         </div>
-
-        <TabsContent value="users" className="mt-0">
-          <Card className="shadow-sm">
-            <CardHeader className="p-5 border-b bg-gray-50">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <CardTitle>사용자 목록</CardTitle>
-                <Button variant="outline" size="sm" className="text-sm">
-                  전체보기
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>이름</TableHead>
-                      <TableHead className="hidden md:table-cell">이메일</TableHead>
-                      <TableHead className="hidden md:table-cell">전화번호</TableHead>
-                      <TableHead className="hidden md:table-cell">가입일</TableHead>
-                      <TableHead className="text-right">예약 수</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id} className="hover:bg-gray-50">
-                        <TableCell className="font-medium">{user.id}</TableCell>
-                        <TableCell>{user.name}</TableCell>
-                        <TableCell className="hidden md:table-cell">{user.email}</TableCell>
-                        <TableCell className="hidden md:table-cell">{user.phone}</TableCell>
-                        <TableCell className="hidden md:table-cell">{user.registeredDate}</TableCell>
-                        <TableCell className="text-right">{user.reservationsCount}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="facilities" className="mt-0">
           <Card className="shadow-sm">
