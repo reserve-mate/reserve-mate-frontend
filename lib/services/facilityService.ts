@@ -75,6 +75,12 @@ interface FacilityListResponse {
 // 시설 서비스
 export const facilityService = {
 
+  // 본인 시설 수 조회(관리자)
+  getDashFacilityCnt : () => {
+    let endPoint = `/admin/facilities/facilityCnt`;
+    return api.get<number>(endPoint);
+  },
+
   // 인기 시설 조회
   getPopularFacility: () => {
     let endPoint = `/facility/popularFacility`;

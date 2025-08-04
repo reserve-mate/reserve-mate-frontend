@@ -36,6 +36,7 @@ export default function AdminDashboardPage() {
   const [totalRevenues, setTotalRevenues] = useState<number>(0);  // 총 매출
   const [totalReservation, setTotalReservation] = useState<number>(0);  // 총 예약 수
   const [totalPlayerCnt, setTotalPlayerCnt] = useState<number>(0); // 매치 총 이용자 수
+  const [totalFacility, setTotalFacility] = useState<number>(0); // 본인 시설 수
   const [loading, setLoading] = useState(false);
 
   // 대시보드 시설 조회
@@ -55,6 +56,22 @@ export default function AdminDashboardPage() {
 
     fetchGetFacilities();
   }, [])
+
+  // 본인 시설 수
+  useEffect(() => {
+
+    const getDashFacilityCnt = async () => {
+      try{
+        const response = await facilityService.getDashFacilityCnt();
+        setTotalFacility(response);
+      }catch(error) {
+        setTotalFacility(0)
+      }
+    }
+
+    getDashFacilityCnt();
+
+  }, []);
 
   // 대시보드 매치 총 이용자 수
   useEffect(() => {
@@ -393,7 +410,7 @@ export default function AdminDashboardPage() {
           <CardContent className="p-4 md:p-6 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">등록된 시설</p>
-              <p className="text-2xl md:text-3xl font-bold mt-1">{stats.facilitiesCount}</p>
+              <p className="text-2xl md:text-3xl font-bold mt-1">{totalFacility}</p>
             </div>
             <div className="p-3 rounded-full bg-purple-100 text-purple-600">
               <Building className="h-5 w-5 md:h-6 md:w-6" />
